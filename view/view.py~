@@ -1,0 +1,91 @@
+from tkinter import *
+from tkinter import ttk
+from dbase import db_session, Asset, Claim
+from .transaction import TransactionView
+WINDOW_WIDTH = 560
+WINDOW_HEIGHT = 300
+
+class App(Tk):
+    def __init__(self):
+        super().__init__()
+        self.title('Personal Accounting')
+        self.mainframe = ttk.Frame(self, padding="3 3 12 12")
+        self.mainframe.grid(column=0, row=0, sticky=(N,W,E,S))
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        SCREEN_WIDTH = self.winfo_screenwidth()
+        SCREEN_HEIGHT = self.winfo_screenheight()
+        SCREEN_X_CENTER = (SCREEN_WIDTH - WINDOW_WIDTH) / 2
+        SCREEN_Y_CENTER = (SCREEN_HEIGHT - WINDOW_HEIGHT) / 2
+        self.geometry('%dx%d+%d+%d' % (WINDOW_WIDTH, WINDOW_HEIGHT,
+                                       SCREEN_X_CENTER, SCREEN_Y_CENTER))
+        self.protocol("WM_DELETE_WINDOW", self.exit_app)
+        self.option_add('*tearOff', False)
+        
+        self.create_menu()
+        self.create_gui()
+        
+        with db_session() as db:
+            for asset in db.query(Asset).all():
+                print(asset)
+            for claim in db.query(Claim).all():
+                print(claim)
+
+    def create_gui(self):
+        self.feet = StringVar()
+        feet_entry=ttk.Entry(self.mainframe, width=7, textvariable = self.feet)
+        feet_entry.grid(column=2, row=1, sticky=(W,E))
+
+        ttk.Label(self.mainframe, text="Hola").grid(column=1, row=1, sticky=(W,E))
+
+        ttk.Button(self.mainframe, text="Calculate", command=self.calculate).grid(column=3, row=2, sticky=W)
+
+        for child in self.mainframe.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+            
+        feet_entry.focus()
+        self.bind("<Return>", self.calculate)
+            
+    def calculate(self, *args):
+        print("calculate")
+        try: value = int(self.feet.get())*2
+        except ValueError: print("Error")
+        else : print("Valor=", value)
+        
+    def create_menu(self): 
+        menu_bar = Menu(self)
+
+        #app_menu = Menu(menu_bar, name='apple')
+        #app_menu.add_command(label='About Accounting')
+        #app_menu.add_separator()
+        #menu_bar.add_cascade(menu=app_menu)
+
+        #help_menu = Menu(menu_bar, name='help')
+        #menu_bar.add_cascade(menu=help_menu, label='Help')
+        #self.createcommand('tk::mac::ShowHelp:', self.show_help)
+
+        #window_menu = Menu(menu_bar, name='window')
+        #menu_bar.add_cascade(menu= window_menu, label='Window')
+        
+        file_menu = Menu(menu_bar)
+        file_menu.add_separator()
+        file_menu.add_command(label='Import')
+        file_menu.add_command(label='Quit', command=self.exit_app)
+        menu_bar.add_cascade(label='File', menu=file_menu)
+        
+        self.createcommand('tk::mac::Quit', self.exit_app)
+        
+        new_menu = Menu(menu_bar)
+        new_menu.add_command(label='Transaction', command=lambda x=self: TransactionView(x))
+        new_menu.add_command(label='Book Entry', command=self.new_bookentry)
+        menu_bar.add_cascade(label='New', menu=new_menu)
+        
+        self.config(menu=menu_bar)
+
+        
+    def exit_app(self):
+        print('exit')
+        self.destroy()
+
+    def new_bookentry(self):
+        print('new book entry')

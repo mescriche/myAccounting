@@ -1,0 +1,62 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\title{my Accounting}
+\author{Manuel Escriche Vicente}
+\begin{document}
+\maketitle
+\begin{abstract}
+
+\end{abstract}
+\tableofcontents
+\newpage
+
+\section{Setup python environment}
+Get a list of python installation:
+\begin{verbatim}
+>> type -a python
+python is /Users/MANEV/.pyenv/shims/python
+python is /usr/bin/python
+\end{verbatim}
+From this list, the first one is used:
+\begin{verbatim}
+>> which python
+/Users/MANEV/.pyenv/shims/python
+\end{verbatim}
+Check what version of python is in use:
+\begin{verbatim}
+>> python -V
+Python 3.8.6
+\end{verbatim}
+Check available versions
+\begin{verbatim}
+>> pyenv versions
+  system
+  3.6.1
+* 3.8.6 (set by /Users/MANEV/.pyenv/version)
+  3.9.16
+\end{verbatim}
+Set proper version in working folder
+\begin{verbatim}
+ >> pyenv local 3.9.16
+ >> python -V
+ Python 3.9.16
+ \end{verbatim}
+ Install pipenv to setup our virtual python environment
+ \begin{verbatim}
+ >> pip install pipenv
+ >> pipenv install
+ >> pipenv shell
+ \end{verbatim}
+ Install sqlalchemy
+ \begin{verbatim}
+ >> pipenv install sqlalchemy
+ \end{verbatim}
+ And, finally, execute the program
+ \begin{verbatim}
+ >> python myAccounting.py
+ \end{verbatim} 
+ 
+\end{document}
