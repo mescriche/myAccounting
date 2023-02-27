@@ -7,11 +7,14 @@ class View(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
-        self.grid(column=0, row=0, padx=2, pady=2, sticky='news')
+        #self.grid(column=0, row=0, padx=2, pady=2, sticky='news')
+        self.pack(fill='both', expand=True)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
         self.create_menu()
         self.create_gui()
+        
+        self.bind('<<NewTransaction>>', self.new_transaction)
 
     def set_controller(self, controller):
         self.controller = controller
@@ -23,9 +26,36 @@ class View(ttk.Frame):
                 
         ## ---- Journal
         journal_frame = ttk.Frame(notebook)
+        journal_frame.pack(fill='both', expand=True)
         notebook.add(journal_frame, text='Journal')
         
+        #columns = ('id', 'date', 'account', 'debit', 'credit')
+        #tree = ttk.Treeview(journal_frame, columns=columns, show='headings')
+        #tree.heading('id', text='Id')
+        #tree.column('id', width=50, stretch=False, anchor='e')
+        #tree.heading('date', text='Date')
+        #tree.column('date', width=100, stretch=False, anchor='c')
+        #tree.heading('account', text='Account')
+        #tree.column('account', width=200, stretch=True, anchor='c')
+        #tree.heading('debit', text='Debit')
+        #tree.column('debit', width=100, stretch=False, anchor='e')
+        #tree.heading('credit', text='Credit')
+        #tree.column('credit', width=100, stretch=False, anchor='e')
+        #tree.pack(fill='both', expand=True)
 
+        text = Text(journal_frame)
+        text.pack(fill='both', expand=True)
+        
+        with db_session() as db:
+            for trans in db.query(Transaction).all():
+                values = (trans.id, trans.date)
+                text.insert('end', '{} - {} \n'.format(*values))
+                #iid = tree.insert('', 'end', values= values, open=True )
+                
+                for entry in trans.entries:
+                    values = (entry.account.name, entry.debit, entry.credit)
+                    text.insert('end', '{} - {} - {} \n'.format(*values))
+                    #tree.insert(iid, 'end', values= values)
         
         ## ---- Ledger
         ledger_frame = ttk.Frame(notebook)
@@ -47,15 +77,12 @@ class View(ttk.Frame):
         self.ledger_accounts.column('#entries', width=100,  anchor='c')
         self.ledger_accounts.heading('balance', text='Balance')
         self.ledger_accounts.column('balance', width=100,  anchor='c')
-        with db_session() as db:
-            for acc in db.query(Account).all():
-                self.ledger_accounts.insert('','end', text=acc.name,
-                                            values=(acc.id, acc.name, acc.type, len(acc.entries), acc.balance))
-        self.ledger_accounts.bind('<<TreeviewSelect>>', self.update_ledger)
+        self.update_ledger_accounts()
+        self.ledger_accounts.bind('<<TreeviewSelect>>', self.update_ledger_entries)
                 
         frame2 = ttk.Frame(pw) 
         pw.add(frame2, weight=5)
-        columns = ('id', 'date', 'description', 'amount', 'balance')
+        columns = ('id', 'date', 'description', 'debit', 'credit')
         self.ledger_entries = ttk.Treeview(frame2, columns=columns, show='headings')
         self.ledger_entries.pack(fill='both', expand=True)
         self.ledger_entries.heading('id', text='Id')
@@ -64,10 +91,11 @@ class View(ttk.Frame):
         self.ledger_entries.column('date', width=100, stretch=False, anchor='c')
         self.ledger_entries.heading('description', text='Description')
         self.ledger_entries.column('description',  anchor='w')
-        self.ledger_entries.heading('amount', text='Amount')
-        self.ledger_entries.column('amount', width=50, stretch=False, anchor='e')
-        self.ledger_entries.heading('balance', text='Balance')
-        self.ledger_entries.column('balance', width=50, stretch=False, anchor='e')
+        self.ledger_entries.heading('debit', text='Debit')
+        self.ledger_entries.column('debit', width=100, stretch=False, anchor='e')
+        self.ledger_entries.heading('credit', text='Credit')
+        self.ledger_entries.column('credit', width=100, stretch=False, anchor='e')
+        
         
         
         ## ---- Income
@@ -98,7 +126,13 @@ class View(ttk.Frame):
         #feet_entry.focus()
         
     #def show_year_range(self):
-    def update_ledger(self, *args):
+    def update_ledger_accounts(self, *args):
+        self.ledger_accounts.delete(*self.ledger_accounts.get_children())
+        with db_session() as db:
+            for acc in db.query(Account).all():
+                self.ledger_accounts.insert('','end', text=acc.name,
+                                            values=(acc.id, acc.name, acc.type, len(acc.entries), acc.balance))
+    def update_ledger_entries(self, *args):
         self.ledger_entries.delete(*self.ledger_entries.get_children())
         item_id = self.ledger_accounts.focus()
         account_name = self.ledger_accounts.item(item_id)['text']
@@ -107,14 +141,7 @@ class View(ttk.Frame):
             for entry in reversed(account.entries):
                 self.ledger_entries.insert('','end', values=(entry.id, entry.transaction.date,
                                                              entry.transaction.description,
-                                                             entry.amount, entry.balance))
-        #for child_id in self.ledger_accounts.get_children():
-        #    self.ledger_accounts.delete(child_id)            
-        #with db_session() as db:
-        #    for acc in db.query(Account).all():
-        #        self.ledger_accounts.insert('','end', text = acc.name, values=(acc.id, acc.name, acc.type,
-        #                                                                       len(acc.entries), acc.balance))
-        
+                                                             entry.debit, entry.credit))
     def calculate(self, *args):
         print("calculate")
         try: value = int(self.feet.get())*2
@@ -154,8 +181,15 @@ class View(ttk.Frame):
         print('exit')
         self.parent.destroy()
 
-    def new_bookentry(self):
+    def new_bookentry(self, *args):
         print('new book entry')
+        print(args)
+
+    def new_transaction(self, *args):
+        print('new_transaction')
+        self.update_ledger_accounts()
+        
+        
 
    # def show_year():
         

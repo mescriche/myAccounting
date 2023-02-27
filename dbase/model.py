@@ -5,7 +5,7 @@ from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, Floa
 from sqlalchemy.orm import relationship, backref, object_session
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property, hybrid_method
-from sqlalchemy import func, select
+from sqlalchemy import func, select, CheckConstraint
 from datetime import datetime, date
 
 Base = declarative_base()
@@ -14,7 +14,7 @@ class Account(Base):
     __tablename__ = 'accounts'
     id = Column(Integer, primary_key=True)
     type = Column(String(6))
-    name = Column(String(50))
+    name = Column(String(50), unique=True)
     entries = relationship('BookEntry', back_populates='account')
 
     __mapper_args__ = {
@@ -22,14 +22,6 @@ class Account(Base):
         'polymorphic_identity': 'account'
     }
 
-    @property
-    def balance(self) -> float:
-        try:
-            _balance =  self.entries[-1].balance
-        except IndexError:
-            _balance =  0.0
-        finally:
-            return _balance
         
     def __repr__(self):
         return "Account({0.id} | {0.type} | {0.name})".format(self)
@@ -38,13 +30,19 @@ class Asset(Account):
     __mapper_args__ = {
         'polymorphic_identity': 'asset'
     }
-
+    
+    @property
+    def balance(self) -> float:
+        return sum((entry.debit - entry.credit for entry in self.entries))
     
 class Claim(Account):
     __mapper_args__ = {
         'polymorphic_identity': 'claim'
     }
-
+    
+    @property
+    def balance(self) -> float:
+        return sum((entry.credit - entry.debit for entry in self.entries))
     
 class BookEntry(Base):
     __tablename__ = 'ledger'
@@ -53,14 +51,12 @@ class BookEntry(Base):
     account = relationship('Account', back_populates='entries')
     transaction_id = Column(Integer, ForeignKey('journal.id'))
     transaction = relationship('Transaction', back_populates='entries')
-    amount = Column(Float) # debit and credit fields joined
-    balance = Column(Float)
-
-    def __init__(self, account, transaction, amount, balance):
-        self.account = account
-        self.transaction = transaction
-        self.amount = amount
-        self.balance = balance + amount
+    debit = Column(Float, nullable=False, default=0) # debit and credit fields joined
+    credit = Column(Float, nullable=False, default=0)
+    __table_args__ = (
+        CheckConstraint('debit  >= 0.0'),
+        CheckConstraint('credit >= 0')
+    )
         
     def __repr__(self):
         return "Entry({0.id} | {0.account.name} | {0.transaction_id} | {0.amount} | {0.balance})".format(self)

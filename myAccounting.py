@@ -13,7 +13,7 @@ class App(Tk):
         self.geometry(f'{window_size[0]}x{window_size[1]}+{center[0]}+{center[1]}')
         self.resizable(True, True)
         self.style = ttk.Style()
-        print(self.style.theme_names())
+        #print(self.style.theme_names())
         self.style.theme_use('clam')
         #self.config(bg='skyblue')
         
