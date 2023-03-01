@@ -31,24 +31,16 @@ def db_session():
         session.close()
        
 def db_setup():
-    assets_file = 'assets.json'
     DIR = path.dirname(path.realpath(__file__))
-    data = dict()
-    with open(path.join(DIR, assets_file)) as afile,  db_session() as db:
-        assets = load(afile)
-        for record in assets:
-            try: asset = db.query(Asset).filter_by(name=record['name']).one()
+    accounts_file = 'accounts.json'    
+    with open(path.join(DIR, accounts_file)) as acc_file, db_session() as db:
+        accounts = load(acc_file)
+        for record in accounts:
+            try: account = db.query(Account).filter_by(name=record['name']).one()
             except NoResultFound:
-                db.add(Asset(**record))
-                
-    claims_file = 'claims.json'    
-    with open(path.join(DIR, claims_file)) as cfile, db_session() as db:
-        claims = load(cfile)
-        for record in claims:
-            try: claim = db.query(Claim).filter_by(name=record['name']).one()
-            except NoResultFound:
-                db.add(Claim(**record))
-        
+                db.add(Account(**record))
+                print("Created account: {}".format(account.gname))
+            else: pass
 db_setup()
 
 

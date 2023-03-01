@@ -1,7 +1,0 @@
-[
-    {"name" : "Maquinaria",  "code": "213"},
-    {"name" : "Mercaderias", "code": "300"},
-    {"name" : "Clientes",    "code": "430"},
-    {"name" : "Bancos",      "code": "572"},
-    {"name" : "Compras",     "code": "600"}
-]

@@ -1,0 +1,12 @@
+[
+    { "type":"claim", "code": "100", "name": "Capital Social" },
+    { "type":"asset", "code": "213", "name": "Maquinaria"  },
+    { "type":"asset", "code": "300", "name": "Mercaderias" },
+    { "type":"claim", "code": "400", "name": "Proveedores" },
+    { "type":"asset", "code": "430", "name": "Clientes" },
+    { "type":"asset", "code": "570", "name": "Caja" },
+    { "type":"asset", "code": "572", "name": "Bancos" },
+    { "type":"asset", "code": "574", "name": "Bancos - Ahorro" },
+    { "type":"asset", "code": "600", "name": "Compras" },
+    { "type":"claim", "code": "700", "name": "Ventas" }
+]

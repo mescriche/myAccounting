@@ -34,7 +34,10 @@ class View(ttk.Frame):
         self.journal_text.pack(fill='both', expand=True)
         #ys = ttk.Scrollbar(journal_frame, orient='vertical', command=self.journal_text.yview)
         #self.journal_text['yscrollcommand'] = ys.set
+        self.journal_text.tag_configure('transaction', foreground='yellow', justify='left')
+        self.journal_text.tag_configure('account', background='blue')
         self.update_journal_view()
+        self.journal_text['state'] = 'disabled'
         
         ## ---- Ledger
         ledger_frame = ttk.Frame(notebook)
@@ -111,10 +114,11 @@ class View(ttk.Frame):
         
     #def show_year_range(self):
     def update_journal_view(self, *args):
+        self.journal_text['state'] = 'normal'
         self.journal_text.delete('1.0', 'end')
         with db_session() as db:
             for trans in reversed(db.query(Transaction).all()):
-                self.journal_text.insert('end', '{:=^60} \n'.format(' Transaction #{} '.format(trans.id)))
+                self.journal_text.insert('end', '{:=^60} \n'.format(' Transaction #{} '.format(trans.id)), ('transaction'))
                 self.journal_text.insert('end', 'Date: {:%d-%m-%Y} \n'.format(trans.date))
                 self.journal_text.insert('end', 'Description: {} \n'.format(trans.description))
                 self.journal_text.insert('end', '{:-^60} \n'.format('-'))
@@ -122,11 +126,14 @@ class View(ttk.Frame):
                 self.journal_text.insert('end', '{:-^60} \n'.format('-'))
                 for entry in trans.entries:
                     values = (entry.debit_currency, entry.account.gname, entry.credit_currency)
-                    self.journal_text.insert('end', '| {:>10} | {:<30} | {:>10} |\n'.format(*values))
+                    #self.journal_text.insert('end', '| {:>10} | {:<30} | {:>10} |\n'.format(*values), ('account'))
+                    self.journal_text.insert('end', '| {:>10} |'.format(entry.debit_currency))
+                    self.journal_text.insert('end', ' {:<30} '.format(entry.account.gname), ('account'))
+                    self.journal_text.insert('end', '| {:>10} |\n'.format(entry.credit_currency))
                 self.journal_text.insert('end', '{:-^60} \n'.format('-'))
                 values = (trans.debit_currency, '', trans.credit_currency)
                 self.journal_text.insert('end', '| {:>10} | {:<30} | {:>10} |\n'.format(*values))
-                
+        self.journal_text['state'] = 'disabled'        
                 
     def update_ledger_accounts(self, *args):
         self.ledger_debit_accounts.delete(*self.ledger_debit_accounts.get_children())
