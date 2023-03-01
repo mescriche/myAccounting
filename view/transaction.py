@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from datetime import datetime, date
 from dbase import db_session, Account, Transaction, BookEntry
+import re
 
 class ValidationError(Exception):
     def __init__(self, message):
@@ -39,7 +40,7 @@ class TransactionView(Toplevel):
         self.debit_tree = ttk.Treeview(debit_frame, height=5,
                                       selectmode='browse', columns=('amount', 'account'), show='headings')
         self.debit_tree.heading('account' , text='Account')
-        self.debit_tree.column('account', width=200, stretch=False, anchor='c')
+        self.debit_tree.column('account', width=200, stretch=False, anchor='w')
         self.debit_tree.heading('amount', text='Amount(€)')
         self.debit_tree.column('amount', width=100, stretch=False, anchor='e')
         self.debit_tree.pack(fill='both',expand=True)
@@ -49,7 +50,7 @@ class TransactionView(Toplevel):
         self.credit_tree.heading('amount', text='Amount(€)')
         self.credit_tree.column('amount', width=100, stretch=False, anchor='e')
         self.credit_tree.heading('account', text='Account')
-        self.credit_tree.column('account', width=200, stretch=False, anchor='c')
+        self.credit_tree.column('account', width=200, stretch=False, anchor='w')
         self.credit_tree.pack(fill='both', expand=True)
         
         debit_frame.pack(side='left', fill='both', expand=True)
@@ -77,7 +78,7 @@ class TransactionView(Toplevel):
         account_field.bind('<<ComboboxSelected>>', lambda x:self.amount_entry.set(' '))
         account_field.pack(anchor='center')
         with db_session() as db:
-            account_field['values'] = [account.name for account in db.query(Account).all()]
+            account_field['values'] = [account.gname for account in db.query(Account).all()]
         account_field.current(0)
         input_acc_frame.pack( side='left', fill='x', expand=True)
         #
@@ -119,10 +120,10 @@ class TransactionView(Toplevel):
         frame.pack(side='top', anchor='n', fill='x', expand=True)
         date_entry.focus()
         # 
-        date_entry.insert(0,'26-10-1964')
-        self.debit_tree.insert('','end', values=['50.0','Cash'])
-        self.credit_tree.insert('', 'end',values=['Equity','50.0'])
-        self.text.insert('1.0','Hola')
+        #date_entry.insert(0,'26-10-1964')
+        #self.debit_tree.insert('','end', values=['50.0','Cash'])
+        #self.credit_tree.insert('', 'end',values=['Equity','50.0'])
+        #self.text.insert('1.0','Hola')
             
         self.protocol("WM_DELETE_WINDOW", self.dismiss) # intercept close button
         self.wait_visibility() # can't grab until window appears, so we wait
@@ -185,6 +186,7 @@ class TransactionView(Toplevel):
             title = "Verifiying transaction"
             messagebox.showerror(title=title, message=error.message)
         else:
+            ptrn = re.compile(r'\[(\d+)\]\[(C|D)\]\s(\D+)')
             with db_session() as db:
                 description =  self.text.get('1.0', 'end-1c')
                 date = datetime.strptime(self.date_entry.get(), '%d-%m-%Y').date()
@@ -198,15 +200,21 @@ class TransactionView(Toplevel):
                     child = self.debit_tree.item(child_id)
                     amount, name = tuple(child['values'])
                     amount = abs(float(amount))
-                    account = db.query(Account).filter_by(name=name).one()
-                    db.add(BookEntry(account=account, transaction=transaction, debit=amount))
+                    if match := ptrn.fullmatch(name):
+                        code = match.group(1)
+                        account = db.query(Account).filter_by(code=code).one()
+                        db.add(BookEntry(account=account, transaction=transaction, debit=amount))
+                    else: raise Exception('Unknown account pattern') 
                         
                 for child_id in self.credit_tree.get_children():
                     child = self.credit_tree.item(child_id)
                     name, amount = tuple(child['values'])
                     amount = abs(float(amount))
-                    account = db.query(Account).filter_by(name=name).one()
-                    db.add(BookEntry(account=account, transaction=transaction, credit=amount))
+                    if match := ptrn.fullmatch(name):
+                        code = match.group(1)
+                        account = db.query(Account).filter_by(code=code).one()
+                        db.add(BookEntry(account=account, transaction=transaction, credit=amount))
+                    else: raise Exception('Unknown account pattern')
             
             #messagebox.showinfo(title='Creating Transaction', message='OK')
             self.parent.event_generate("<<NewTransaction>>")
