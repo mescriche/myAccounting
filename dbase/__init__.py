@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from .model import Base, Account, Asset, Claim, Transaction, BookEntry
 from collections import namedtuple
+import locale
 
 
 def db_init():
@@ -29,7 +30,11 @@ def db_session():
         raise
     finally:
         session.close()
-       
+
+def db_currency(data:float) -> str:
+    return locale.currency(data, symbol=False, grouping=True) if data > 0 else '-'
+    
+        
 def db_setup():
     DIR = path.dirname(path.realpath(__file__))
     accounts_file = 'accounts.json'    
@@ -39,7 +44,7 @@ def db_setup():
             try: account = db.query(Account).filter_by(name=record['name']).one()
             except NoResultFound:
                 db.add(Account(**record))
-                print("Created account: {}".format(account.gname))
+                print("Created account: type:{type} code:{code} name:{name}".format(**record))
             else: pass
 db_setup()
 

@@ -7,7 +7,6 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property, hybrid_method
 from sqlalchemy import func, select, CheckConstraint
 from datetime import datetime, date
-from locale import currency
 
 Base = declarative_base()
 
@@ -15,7 +14,7 @@ class Account(Base):
     __tablename__ = 'accounts'
     id = Column(Integer, primary_key=True)
     type = Column(String(6))
-    code = Column(String(6), unique=True)
+    code = Column(String(6),  unique=True)
     name = Column(String(50), unique=True)
     entries = relationship('BookEntry', back_populates='account')
 
@@ -29,17 +28,9 @@ class Account(Base):
         return sum((entry.debit for entry in self.entries))
     
     @property
-    def debit_currency(self) -> str:
-        return currency(self.debit, symbol=False, grouping=True) if self.debit > 0 else '-'
-    
-    @property
     def credit(self) -> float:
         return sum((entry.credit for entry in self.entries))
 
-    @property
-    def credit_currency(self) -> str:
-        return currency(self.credit, symbol=False, grouping=True) if self.credit > 0 else '-'
-    
     def __repr__(self):
         return "Account({0.id} | {0.type} | {0.name})".format(self)
 
@@ -55,9 +46,6 @@ class Asset(Account):
     @property
     def balance(self) -> float:
         return self.debit - self.credit
-    @property
-    def balance_currency(self) -> str:
-        return currency(self.balance, symbol=False, grouping=True) if self.balance > 0 else '-'
     
 class Claim(Account):
     __mapper_args__ = {
@@ -71,10 +59,6 @@ class Claim(Account):
     @property
     def balance(self) -> float:
         return self.credit - self.debit
-    
-    @property
-    def balance_currency(self) -> str:
-        return currency(self.balance, symbol=False, grouping=True) if self.balance > 0 else '-'
     
 class BookEntry(Base):
     __tablename__ = 'ledger'
@@ -90,14 +74,6 @@ class BookEntry(Base):
         CheckConstraint('credit >= 0.0')
     )
 
-    @property
-    def debit_currency(self) -> str:
-        return currency(self.debit, symbol=False, grouping=True) if self.debit > 0 else '-'
-
-    @property
-    def credit_currency(self) -> str:
-        return currency(self.credit, symbol=False, grouping=True) if self.credit > 0 else '-'
-    
     def __repr__(self):
         return "Entry({0.id} | {0.account.name} | {0.transaction_id} | {0.amount} | {0.balance})".format(self)
 
@@ -114,16 +90,8 @@ class Transaction(Base):
         return sum((entry.debit for entry in self.entries))
 
     @property
-    def debit_currency(self) -> str:
-        return currency(self.debit, symbol=False, grouping=True) if self.debit > 0 else '-'
-    
-    @property
     def credit(self) -> float:
         return sum((entry.credit for entry in self.entries))
 
-    @property
-    def credit_currency(self) -> str:
-        return currency(self.credit, symbol=False, grouping=True) if self.credit > 0 else '-'
-    
     def __repr__(self):
         return "Transaction({0.id} | {0.date}} | #entries={1} | {0.description})".format(self, len(self.entries))
