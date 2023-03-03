@@ -3,6 +3,8 @@ from tkinter import ttk
 from .transaction import TransactionView
 from .journal import JournalView
 from .ledger import LedgerView
+from .income import IncomeView
+from .balance import BalanceView
 from locale import currency
 
 class View(ttk.Frame):
@@ -35,12 +37,14 @@ class View(ttk.Frame):
         self.ledger.render()
         
         ## ---- Income
-        income_frame = ttk.Frame(notebook)
-        notebook.add(income_frame, text='Income')
+        self.income = IncomeView(notebook)
+        notebook.add(self.income, text='Income')
+        self.income.render()
         
         ## ---- Balance
-        balance_frame = ttk.Frame(notebook)
-        notebook.add(balance_frame, text='Balance')
+        self.balance = BalanceView(notebook)
+        notebook.add(self.balance, text='Balance')
+        self.balance.render()
         
     #def show_year_range(self):
 
@@ -78,8 +82,10 @@ class View(ttk.Frame):
 
 
     def new_transaction(self, *args):
-        #print('new_transaction')
-        self.ledger.render()
         self.journal.render()
+        self.ledger.render()
+        self.income.render()
+        self.balance.render()
+
         
          

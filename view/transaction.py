@@ -36,25 +36,18 @@ class TransactionView(Toplevel):
         ttk.Separator(frame, orient='horizontal').pack(fill='x', expand=True)
         
         accounts_frame=ttk.Frame(frame)
-        debit_frame=ttk.Labelframe(accounts_frame, text='Debit:', labelanchor='n')
-        self.debit_tree = ttk.Treeview(debit_frame, height=5,
-                                      selectmode='browse', columns=('amount', 'account'), show='headings')
-        self.debit_tree.heading('account' , text='Account')
-        self.debit_tree.column('account', width=200, stretch=False, anchor='w')
-        self.debit_tree.heading('amount', text='Amount(€)')
-        self.debit_tree.column('amount', width=100, stretch=False, anchor='e')
-        self.debit_tree.pack(fill='both',expand=True)
+        columns = ('account', 'debit', 'credit')
+        self.data = ttk.Treeview(accounts_frame, height=5,
+                                       selectmode='browse', columns = columns, show='headings')
+        self.data.heading('debit', text='Debit(€)')
+        self.data.column('debit', width=100, stretch=False, anchor='e')        
+        self.data.heading('account' , text='Account')
+        self.data.column('account', width=200, stretch=True, anchor='w')
+        self.data.heading('credit', text='Credit(€)')
+        self.data.column('credit', width=100, stretch=False, anchor='e')
+        self.data.pack(fill='both',expand=True)
+        self.data.tag_configure('to', background='lightblue')
 
-        credit_frame=ttk.Labelframe(accounts_frame, text='Credit:', labelanchor='n')
-        self.credit_tree = ttk.Treeview(credit_frame, height=5, columns=('account','amount'), show='headings')
-        self.credit_tree.heading('amount', text='Amount(€)')
-        self.credit_tree.column('amount', width=100, stretch=False, anchor='e')
-        self.credit_tree.heading('account', text='Account')
-        self.credit_tree.column('account', width=200, stretch=False, anchor='w')
-        self.credit_tree.pack(fill='both', expand=True)
-        
-        debit_frame.pack(side='left', fill='both', expand=True)
-        credit_frame.pack(side='right', fill='both', expand=True)
         accounts_frame.pack(fill='both', expand=True)
         
 
@@ -64,9 +57,11 @@ class TransactionView(Toplevel):
         controls_frame = ttk.Frame(frame)
         controls_frame.pack(fill='x', expand=True)
 
-        debit_buttons_frame = ttk.Frame(controls_frame)
-        ttk.Button(debit_buttons_frame, image=plus_icon, command=self.add_debit_side).pack(side='left')
-        ttk.Button(debit_buttons_frame, image=minus_icon, command=self.remove_debit_selected).pack(side='left')
+        leftside_buttons_frame = ttk.Frame(controls_frame)
+        Button(leftside_buttons_frame, image=minus_icon, command=self.remove_selected,
+               padx=0, pady=0, bd=0).pack(side='left', padx=2)
+        Button(leftside_buttons_frame, text='To', command=self.upload_to,
+               padx=0, pady=3, bd=0).pack(side='left', padx=2)
         
         input_frame = ttk.Frame(controls_frame)
         #
@@ -90,13 +85,15 @@ class TransactionView(Toplevel):
                   validate='key', validatecommand=vamount_wrapper).pack()
         input_amnt_frame.pack(side='left', fill='x', expand=True)
 
-        credit_buttons_frame = ttk.Frame(controls_frame)
-        ttk.Button(credit_buttons_frame, image=plus_icon, command=self.add_credit_side).pack(side='right')
-        ttk.Button(credit_buttons_frame, image=minus_icon, command=self.remove_credit_selected).pack(side='left')
+        rightside_buttons_frame = ttk.Frame(controls_frame)
+        Button(rightside_buttons_frame, text='Debit', command=self.upload_debit,
+               padx=0, pady=3, bd=0).pack(side='left', padx=2)
+        Button(rightside_buttons_frame, text='Credit', command=self.upload_credit,
+               padx=0, pady=3, bd=0).pack(side='left', padx=2)
 
-        debit_buttons_frame.pack(side='left')
+        leftside_buttons_frame.pack(side='left', anchor='s')
         input_frame.pack(side='left', expand=True)
-        credit_buttons_frame.pack(side='left')
+        rightside_buttons_frame.pack(side='left', anchor='s')
 
         ttk.Separator(frame, orient='horizontal').pack(fill='x', expand=True)
         
@@ -148,34 +145,31 @@ class TransactionView(Toplevel):
                 return False
             return True
         
-    def add_debit_side(self):
+    def upload_debit(self):
         if not self.amount_entry.get(): return
         try: amount = float(self.amount_entry.get())
         except ValueError: pass
         else:
-            self.debit_tree.insert('','end', values=(amount, self.account_entry.get()))
+            self.data.insert('','end', values=(self.account_entry.get(), amount, '-'))
         finally:
             self.amount_entry.set(' ')
 
-    def add_credit_side(self):
+    def upload_credit(self):
         if not self.amount_entry.get(): return
         try: amount = float(self.amount_entry.get())
         except: ValueError
         else:
-            self.credit_tree.insert('','end', values=(self.account_entry.get(), amount))
+            self.data.insert('','end', values=(self.account_entry.get(), '-', amount))
         finally:
             self.amount_entry.set(' ')
-
-    def remove_debit_selected(self):
-        try: item = self.debit_tree.selection()[0]
-        except IndexError: pass
-        else: self.debit_tree.delete(item)
+    def upload_to(self):
+        self.data.insert('', 'end', values=('{:-^70}'.format(' To '), '', ''), tags=('to'))
             
-    def remove_credit_selected(self):
-        try: item = self.credit_tree.selection()[0]
+    def remove_selected(self):
+        try: item = self.data.selection()[0]
         except IndexError: pass
-        else: self.credit_tree.delete(item)
-        
+        else: self.data.delete(item)
+            
     def dismiss(self):
         self.grab_release()
         self.destroy()
@@ -196,35 +190,35 @@ class TransactionView(Toplevel):
                 # assets are debit accounts, claims are credit accounts 
                 # credit is positive for claims but negative for assets
                 # debit is positive for assets but negative for claims
-                for child_id in self.debit_tree.get_children():
-                    child = self.debit_tree.item(child_id)
-                    amount, name = tuple(child['values'])
-                    amount = abs(float(amount))
-                    if match := ptrn.fullmatch(name):
+                for child_id in self.data.get_children():
+                    child = self.data.item(child_id)
+                    acc_name, debit, credit = tuple(child['values'])
+                    if match := ptrn.fullmatch(acc_name):
                         code = match.group(1)
                         account = db.query(Account).filter_by(code=code).one()
-                        db.add(BookEntry(account=account, transaction=transaction, debit=amount))
-                    else: raise Exception('Unknown account pattern') 
-                        
-                for child_id in self.credit_tree.get_children():
-                    child = self.credit_tree.item(child_id)
-                    name, amount = tuple(child['values'])
-                    amount = abs(float(amount))
-                    if match := ptrn.fullmatch(name):
-                        code = match.group(1)
-                        account = db.query(Account).filter_by(code=code).one()
-                        db.add(BookEntry(account=account, transaction=transaction, credit=amount))
-                    else: raise Exception('Unknown account pattern')
+                        try: debit = abs(float(debit))
+                        except ValueError: debit = 0.0
+                        try: credit = abs(float(credit))
+                        except ValueError: credit = 0.0
+                        db.add(BookEntry(account=account, transaction=transaction, debit=debit, credit=credit))
+                                                                   
             
             #messagebox.showinfo(title='Creating Transaction', message='OK')
             self.parent.event_generate("<<NewTransaction>>")
             self.dismiss()
     
     def verify_input(self):
-        debit_total = sum([float(self.debit_tree.item(idd)['values'][0])
-                           for idd in self.debit_tree.get_children()])
-        credit_total = sum([float(self.credit_tree.item(idd)['values'][1])
-                        for idd in self.credit_tree.get_children()])        
+        debit_total, credit_total = 0,0
+        for idd in self.data.get_children():
+            #print(self.data.item(idd))
+            debit = self.data.item(idd)['values'][1]
+            credit = self.data.item(idd)['values'][2]
+            try: debit = float(debit)
+            except ValueError: pass    
+            else: debit_total += debit
+            try: credit = float(credit)
+            except ValueError: pass
+            else:  credit_total += credit                
         if not debit_total or not credit_total:
             raise ValidationError('Missing input for accounts')
         if debit_total != credit_total:
