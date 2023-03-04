@@ -10,7 +10,7 @@ class App(Tk):
     def __init__(self):
         super().__init__()
         self.title('Personal Accounting')
-        window_size = 800,500
+        window_size = 1000,600
         screen_size = self.winfo_screenwidth(), self.winfo_screenheight()
         center =  int((screen_size[0] - window_size[0]) / 2) , int((screen_size[1] - window_size[1]) / 2)
         self.geometry(f'{window_size[0]}x{window_size[1]}+{center[0]}+{center[1]}')
