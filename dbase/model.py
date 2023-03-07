@@ -1,4 +1,4 @@
-from enum import Enum
+#from enum import Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, Float, PickleType
 from sqlalchemy.orm import relationship, backref, object_session
@@ -11,8 +11,10 @@ class Account(Base):
     __tablename__ = 'accounts'
     id = Column(Integer, primary_key=True)
     type = Column(String(6))
+#    subtype = Column(String(10))
     code = Column(String(6),  unique=True)
     name = Column(String(50), unique=True)
+    attributes = Column(PickleType)
     entries = relationship('BookEntry', back_populates='account')
 
     __mapper_args__ = {
@@ -91,4 +93,4 @@ class Transaction(Base):
         return sum((entry.credit for entry in self.entries))
 
     def __repr__(self):
-        return "Transaction({0.id} | {0.date}} | #entries={1} | {0.description})".format(self, len(self.entries))
+        return "Transaction({0.id} | {0.date} | #entries={1} | {0.description})".format(self, len(self.entries))

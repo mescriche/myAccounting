@@ -5,13 +5,26 @@ from dbase import db_session, db_currency, Transaction
 class JournalView(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
+        self.parent = parent
         self.pack(fill='both', expand=True)
         self.journal = Text(self)
         self.journal.pack(fill='both', expand=True)
         self.journal.tag_configure('transaction', foreground='yellow', justify='left')
         self.journal.tag_configure('account', background='blue')
+        #self.journal.tag_bind('account', "<Button-1>" , self.account_in_ledger)
         self.render()
-
+    def account_in_ledger(self, event):
+        print('account_in_ledger')
+        index = self.journal.index('@{},{}'.format(event.x, event.y))
+        tag_indices = list(self.journal.tag_ranges('account'))
+        for start, end in zip(*[iter(tag_indices)]*2):
+            if self.journal.compare(start, '<=', index) and self.journal.compare(index, '<', end):
+                account = self.journal.get(start, end)
+                self.parent.select(1)
+                break
+        else:
+            print('Account not found')
+        
     def render(self):
         self.journal['state'] = 'normal'
         self.journal.delete('1.0', 'end')

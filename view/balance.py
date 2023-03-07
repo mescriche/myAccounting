@@ -21,6 +21,7 @@ class BalanceView(ttk.Frame):
         self.assets.heading('balance', text='Amount(€)')
         self.assets.column('balance', width=50, anchor='e')
         self.assets.tag_configure('total', background='lightgray')
+        self.assets.tag_configure('subtotal', background='lightblue')
         
         cdit_frame = ttk.Labelframe(pw, text='Claims', labelanchor='n')
         pw.add(cdit_frame, weight=1)
@@ -32,6 +33,7 @@ class BalanceView(ttk.Frame):
         self.claims.heading('balance', text='Amount(€)')
         self.claims.column('balance', width=50, anchor='e')        
         self.claims.tag_configure('total', background='lightgray')
+        self.claims.tag_configure('subtotal', background='lightblue')
         
         self.render()
 
@@ -40,14 +42,53 @@ class BalanceView(ttk.Frame):
         self.claims.delete(*self.claims.get_children())
         n_assets, n_claims = 0,0
         with db_session() as db:
-            for asset in db.query(Asset).all():
-                if asset.credit > 0 or asset.debit > 0 :
-                    self.assets.insert('', 'end', values=(asset.gname, asset.balance))
+            assets = list(filter(lambda asset: asset.credit or asset.debit, db.query(Asset).all()))
+            liquid_assets = list(filter(lambda asset: asset.attributes['liquidity'] == 'high', assets))
+            for asset in liquid_assets:
+                self.assets.insert('', 'end', values=(asset.gname, db_currency(asset.balance)))
+                n_assets += 1
+            else:
+                if len(liquid_assets) > 0:
+                    self.assets.insert('', 'end', values=('Current:', db_currency(sum((asset.balance for asset in liquid_assets)))), tag='subtotal')
+                    n_assets += 1                
+            solid_assets =  list(filter(lambda asset: asset.attributes['liquidity'] == 'low', assets))
+            for asset in solid_assets:
+                self.assets.insert('', 'end', values=(asset.gname, db_currency(asset.balance)))
+                n_assets +=1
+            else:
+                if len(solid_assets) > 0:
+                    self.assets.insert('', 'end', values=('Fixed:', db_currency(sum((asset.balance for asset in solid_assets)))), tag='subtotal')
                     n_assets += 1
-            for claim in db.query(Claim).all():
-                if claim.credit > 0 or claim.debit > 0 :
-                    self.claims.insert('', 'end', values=(claim.gname, claim.balance))
+            
+            #
+            claims = list(filter(lambda claim: claim.credit or claim.debit, db.query(Claim).all()))
+            short_enforceable_claims = list(filter(lambda claim: claim.attributes['enforceability'] == 'short_term', claims))
+            for claim in short_enforceable_claims:
+                self.claims.insert('', 'end', values=(claim.gname, db_currency(claim.balance)))
+                n_claims += 1
+            else:
+                if len(short_enforceable_claims) > 0:
+                    self.claims.insert('', 'end', values=('Short Term:',
+                                                          db_currency(sum((claim.balance for claim in short_enforceable_claims)))), tag='subtotal')
                     n_claims += 1
+            long_enforceable_claims = list(filter(lambda claim: claim.attributes['enforceability'] == 'long_term', claims))
+            for claim in long_enforceable_claims:
+                self.claims.insert('', 'end', values=(claim.gname, db_currency(claim.balance)))
+                n_claims += 1
+            else:
+                if len(long_enforceable_claims) > 0:
+                    self.claims.insert('', 'end', values=('Long Term:',
+                                                          db_currency(sum((claim.balance for claim in long_enforceable_claims)))), tag='subtotal')
+                    n_claims += 1                
+            no_enforceable_claims = list(filter(lambda claim:  claim.attributes['enforceability'] == 'None', claims))
+            for claim in no_enforceable_claims:
+                self.claims.insert('', 'end', values=(claim.gname, db_currency(claim.balance)))
+                n_claims += 1
+            else:
+                if len(no_enforceable_claims) > 0:
+                    self.claims.insert('', 'end', values=('Equity:',
+                                                          db_currency(sum((claim.balance for claim in no_enforceable_claims)))), tag='subtotal')
+                    n_claims += 1              
             assets_total = sum((asset.balance for asset in db.query(Asset).all()))
             claims_total = sum((claim.balance for claim in db.query(Claim).all()))
             
