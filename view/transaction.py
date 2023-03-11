@@ -12,7 +12,6 @@ class ValidationError(Exception):
 class TransactionView(Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
-        self.parent = parent
         self.title('Transaction')
         #self.config(bg='skyblue')
         self.rowconfigure(0, weight=1)
@@ -204,7 +203,7 @@ class TransactionView(Toplevel):
                                                                    
             
             #messagebox.showinfo(title='Creating Transaction', message='OK')
-            self.parent.event_generate("<<NewTransaction>>")
+            self.parent.event_generate("<<DataBaseContentChanged>>")
             self.dismiss()
     
     def verify_input(self):

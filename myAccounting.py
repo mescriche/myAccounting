@@ -17,7 +17,7 @@ class App(Tk):
         self.resizable(True, True)
         self.style = ttk.Style()
         #print(self.style.theme_names())
-        self.style.theme_use('clam')
+        self.style.theme_use('default')
         #self.config(bg='skyblue')
         
         self.option_add('*tearOff', False)
@@ -36,6 +36,7 @@ class App(Tk):
         #controller = Controller(model,view)
         controller = Controller(view)
         view.set_controller(controller)
+        print(self.tk.call('tk', 'windowingsystem'))
         
         
 if __name__ == '__main__':
