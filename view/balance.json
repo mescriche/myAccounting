@@ -1,0 +1,28 @@
+{
+    "content": "report",
+    "assets": {
+        "fixed": {
+            "devices": [
+                "20"
+            ]
+        },
+        "current": {
+            "Bank": [
+                "51",
+                "511"
+            ],
+            "Wallet": [
+                "50"
+            ]
+        }
+    },
+    "claims": {
+        "short_term": [],
+        "long_term": [],
+        "net_worth": [
+            "10",
+            "11"
+        ]
+    },
+    "profile": "student"
+}

@@ -1,5 +1,5 @@
 from datetime import datetime
-from dbase import db_session, Asset, Claim, Transaction, BookEntry
+from dbase import db_session, Transaction, BookEntry
 class YearRange:
     def __init__(self):
         today = datetime.today()

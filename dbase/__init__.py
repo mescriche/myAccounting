@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from .model import Base, Account, Asset, Claim, Transaction, BookEntry
+from .model import Base, Account, Transaction, BookEntry
 from collections import namedtuple
 import locale
 
@@ -39,13 +39,20 @@ def db_setup():
     DIR = path.dirname(path.realpath(__file__))
     accounts_file = 'accounts.json'    
     with open(path.join(DIR, accounts_file)) as acc_file, db_session() as db:
-        accounts = load(acc_file)
-        for record in accounts:
-            try: account = db.query(Account).filter_by(name=record['name']).one()
-            except NoResultFound:
-                db.add(Account(**record))
-                print("Created account: type:{type} code:{code} name:{name}".format(**record))
-            else: pass
+        data = load(acc_file)
+        if 'content' not in data: raise Exception('Wrong data file format')
+        elif data['content'] != 'accounts': raise Exception('Wrong content for accounts definition')
+        else: pass
+        if 'accounts' not in data: raise Exception('Missing accounts field')
+        elif not isinstance(data['accounts'], list): Exception('Wrong format in list of accounts')
+        else:
+            for record in data['accounts']:
+                try: account = db.query(Account).filter_by(name=record['name']).one()
+                except NoResultFound:
+                    db.add(Account(**record))
+                    print("Created account: type:{type} content:{content} code:{code} name:{name}".format(**record))
+                else:
+                    print("{} already existing in data base".format(account))
 db_setup()
 
 

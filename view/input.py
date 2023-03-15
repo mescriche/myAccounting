@@ -214,15 +214,13 @@ class InputView(ttk.Frame):
             raise Exception('Wrong file extension')
 
         with open(filename) as input_file:
-            data_file = load(input_file)
-            if 'title' not in data_file:
-                raise Exception('Miss title keyword')
-            if 'accounts_file' not in data_file:
-                raise Exception('Miss accounts_file keyword')
-            if 'transactions' not in data_file:
-                raise Exception('Miss transactions keyword')
+            data = load(input_file)
+            if 'content' not in data: raise Exception('Wrong data file format')
+            elif data['content'] != 'transactions': raise Exception('Wrong content for transactions definition')
+            else: pass
+            if 'transactions' not in data: raise Exception('Missing transactions field')
             else:
-                for trans in data_file['transactions']:
+                for trans in data['transactions']:
                     if 'date' not in trans:
                         raise Exception('Transaction miss date')
                     else:

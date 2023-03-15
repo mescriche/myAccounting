@@ -1,0 +1,35 @@
+{
+    "content": "report",
+    "revenue": {
+        "parents": [
+            "70"
+        ],
+        "others": [
+            "71"
+        ]
+    },
+    "expenses": {
+        "career": [
+            "61"
+        ],
+        "acomodation": [
+            "62"
+        ],
+        "maintenance": [
+            "63"
+        ],
+        "fitness": [
+            "64"
+        ],
+        "social life": [
+            "65"
+        ],
+        "transport": [
+            "66"
+        ],
+        "others": [
+            "60"
+        ]
+    },
+    "profile": "student"
+}

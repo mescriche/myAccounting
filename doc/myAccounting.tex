@@ -38,17 +38,21 @@ Check available versions
 * 3.8.6 (set by /Users/MANEV/.pyenv/version)
   3.9.16
 \end{verbatim}
-Set proper version in working folder
+Set proper version in working folder. This steps seems to be useless. 
 \begin{verbatim}
  >> pyenv local 3.9.16
- >> python -V
+ >> python -V 
  Python 3.9.16
  \end{verbatim}
- Install pipenv to setup our virtual python environment
+ Install pipenv to setup our virtual python environment. Notice pipenv doesn't get the version established by pyenv local previously.
  \begin{verbatim}
  >> pip install pipenv
- >> pipenv install
+ >> pipenv install --python 3.9.16
  >> pipenv shell
+ \end{verbatim}
+ In case you have to remove your virtual environment 
+ \begin{verbatim}
+ >> pipenv --rm
  \end{verbatim}
  Install sqlalchemy
  \begin{verbatim}

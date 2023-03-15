@@ -1,12 +1,96 @@
-[
-    { "type":"claim", "code": "100", "name":"Capital Social", "attributes":{"enforceability":null}},
-    { "type":"asset", "code": "213", "name":"Maquinaria",     "attributes":{"liquidity":"low"}},
-    { "type":"asset", "code": "300", "name":"Mercaderias",    "attributes":{"liquidity":"high"}},
-    { "type":"claim", "code": "400", "name":"Proveedores",    "attributes":{"enforceability":"short_term"}},
-    { "type":"asset", "code": "430", "name":"Clientes",       "attributes":{"liquidity":"high"}},
-    { "type":"asset", "code": "570", "name":"Caja",           "attributes":{"liquidity":"high"}},
-    { "type":"asset", "code": "572", "name":"Bancos",         "attributes":{"liquidity":"high"}},
-    { "type":"asset", "code": "574", "name":"Bancos - Ahorro","attributes":{"liquidity":"high"}},
-    { "type":"asset", "code": "600", "name":"Compras",        "attributes":{"liquidity":"high"}},
-    { "type":"claim", "code": "700", "name":"Ventas",         "attributes":{"enforceability":"short_term"}}
-]
+{
+    "content": "accounts",
+    "accounts": [
+        {
+            "type": "CREDIT",
+            "content": "REAL",
+            "code": "10",
+            "name": "Wealth"
+        },
+        {
+            "type": "CREDIT",
+            "content": "REAL",
+            "code": "11",
+            "name": "Outcome"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "20",
+            "name": "Devices"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "50",
+            "name": "Wallet"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "51",
+            "name": "Bank Account"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "511",
+            "name": "OpenBank"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "70",
+            "name": "Income - Parents "
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "71",
+            "name": "Income - Others"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "60",
+            "name": "Expenses "
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "61",
+            "name": "Inv - Career"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "62",
+            "name": "Exp - Social life"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "63",
+            "name": "Exp - Maintenance"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "64",
+            "name": "Exp - Fitness"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "65",
+            "name": "Exp - Accomodation"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "66",
+            "name": "Exp - Transport"
+        }
+    ],
+    "profile": "student"
+}

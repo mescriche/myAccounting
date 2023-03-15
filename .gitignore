@@ -154,3 +154,6 @@ doc/myAccounting.aux
 doc/myAccounting.out
 doc/myAccounting.synctex.gz
 doc/myAccounting.toc
+*.py~
+*.json#
+*.json~
