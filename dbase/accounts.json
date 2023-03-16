@@ -41,55 +41,55 @@
             "type": "CREDIT",
             "content": "NOMINAL",
             "code": "70",
-            "name": "Income - Parents "
+            "name": "Income-Parents"
         },
         {
             "type": "CREDIT",
             "content": "NOMINAL",
             "code": "71",
-            "name": "Income - Others"
+            "name": "Income-Others"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "60",
-            "name": "Expenses "
+            "name": "Expenses"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "61",
-            "name": "Inv - Career"
+            "name": "Inv-Career"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "62",
-            "name": "Exp - Social life"
+            "name": "Exp-Social life"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "63",
-            "name": "Exp - Maintenance"
+            "name": "Exp-Maintenance"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "64",
-            "name": "Exp - Fitness"
+            "name": "Exp-Fitness"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "65",
-            "name": "Exp - Accomodation"
+            "name": "Exp-Accomodation"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "66",
-            "name": "Exp - Transport"
+            "name": "Exp-Transport"
         }
     ],
     "profile": "student"

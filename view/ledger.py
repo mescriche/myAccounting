@@ -18,12 +18,14 @@ class LedgerView(ttk.Frame):
         with db_session() as db:
             for account in db.query(Account).all():
                 if not account.debit and not account.credit: continue 
-                self.ledger.insert('end', '{}\n'.format(account.gname), ('account'))
-                self.ledger.insert('end', '{:-^112} \n'.format('-'))
-                self.ledger.insert('end', '| {:>4} | {:>4} | {:^10} | {:^10} | {:^10} | {:<55} |\n'.format('EId', 'TId', 'Date', 'Debit', 'Credit', 'Description'))
-                self.ledger.insert('end', '{:-^112} \n'.format('-'))
+                self.ledger.insert('end', f"{account.gname:<112}", ('account'))
+                self.ledger.insert('end', '\n')
+                self.ledger.insert('end', f"{'':-^112}\n")
+                self.ledger.insert('end', f"| {'EId':>4} | {'TId':>4} | {'Date':^10} | {'Debit':^10} | {'Credit':^10} | {'Description':<55} |\n")
+                self.ledger.insert('end', f"{'':-^112} \n")
                 for entry in account.entries:
-                    self.ledger.insert('end', '| {:>4} | {:>4} | {} | {:>10} | {:>10} | {:<55} |\n'.format(entry.id, entry.transaction.id, entry.transaction.date,  db_currency(entry.debit), db_currency(entry.credit), entry.transaction.description))
-                self.ledger.insert('end', '{:-^112} \n\n'.format('-'))      
+                    self.ledger.insert('end', f"| {entry.id:>4} | {entry.transaction.id:>4} | {entry.transaction.date} | {db_currency(entry.debit):>10} | {db_currency(entry.credit):>10} | {entry.transaction.description:<55} |\n")
+                self.ledger.insert('end', f"{'':-^112}\n")
+                self.ledger.insert('end', '\n')
         self.ledger['state'] = 'disabled'
                                    

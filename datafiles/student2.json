@@ -1,0 +1,14 @@
+{"content":"transactions",
+ "transactions":[
+	{"date":"22-02-2022",
+ 	 "description":"ingreso mensual",
+	 "entries":[
+		{"account":"Income-Parents", "debit": 0, "credit": 100},
+		{"account":"Bank Account", "debit":100, "credit":0 }
+ 	]		
+   }
+ ]
+}	
+
+
+

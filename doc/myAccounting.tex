@@ -38,13 +38,13 @@ Check available versions
 * 3.8.6 (set by /Users/MANEV/.pyenv/version)
   3.9.16
 \end{verbatim}
-Set proper version in working folder. This steps seems to be useless. 
+Set proper version in working folder.  
 \begin{verbatim}
  >> pyenv local 3.9.16
  >> python -V 
  Python 3.9.16
  \end{verbatim}
- Install pipenv to setup our virtual python environment. Notice pipenv doesn't get the version established by pyenv local previously.
+ Install pipenv to setup our virtual python environment. Notice pipenv doesn't get the version established by pyenv local previously, but the global one. Therefore, you have to care to set it up again in next steps.
  \begin{verbatim}
  >> pip install pipenv
  >> pipenv install --python 3.9.16
@@ -58,9 +58,16 @@ Set proper version in working folder. This steps seems to be useless.
  \begin{verbatim}
  >> pipenv install sqlalchemy
  \end{verbatim}
+ Config the application profile by editing its configuration file under folder config, or just take one already defined and distribute its content by executing:
+ \begin{verbatim}
+ >> python configApp <profile>
+ >> python configApp student
+ \end{verbatim}
  And, finally, execute the program
  \begin{verbatim}
  >> python myAccounting.py
  \end{verbatim} 
- 
+ \section{Config application profile}
+ MyAccounting application configure its database, its income and balance reports based on the user profile, which is defined in a file named <profile>.json.
+  
 \end{document}
