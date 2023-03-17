@@ -12,11 +12,11 @@ class BalanceView(ttk.Frame):
         self.text = Text(self, wrap='word')
         self.text.pack(fill='both', expand=True)
         
-        self.text.insert('end', f"{'BALANCE SHEET':^80}\n")
-        self.text.insert('end', f"{'':=^80}\n")
+        self.text.insert(1.0, f"{'BALANCE SHEET':^80}\n")
+        self.text.insert(2.0, f"{'':=^80}\n")
         
         pw = ttk.Panedwindow(self.text, orient=HORIZONTAL, width=560)
-        self.text.window_create('end', window=pw)
+        self.text.window_create(3.0, window=pw)
         
         dbit_frame = ttk.Labelframe(pw, text='Assets', labelanchor='n')
         pw.add(dbit_frame, weight=1)
@@ -53,9 +53,8 @@ class BalanceView(ttk.Frame):
     def render(self):
         self.text['state'] = 'normal'
         #self.text.delete(1.0, 'end')
-        #self.text.insert('end', f"{'BALANCE SHEET':^60}\n")
-        #self.text.insert('end', f"{'':=^60}\n")
-
+        #self.text.insert(1.0, f"{'BALANCE SHEET':^80}\n")
+        #self.text.insert(2.0, f"{'':=^80}\n")
         self.assets.delete(*self.assets.get_children())
         self.claims.delete(*self.claims.get_children())
         

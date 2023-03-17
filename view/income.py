@@ -13,13 +13,64 @@ class IncomeView(ttk.Frame):
         self.text.tag_configure('title', background='blue')
         self.text.tag_configure('subtitle', background='light blue')
         self.text.tag_configure('total', background='purple')
+
+        self.text.insert(1.0, f"{'INCOME STATEMENT':^60}\n")
+        self.text.insert(2.0, f"{'':=^60}\n")
+        
+        columns = ('topic', 'amount')
+        self.income = ttk.Treeview(self.text, height=20, columns=columns, show='headings')
+        self.text.window_create(3.0, window=self.income)
+        
+        self.income.heading('topic', text='Topic')
+        self.income.column('topic', width=300, anchor='w')
+        self.income.heading('amount', text='Amount(€)')
+        self.income.column('amount', width=120, anchor='e')
+        self.income.tag_configure('revenue', background='lightblue')
+        self.income.tag_configure('expense', background='LightSalmon')
+        self.income.tag_configure('total', background='lightgray')
+        
+        #self.text.insert('end', f"\n{'':=^60}\n")
+                
         report_file = 'income.json'
         DIR = path.dirname(path.realpath(__file__))
         with open(path.join(DIR, report_file)) as _file:
             self.income_repo = load(_file)
         self.render()
-
+        
     def render(self):
+        self.text['state'] = 'normal'
+        #self.text.insert(1.0, f"{'INCOME STATEMENT':^60}\n")
+        #self.text.insert(2.0, f"{'':=^60}\n")
+        self.income.delete(*self.income.get_children())
+        
+        iid = self.income.insert('', 'end', values=('Revenue', ''), tag='revenue', open=True)
+        rev_values = list()
+        with db_session() as db:
+            for revenue in self.income_repo['revenues']:
+                codes = self.income_repo['revenues'][revenue]
+                accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)
+                value = sum(map(lambda account:account.balance, accounts))
+                rev_values.append(value)
+                self.income.insert(iid, 'end', values=(f"{'':8}{revenue.capitalize()}", db_currency(value)))
+            else:
+                self.income.item(iid, values=('Revenue', db_currency(sum(rev_values))))
+
+        iid = self.income.insert('', 'end', values=('Expense', ''), tag='expense', open=True)
+        exp_values = list()
+        with db_session() as db:
+            for expense in self.income_repo['expenses']:
+                codes = self.income_repo['expenses'][expense]
+                accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)
+                value = sum(map(lambda account:account.balance, accounts))
+                exp_values.append(value)
+                self.income.insert(iid, 'end', values=(f"{'':8}{expense.capitalize()}", db_currency(value)))
+            else:
+                self.income.item(iid, values=('Expense', db_currency(sum(exp_values))))
+        net_income = sum(rev_values) - sum(exp_values)
+        self.income.insert('','end', values=('Net Income',net_income), tag='total')
+        self.text['state'] = 'disabled'
+        
+    def render_text(self):
         self.text['state'] = 'normal'
         self.text.delete('1.0', 'end')
         self.text.insert('end', f"{'INCOME STATEMENT':^60}\n")
