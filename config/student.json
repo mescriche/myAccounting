@@ -32,9 +32,12 @@
 	 }
      },
      "claims": {
-	 "short_term":[],
+	 "short_term": {},
 	 "long_term": [],
-	 "net_worth": ["10","11"]
+	 "net_worth": {
+	     "Wealth": ["10"],
+	     "Income": ["11"]
+	 }
      }
  },
  "income":{
