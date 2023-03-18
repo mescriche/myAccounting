@@ -34,7 +34,7 @@ class Account(Base):
     
     @property
     def isEmpty(self) -> bool:
-        try: item = entries[0]
+        try: item = self.entries[0]
         except IndexError: return True
         else: return False
         

@@ -14,12 +14,12 @@ class IncomeView(ttk.Frame):
         self.text.tag_configure('subtitle', background='light blue')
         self.text.tag_configure('total', background='purple')
 
-        self.text.insert(1.0, f"{'INCOME STATEMENT':^60}\n")
-        self.text.insert(2.0, f"{'':=^60}\n")
+        self.text.insert(1.10, f"{'INCOME STATEMENT':^60}\n")
+        self.text.insert(2.10, f"{'':=^60}\n")
         
         columns = ('topic', 'amount')
         self.income = ttk.Treeview(self.text, height=20, columns=columns, show='headings')
-        self.text.window_create(3.0, window=self.income)
+        self.text.window_create(3.10, window=self.income)
         
         self.income.heading('topic', text='Topic')
         self.income.column('topic', width=300, anchor='w')
@@ -35,6 +35,10 @@ class IncomeView(ttk.Frame):
         DIR = path.dirname(path.realpath(__file__))
         with open(path.join(DIR, report_file)) as _file:
             self.income_repo = load(_file)
+            
+        topics = ('revenues', 'expenses')            
+        nrows = 1 + len(topics) + sum([len(self.income_repo[topic]) for topic in topics])
+        self.income.config(height=nrows)
         self.render()
         
     def render(self):
@@ -42,7 +46,7 @@ class IncomeView(ttk.Frame):
         #self.text.insert(1.0, f"{'INCOME STATEMENT':^60}\n")
         #self.text.insert(2.0, f"{'':=^60}\n")
         self.income.delete(*self.income.get_children())
-        
+
         iid = self.income.insert('', 'end', values=('Revenue', ''), tag='revenue', open=True)
         rev_values = list()
         with db_session() as db:
