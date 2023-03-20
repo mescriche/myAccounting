@@ -10,21 +10,30 @@ class JournalView(ttk.Frame):
         self.text.pack(fill='both', expand=True)
         self.text.tag_configure('transaction', background='blue', foreground='yellow', justify='left')
         self.text.tag_configure('account', background='blue')
-        #self.journal.tag_bind('account', "<Button-1>" , self.account_in_ledger)
-        self.render()
+
+        #self.render()
+
         
-    def account_in_ledger(self, event):
-        print('account_in_ledger')
-        index = self.journal.index('@{},{}'.format(event.x, event.y))
-        tag_indices = list(self.journal.tag_ranges('account'))
-        for start, end in zip(*[iter(tag_indices)]*2):
-            if self.journal.compare(start, '<=', index) and self.journal.compare(index, '<', end):
-                account = self.journal.get(start, end)
-                self.parent.select(1)
-                break
+    def create_popup_menu(self, widget, value):
+        menu = Menu(widget)
+        menu.add_command(label='Remove Transaction', command= lambda e=value: self.remove_transaction(e) )
+        if self.text.tk.call('tk', 'windowingsystem') == 'aqua':
+            widget.bind('<2>',         lambda e: menu.post(e.x_root, e.y_root))
+            widget.bind('<Control-1>', lambda e: menu.post(e.x_root, e.y_root))
         else:
-            print('Account not found')
+            widget.bind('<3>', lambda e: menu.post(e.x_root, e.y_root))
+
         
+    def remove_transaction(self, trans_id):
+        #print('remove_transaction:', trans_id)
+        with db_session() as db:
+            trans = db.query(Transaction).get(trans_id)
+            for entry in trans.entries:
+                db.delete(entry)
+            else:
+                db.delete(trans)
+        self.master.master.event_generate("<<DataBaseContentChanged>>")
+            
     def render(self):
         self.text['state'] = 'normal'
         self.text.delete('1.0', 'end')
@@ -36,9 +45,13 @@ class JournalView(ttk.Frame):
         
     def render_treeview(self, trans):
         trans_id = f"Transaction #{trans.id}"
-        self.text.insert('end', f"{trans_id :=^70}", ('transaction'))
-        self.text.insert('end', '\n')
-        self.text.insert('end', f"Date: {trans.date:%d-%m-%Y}\n")
+        #self.text.insert('end', f"{trans_id :=^70}", ('transaction'))
+        #self.text.insert('end', '\n')
+        trans_id = f"{trans_id: ^122}"
+        label = Label(self.text, text=trans_id, background='dark cyan')
+        self.text.window_create('end', window=label)
+        self.create_popup_menu(label, trans.id)
+        self.text.insert('end', f"\nDate: {trans.date:%d-%m-%Y}\n")
         self.text.insert('end', f"Description: {trans.description}\n")
         self.text.insert('end', f"{'':-^70} \n")
         columns = ('debit', 'account', 'credit')
@@ -61,7 +74,7 @@ class JournalView(ttk.Frame):
         else:
             table.insert('','end', values=(db_currency(trans.debit), '', db_currency(trans.credit)), tag='total')
             table.config(height=1+len(trans.entries))
-            self.text.insert('end', f"\n{'':-^70}\n")
+            self.text.insert('end', f"\n{'':^70}\n")
 
             
     def render_text(self, trans):

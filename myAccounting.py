@@ -36,7 +36,7 @@ class App(Tk):
         #controller = Controller(model,view)
         controller = Controller(view)
         view.set_controller(controller)
-        print(self.tk.call('tk', 'windowingsystem'))
+        #print(self.tk.call('tk', 'windowingsystem'))
         
         
 if __name__ == '__main__':

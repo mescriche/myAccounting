@@ -45,6 +45,7 @@ class View(ttk.Frame):
         #btn.image=plus_icon
         #btn.pack(side='left')
         
+        #top = self.winfo_toplevel()
         
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)

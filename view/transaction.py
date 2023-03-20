@@ -12,11 +12,12 @@ class ValidationError(Exception):
 class TransactionView(Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
+        self.parent = parent
         self.title('Transaction')
         #self.config(bg='skyblue')
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
-        self.geometry('+{}+{}'.format(self._root().winfo_x()+20, self._root().winfo_y()+20))
+        self.geometry('+{}+{}'.format(self._root().winfo_x()+44, self._root().winfo_y()+88))
         #self.geometry('700x300+300+200')
         
         self.date_entry = StringVar()
@@ -31,7 +32,7 @@ class TransactionView(Toplevel):
                   validate='focusout', validatecommand=vdate_wrapper)
         date_entry.pack(side='right')
         date_frame.pack(padx=10, pady=10, ipadx=5, ipady=5)
-        
+
         ttk.Separator(frame, orient='horizontal').pack(fill='x', expand=True)
         
         accounts_frame=ttk.Frame(frame)
@@ -46,6 +47,7 @@ class TransactionView(Toplevel):
         self.data.column('credit', width=100, stretch=False, anchor='e')
         self.data.pack(fill='both',expand=True)
         self.data.tag_configure('to', background='lightblue')
+        
 
         accounts_frame.pack(fill='both', expand=True)
         
@@ -115,11 +117,11 @@ class TransactionView(Toplevel):
         
         frame.pack(side='top', anchor='n', fill='x', expand=True)
         date_entry.focus()
-        # 
-        #date_entry.insert(0,'26-10-1964')
-        #self.debit_tree.insert('','end', values=['50.0','Cash'])
-        #self.credit_tree.insert('', 'end',values=['Equity','50.0'])
-        #self.text.insert('1.0','Hola')
+
+        self.date_entry.set('23-03-2022')
+        self.data.insert('','end', values=('[DR-51] Bank Account', '100', '0'))
+        self.data.insert('','end', values=('[CN-70] Income-Parents', '0', '100'))
+        self.text.insert(1.0, 'apoyo mensual')
             
         self.protocol("WM_DELETE_WINDOW", self.dismiss) # intercept close button
         self.wait_visibility() # can't grab until window appears, so we wait
@@ -179,31 +181,28 @@ class TransactionView(Toplevel):
             title = "Verifiying transaction"
             messagebox.showerror(title=title, message=error.message)
         else:
-            ptrn = re.compile(r'\[(\d+)\]\[(C|D)\]\s(\D+)')
+            ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\s\w]+')
             with db_session() as db:
                 description =  self.text.get('1.0', 'end-1c')
-                date = datetime.strptime(self.date_entry.get(), '%d-%m-%Y').date()
+                try: date = datetime.strptime(self.date_entry.get(), '%d-%m-%Y').date()
+                except: raise Exception(f'Wrong date format:"{self.date_entry.get()}"')
                 transaction = Transaction(date=date, description=description)
                 db.add(transaction)
-                # asset vs claim
-                # assets are debit accounts, claims are credit accounts 
-                # credit is positive for claims but negative for assets
-                # debit is positive for assets but negative for claims
                 for child_id in self.data.get_children():
                     child = self.data.item(child_id)
                     acc_name, debit, credit = tuple(child['values'])
                     if match := ptrn.fullmatch(acc_name):
-                        code = match.group(1)
-                        account = db.query(Account).filter_by(code=code).one()
+                        code = match.group('code')
+                        try: account = db.query(Account).filter_by(code=code).one()
+                        except: raise Exception(f'Unknown code:"{code}"')
                         try: debit = abs(float(debit))
                         except ValueError: debit = 0.0
                         try: credit = abs(float(credit))
                         except ValueError: credit = 0.0
                         db.add(BookEntry(account=account, transaction=transaction, debit=debit, credit=credit))
-                                                                   
-            
-            #messagebox.showinfo(title='Creating Transaction', message='OK')
-            self.parent.event_generate("<<DataBaseContentChanged>>")
+                    else :
+                        raise Exception(f'Wrong account pattern:"{acc_name}"')
+            self.master.event_generate("<<DataBaseContentChanged>>")
             self.dismiss()
     
     def verify_input(self):
