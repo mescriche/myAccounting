@@ -157,3 +157,5 @@ doc/myAccounting.toc
 *.py~
 *.json#
 *.json~
+datafiles/test0.json
+dbase/accounting.db

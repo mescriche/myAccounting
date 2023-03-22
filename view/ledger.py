@@ -9,14 +9,19 @@ class LedgerView(ttk.Frame):
         self.pack(fill='both', expand=True)
         self.text = Text(self)
         self.text.pack(fill='both', expand=True)
+        scroll_bar = Scrollbar(self.text)
+        self.text.configure(yscrollcommand=scroll_bar.set)
+        scroll_bar.config(command=self.text.yview)
+        scroll_bar.pack(side='right', fill='y')
+
         self.text.tag_configure('account', background='blue')
         self.render()
 
     def render(self):
         self.text['state'] = 'normal'
         self.text.delete('1.0', 'end')
-        self.text.insert(1.0, f"{'LEDGER BOOK':^112}")
-        self.text.insert(2.0, f"{'':=^112}\n")
+        self.text.insert(1.0, f"{'LEDGER BOOK':^110}")
+        self.text.insert(2.0, f"{'':=^110}\n")
         with db_session() as db:
             for account in db.query(Account).all():
                 if account.isEmpty: continue
@@ -26,9 +31,9 @@ class LedgerView(ttk.Frame):
         self.text['state'] = 'disabled'
 
     def render_treeview(self, account):
-        self.text.insert('end', f"{account.gname:<112}", ('account'))
+        self.text.insert('end', f"{account.gname:<110}", ('account'))
         self.text.insert('end', '\n')
-        self.text.insert('end', f"{'':-^112}\n")
+        self.text.insert('end', f"{'':-^110}\n")
         columns = ('eid', 'tid', 'date', 'debit', 'credit', 'description')
         data = dict()
         data['eid'] = {'text':'Eid', 'width':25, 'anchor':'c'}
@@ -36,7 +41,7 @@ class LedgerView(ttk.Frame):
         data['date'] = {'text':'Date', 'width':100, 'anchor':'c'}
         data['debit'] = {'text':'Debit', 'width':80, 'anchor':'e'}
         data['credit'] = {'text':'Credit', 'width':80, 'anchor':'e'}
-        data['description'] = {'text':'Description', 'width':470, 'anchor':'w'}
+        data['description'] = {'text':'Description', 'width':460, 'anchor':'w'}
         
         table = ttk.Treeview(self.text, columns=columns, show='headings')
         self.text.window_create('end', window=table)
@@ -50,7 +55,7 @@ class LedgerView(ttk.Frame):
             table.insert('','end', values=values)
         else:
             table.config(height=len(account.entries))
-            self.text.insert('end', f"\n{'':-^112}\n")
+            self.text.insert('end', f"\n{'':-^110}\n")
     def render_text(self, account):
         self.text.insert('end', f"{account.gname:<112}", ('account'))
         self.text.insert('end', '\n')

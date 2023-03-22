@@ -82,30 +82,23 @@ class InputView(ttk.Frame):
         #file_name_entry.configure(insertcolor='blue')
         file_name_entry.pack(side='left')
         
-#        self.play_control_bar = Frame(shortcut_bar, background='sea green')
-#        self.play_control_bar.pack(side='left', expand=False, fill='x', padx=10)
-
-
         self.line_number_bar = Text(self, width=4, padx=3, takefocus=0, border=0,
                                     background='khaki', foreground='dark blue', state='disabled', wrap=None)
         self.line_number_bar.pack(side='left', fill='y')
         
-        self.text = Text(self, wrap='word', undo=1)
+        self.text = Text(self, wrap='word')
         self.text.pack(fill='both', expand=True)
+        scroll_bar = Scrollbar(self.text)
+        self.text.configure(yscrollcommand=scroll_bar.set)
+        scroll_bar.config(command=self.text.yview)
+        scroll_bar.pack(side='right', fill='y')
         
         
-    def insert_transaction(self, event):
-        print(event)
-        pos = self.text.index('insert')
-        text = '\t{"date":"",\n\t "description":"",\n\t "entries":[\n\t\t{"account":"", "debit": 0, "credit": 0 },\n\t\t{"account":"", "debit": 0, "credit": 0 },\n\t\t{"account":"", "debit": 0, "credit": 0 }\n\t\t]\t\n\t}'
-        self.text.insert(pos, text)
-
     def new_edit(self, *args):
         self.text.delete(1.0, 'end')
-        #text = '{"content":"transactions",\n "transactions":[\n  ]\n}'
-        #self.text.insert(1.0, text)                 
-        #self.render()
-        #return 'break'
+        if filename := self.filename.get():
+            self.filename.set('')
+            self.dirname.set('')
         
     def write_transaction(self, data):
         if content := self.text.get(1.0, 'end-1c'):
@@ -178,7 +171,8 @@ class InputView(ttk.Frame):
         else:
             content = self.text.get(1.0, 'end-1c')
             data = loads(content)
-            for trans in data:
+            progress_ndx = IntVar()
+            for n,trans in enumerate(data):
                 self.new_transaction(trans)
             else:
                 title = "Transaction Input"

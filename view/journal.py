@@ -8,6 +8,12 @@ class JournalView(ttk.Frame):
         self.pack(fill='both', expand=True)
         self.text = Text(self)
         self.text.pack(fill='both', expand=True)
+        scroll_bar = Scrollbar(self.text)
+        self.text.configure(yscrollcommand=scroll_bar.set)
+        scroll_bar.config(command=self.text.yview)
+        scroll_bar.pack(side='right', fill='y')
+
+        
         self.text.tag_configure('transaction', background='blue', foreground='yellow', justify='left')
         self.text.tag_configure('account', background='blue')
 

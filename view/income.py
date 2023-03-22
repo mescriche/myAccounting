@@ -10,6 +10,11 @@ class IncomeView(ttk.Frame):
         self.pack(fill='both', expand=True)
         self.text = Text(self)
         self.text.pack(fill='both', expand=True)
+        scroll_bar = Scrollbar(self.text)
+        self.text.configure(yscrollcommand=scroll_bar.set)
+        scroll_bar.config(command=self.text.yview)
+        scroll_bar.pack(side='right', fill='y')
+
         self.text.tag_configure('title', background='blue')
         self.text.tag_configure('subtitle', background='light blue')
         self.text.tag_configure('total', background='purple')

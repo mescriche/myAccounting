@@ -11,7 +11,11 @@ class BalanceView(ttk.Frame):
         self.pack(fill='both', expand=True)
         self.text = Text(self, wrap='word')
         self.text.pack(fill='both', expand=True)
-        
+        scroll_bar = Scrollbar(self.text)
+        self.text.configure(yscrollcommand=scroll_bar.set)
+        scroll_bar.config(command=self.text.yview)
+        scroll_bar.pack(side='right', fill='y')
+
         self.text.insert(1.0, f"{'BALANCE SHEET':^80}\n")
         self.text.insert(2.0, f"{'':=^80}\n")
         
