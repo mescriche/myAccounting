@@ -19,26 +19,19 @@ class JSON_TransactionView(TransactionView):
             title = "Verifiying transaction"
             messagebox.showerror(title=title, message=error.message)
         else:
-            trans = '{' + f'"date":"{self.date_entry.get()}",'
-            description =  self.text.get('1.0', 'end-1c')
-            trans += f' "description":"{description}",'
-            trans += f' "entries":['
-            children = self.data.get_children()
-            N = len(children) - 1
-            for n, child_id in enumerate(children):
+            trans = dict()
+            trans['date'] = self.date_entry.get()
+            trans['description'] = self.text.get(1.0, 'end-1c')
+            trans['entries'] = list()
+            for child_id in self.data.get_children():
                 child = self.data.item(child_id)
                 acc_name, debit, credit = tuple(child['values'])
                 try: debit = abs(float(debit))
                 except ValueError: debit = 0.0
                 try: credit = abs(float(credit))
                 except ValueError: credit = 0.0
-                trans += '{' + f'"account":"{acc_name}"' + f',"debit":"{debit}"' + f',"credit":"{credit}"' + '}'
-                if (n != N): trans += ','
-            else: trans += ']}'
-            try:
-                trans = dumps(loads(trans), indent=4)
-            except : raise Exception("wrong json format")
-            self.parent.write_trans(trans)
+                trans['entries'].append({'account': acc_name, 'debit': debit, 'credit': credit })
+            self.parent.write_transaction(trans)
             self.dismiss()
 
 class InputView(ttk.Frame):
@@ -114,12 +107,12 @@ class InputView(ttk.Frame):
         #self.render()
         #return 'break'
         
-    def write_trans(self, data):
+    def write_transaction(self, data):
         if content := self.text.get(1.0, 'end-1c'):
             content = loads(content)
+            self.text.delete(1.0, 'end')            
         else: content = list()
-        self.text.delete(1.0, 'end')            
-        content.append(loads(data))
+        content.append(data)
         self.text.insert('end', dumps(content, indent=4))
         
     def open_file(self, *args):
