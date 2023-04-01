@@ -1,7 +1,7 @@
 import argparse, os, json
 
-parser = argparse.ArgumentParser()
-parser.add_argument("profile", help="profile to configure the application")
+parser = argparse.ArgumentParser(prog='configApp.py')
+parser.add_argument('profile', choices=['student', 'senior'], help="profile to configure the application")
 parser.add_argument("-c","--dbclean", help="delete db content", action="store_true")
 args = parser.parse_args()
 print("... procesing {} profile ...".format(args.profile))

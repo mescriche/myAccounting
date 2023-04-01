@@ -23,15 +23,9 @@ class Account(Base):
     name = Column(String(50), unique=True)
     entries = relationship('BookEntry', back_populates='account')
 
-#    def debit(self) -> float:
-#        return sum((entry.debit for entry in self.entries))
-    
     def debit(self, year=None) -> float:
         entries = filter(lambda x:x.transaction.date.year == year, self.entries) if year else self.entries
         return sum((entry.debit for entry in entries))
-    
-#    def credit(self) -> float:
-#        return sum((entry.credit for entry in self.entries))
     
     def credit(self, year=None) -> float:
         entries = filter(lambda x:x.transaction.date.year == year, self.entries) if year else self.entries
@@ -43,8 +37,9 @@ class Account(Base):
         except IndexError: return True
         else: return False
 
-    def isQuiet(self, year) -> bool:
-        try: next(filter(lambda x:x.transaction.date.year == year, self.entries))
+    def isQuiet(self, year=None) -> bool:
+        entries = filter(lambda x:x.transaction.date.year == year, self.entries) if year else self.entries
+        try: next(entries)
         except StopIteration: return True
         else: return False
 
@@ -106,23 +101,26 @@ class BookEntry(Base):
     account = relationship('Account', back_populates='entries')
     transaction_id = Column(Integer, ForeignKey('journal.id'))
     transaction = relationship('Transaction', back_populates='entries')
-    debit = Column(Float, nullable=False, default=0) # debit and credit fields joined
-    credit = Column(Float, nullable=False, default=0)
-    __table_args__ = (
-        CheckConstraint('debit  >= 0.0'),
-        CheckConstraint('credit >= 0.0')
-    )
+    type  = Column(Enum(Type))
+    amount = Column(Float, default=0)
+    
+    __table_args__ = ( CheckConstraint('amount >= 0.0'),)
+
+        
+    @property
+    def value(self) -> float:
+        return self.amount if self.account.type == self.type else -self.amount
 
     @property
-    def amount(self) -> float:
-        if self.account.type == Type.DEBIT:
-            return self.debit if self.debit > 0 else -self.credit
-        elif self.account.type == Type.CREDIT:
-            return self.credit if self.credit > 0 else -self.debit
-        else: raise Exception("Error in database")
+    def credit(self) -> float:
+        return self.amount if self.type == Type.CREDIT else 0.0
+
+    @property
+    def debit(self) -> float:
+        return self.amount if self.type == Type.DEBIT else 0.0
         
     def __repr__(self):
-        return "Entry({0.id} | {0.account.name} | {0.transaction_id} | {0.amount} | {0.balance})".format(self)
+        return "Entry({0.id} | {0.account.name} | {0.transaction_id} | {0.type} | {0.amount} )".format(self)
 
     
 class Transaction(Base):

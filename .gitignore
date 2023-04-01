@@ -157,6 +157,7 @@ doc/myAccounting.toc
 *.py~
 *.json#
 *.json~
+*.html~
 datafiles/test0.json
 dbase/accounting.db
 datafiles/accounts_db_mev.json
@@ -171,5 +172,4 @@ datafiles/accounts_db_new_mev_2021.json
 datafiles/accounts_db_new_mev_2022.json
 datafiles/accounts_db_new_mev_2023.json
 dbase/accounting.db
-dbase/accounting.db
-config/colors.html~
+importApp.py

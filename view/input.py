@@ -194,9 +194,14 @@ class InputView(ttk.Frame):
                 try: account = db.query(Account).filter_by(code=code).one()
                 except: raise Exception(f'Unknown account code:"{code}"')
                 else:
-                    debit = float(entry['debit']) if 'debit' in entry else 0.0
-                    credit = float(entry['credit']) if 'credit' in entry else 0.0
-                    db.add(BookEntry(account=account, transaction=transaction, debit=debit, credit=credit))
+                    if 'debit' in entry and 'credit' in entry:
+                        print(trans)
+                        raise Exception('Wrong BookEntry Format')
+                    elif 'debit' in entry and entry['debit'] > 0:
+                        db.add(BookEntry(account=account, transaction=transaction, type='DEBIT', amount=float(entry['debit'])))
+                    elif 'credit' in entry and entry['credit'] > 0:
+                        db.add(BookEntry(account=account, transaction=transaction, type='CREDIT', amount=float(entry['credit'])))
+                    else: raise Exception(f'Wrong BookEntry format')
             else:
                 raise Exception(f'Wrong account pattern:"{_account}"')
 
