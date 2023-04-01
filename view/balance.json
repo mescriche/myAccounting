@@ -1,24 +1,53 @@
 {
-    "content": "report",
+    "purpose": "report",
     "assets": {
         "fixed": {
-            "devices": [
+            "Houses": [
                 "20"
+            ],
+            "Land": [
+                "21"
+            ],
+            "Vehicles": [
+                "22"
+            ],
+            "Tools": [
+                "23"
+            ],
+            "Furniture": [
+                "24"
+            ],
+            "Devices": [
+                "25"
+            ],
+            "Pension Plan": [
+                "26"
             ]
         },
         "current": {
-            "Bank": [
+            "Bank CA": [
+                "50",
                 "51",
                 "511"
             ],
-            "Wallet": [
-                "50"
+            "Bank SA": [
+                "512"
+            ],
+            "Investment Fund": [
+                "53"
+            ],
+            "Shares": [
+                "54"
             ]
         }
     },
     "claims": {
-        "short_term": {},
-        "long_term": [],
+        "short_term": {
+            "Credit Card": [
+                "12"
+            ]
+        },
+        "long_term": {},
         "net_worth": {
             "Wealth": [
                 "10"
@@ -28,5 +57,5 @@
             ]
         }
     },
-    "profile": "student"
+    "profile": "senior"
 }

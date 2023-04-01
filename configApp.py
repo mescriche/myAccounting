@@ -2,6 +2,7 @@ import argparse, os, json
 
 parser = argparse.ArgumentParser()
 parser.add_argument("profile", help="profile to configure the application")
+parser.add_argument("-c","--dbclean", help="delete db content", action="store_true")
 args = parser.parse_args()
 print("... procesing {} profile ...".format(args.profile))
 
@@ -16,6 +17,13 @@ balancefile = 'balance.json'
 incomefile = 'income.json'
 accountsfile = 'accounts.json'
 
+if args.dbclean:
+    filename = 'accounting.db'
+    target = os.path.join(current_dir, dbase_dir, filename)
+    if os.path.isfile(target):
+        with open(target, 'w', encoding='utf-8') as _file:
+            pass
+        print(f"... cleaned up db file: {os.path.basename(target)} .....")
 
 if not os.path.isfile(source):
     print("{} profile is not available".format(args.profile))
@@ -45,10 +53,3 @@ else:
                 json.dump(data['income'], _file, ensure_ascii=False, indent=4)
             print("... generated {} file ...".format(os.path.basename(target)))
             
-    
-
-
-
-#def config():
-#if __name__ == '__main__':
-#    config()

@@ -28,10 +28,9 @@ class YearRange:
         return "Year Range ({0.min}, {0.run}, {0.max})".format(self)
         
 class Controller:
-    def __init__(self, view):
-        self.view = view
-        self.year_range = YearRange()
-        
+    def __init__(self):
+        print('controller')
+        self.year_range = YearRange()        
         with db_session() as db:
             try:
                 first = db.query(Transaction).order_by(Transaction.date.asc()).first()

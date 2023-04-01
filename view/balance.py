@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import ttk
-from dbase import db_session, db_currency, Account
+from dbase import db_session, db_currency, Account, db_get_yearRange
 from locale import currency
 from os import path
 from json import load
@@ -9,6 +9,22 @@ class BalanceView(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         self.pack(fill='both', expand=True)
+
+        self.eyear = IntVar()
+        self.title = Frame(self, background='green', bd=3)
+        self.title.pack(expand=False, fill='x', pady=5, padx=5)
+        title = f'BALANCE SHEET'
+        ttk.Label(self.title, text = f"{title:^104}").pack(expand=False, side='left')
+        ttk.Label(self.title, text = f"{'YEAR: ':>10}").pack(side='left', ipadx=0, ipady=0)
+        year_combo = ttk.Combobox(self.title, state='readonly', width=5, textvariable=self.eyear)
+        year_combo.pack(side='left', ipadx=0, ipady=0)
+        min_year,max_year = db_get_yearRange()
+        values =[*range(max_year, min_year-1, -1)]
+        year_combo['values'] = values
+        year_combo.bind('<<ComboboxSelected>>', self.render)
+        self.eyear.set(values[0])
+        
+        
         self.text = Text(self, wrap='word')
         self.text.pack(fill='both', expand=True)
         scroll_bar = Scrollbar(self.text)
@@ -16,11 +32,8 @@ class BalanceView(ttk.Frame):
         scroll_bar.config(command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
 
-        self.text.insert(1.0, f"{'BALANCE SHEET':^80}\n")
-        self.text.insert(2.0, f"{'':=^80}\n")
-        
         pw = ttk.Panedwindow(self.text, orient=HORIZONTAL, width=560)
-        self.text.window_create(3.0, window=pw)
+        self.text.window_create(3.10, window=pw)
         
         dbit_frame = ttk.Labelframe(pw, text='Assets', labelanchor='n')
         pw.add(dbit_frame, weight=1)
@@ -51,14 +64,18 @@ class BalanceView(ttk.Frame):
         DIR = path.dirname(path.realpath(__file__))
         with open(path.join(DIR, report_file)) as _file:
             self.balance_repo = load(_file)
+        topics = ('current', 'fixed')
+        assets_nrows = 1 + len(topics) + sum([len(self.balance_repo['assets'][topic]) for topic in topics])
+        self.assets.config(height=assets_nrows)
         
+        topics = ('short_term', 'long_term', 'net_worth')
+        claims_nrows = 1 + len(topics) + sum([len(self.balance_repo['claims'][topic]) for topic in topics])
+        self.claims.config(height=claims_nrows)
         self.render()
 
-    def render(self):
+    def render(self, *args):
+        year = self.eyear.get()
         self.text['state'] = 'normal'
-        #self.text.delete(1.0, 'end')
-        #self.text.insert(1.0, f"{'BALANCE SHEET':^80}\n")
-        #self.text.insert(2.0, f"{'':=^80}\n")
         self.assets.delete(*self.assets.get_children())
         self.claims.delete(*self.claims.get_children())
         
@@ -69,7 +86,7 @@ class BalanceView(ttk.Frame):
             for asset in self.balance_repo['assets']['current']:
                 codes = self.balance_repo['assets']['current'][asset]
                 accounts = map(lambda code:db.query(Account).filter_by(code=code).one(), codes)
-                value = sum(map(lambda account: account.balance, accounts))
+                value = sum(map(lambda account: account.balance(year), accounts))
                 c_values.append(value)
                 self.assets.insert(iid, 'end', values=(f"{'':4}{asset.capitalize()}", db_currency(value)))                
             else:
@@ -82,7 +99,7 @@ class BalanceView(ttk.Frame):
             for asset in self.balance_repo['assets']['fixed']:
                 codes = self.balance_repo['assets']['fixed'][asset]
                 accounts = map(lambda code:db.query(Account).filter_by(code=code).one(), codes)
-                value = sum(map(lambda account: account.balance, accounts))
+                value = sum(map(lambda account: account.balance(year), accounts))
                 f_values.append(value)                
                 self.assets.insert(iid, 'end', values=(f"{'':4}{asset.capitalize()}", db_currency(value)))
             else:
@@ -99,7 +116,7 @@ class BalanceView(ttk.Frame):
             for claim in self.balance_repo['claims']['short_term']:
                 codes = self.balance_repo['claims']['short_term'][claim]
                 accounts = map(lambda code:db.query(Account).filter_by(code=code).one(), codes)
-                value = sum(map(lambda account: account.balance, accounts))
+                value = sum(map(lambda account: account.balance(year), accounts))
                 st_values.append(value)
                 self.claims.insert(iid, 'end', values=(f"{'':4}{claim.capitalize()}", db_currency(value)))                
             else:
@@ -112,7 +129,7 @@ class BalanceView(ttk.Frame):
             for claim in self.balance_repo['claims']['long_term']:
                 codes = self.balance_repo['claims']['long_term'][claim]
                 accounts = map(lambda code:db.query(Account).filter_by(code=code).one(), codes)
-                value = sum(map(lambda account: account.balance, accounts))
+                value = sum(map(lambda account: account.balance(year), accounts))
                 lt_values.append(value)
                 self.claims.insert(iid, 'end', values=(f"{'':4}{claim.capitalize()}", db_currency(value)))                
             else:
@@ -126,7 +143,7 @@ class BalanceView(ttk.Frame):
             for claim in self.balance_repo['claims']['net_worth']:
                 codes = self.balance_repo['claims']['net_worth'][claim]
                 accounts = map(lambda code:db.query(Account).filter_by(code=code).one(), codes)
-                value = sum(map(lambda account: account.balance, accounts))
+                value = sum(map(lambda account: account.balance(year), accounts))
                 nw_values.append(value)
                 self.claims.insert(iid, 'end', values=(f"{'':4}{claim.capitalize()}", db_currency(value)))                
             else:

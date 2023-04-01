@@ -1,6 +1,6 @@
 {"profile":"student",
  "accounts":{
-     "content":"accounts",
+     "purpose":"database",
      "accounts":[
 	 { "type":"CREDIT", "content":"REAL",    "code": "10",  "name":"Wealth"},
 	 { "type":"CREDIT", "content":"REAL",    "code": "11",  "name":"Outcome"},
@@ -21,7 +21,7 @@
      ]
  },
  "balance":{
-     "content":"report",
+     "purpose":"report",
      "assets": {
 	 "fixed": {
 	     "devices": ["20"]
@@ -33,7 +33,7 @@
      },
      "claims": {
 	 "short_term": {},
-	 "long_term": [],
+	 "long_term": {},
 	 "net_worth": {
 	     "Wealth": ["10"],
 	     "Income": ["11"]
@@ -41,7 +41,7 @@
      }
  },
  "income":{
-     "content":"report",
+     "purpose":"report",
      "revenues": {
 	 "parents": ["70"],
 	 "others":  ["71"]

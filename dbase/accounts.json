@@ -1,5 +1,5 @@
 {
-    "content": "accounts",
+    "purpose": "database",
     "accounts": [
         {
             "type": "CREDIT",
@@ -14,10 +14,52 @@
             "name": "Outcome"
         },
         {
+            "type": "CREDIT",
+            "content": "REAL",
+            "code": "12",
+            "name": "Bank Credit Card"
+        },
+        {
             "type": "DEBIT",
             "content": "REAL",
             "code": "20",
+            "name": "Houses"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "21",
+            "name": "Land"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "22",
+            "name": "Vehicles"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "23",
+            "name": "Tools"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "24",
+            "name": "Furniture"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "25",
             "name": "Devices"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "26",
+            "name": "Pension Plan"
         },
         {
             "type": "DEBIT",
@@ -35,19 +77,67 @@
             "type": "DEBIT",
             "content": "REAL",
             "code": "511",
-            "name": "OpenBank"
+            "name": "OpenBank Current Account"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "512",
+            "name": "OpenBank Savings Account"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "513",
+            "name": "Ing Invest Account"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "53",
+            "name": "Investment Fund"
+        },
+        {
+            "type": "DEBIT",
+            "content": "REAL",
+            "code": "54",
+            "name": "Shares"
         },
         {
             "type": "CREDIT",
             "content": "NOMINAL",
             "code": "70",
-            "name": "Income-Parents"
+            "name": "Income"
         },
         {
             "type": "CREDIT",
             "content": "NOMINAL",
             "code": "71",
-            "name": "Income-Others"
+            "name": "Income-Payroll"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "711",
+            "name": "Income-SocialInsurance"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "72",
+            "name": "Income-Dividend"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "73",
+            "name": "Income-Interest"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "74",
+            "name": "Income-Discounts"
         },
         {
             "type": "DEBIT",
@@ -59,38 +149,236 @@
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "61",
-            "name": "Inv-Career"
+            "name": "Exp-Person"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "610",
+            "name": "ExpP-Feeding"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "611",
+            "name": "ExpP-Clothing"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "612",
+            "name": "ExpP-Health/Fitness"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "613",
+            "name": "ExpP-Formation"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "6131",
+            "name": "ExpPForm-Miguel"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "6132",
+            "name": "ExpPForm-Manuel"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "614",
+            "name": "ExpP-Connectivity"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "615",
+            "name": "ExpP-Accomodation"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "616",
+            "name": "ExpP-Restaurants"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "617",
+            "name": "ExpP-Transport"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "618",
+            "name": "ExpP-Entertainment"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "619",
+            "name": "ExpP-Lotery"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "62",
-            "name": "Exp-Social life"
+            "name": "Exp-House"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "621",
+            "name": "ExpH-Water"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "622",
+            "name": "ExpH-Waste"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "623",
+            "name": "ExpH-Electricity"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "624",
+            "name": "ExpH-Combustible"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "625",
+            "name": "ExpH-Connectivity"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "626",
+            "name": "ExpH-Maintenance"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "63",
-            "name": "Exp-Maintenance"
+            "name": "Exp-Vehicle"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "631",
+            "name": "ExpV-Combustible"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "632",
+            "name": "ExpV-Parking"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "633",
+            "name": "ExpV-Maintenance"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "634",
+            "name": "ExpV-Motorway"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "64",
-            "name": "Exp-Fitness"
+            "name": "Exp-Services"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "641",
+            "name": "ExpS-Notary"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "642",
+            "name": "ExpS-PropertyRegister"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "643",
+            "name": "ExpS-Lawyer"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "644",
+            "name": "ExpS-Architect"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "645",
+            "name": "ExpS-Computers"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "646",
+            "name": "ExpS-Banks"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "65",
-            "name": "Exp-Accomodation"
+            "name": "Exp-Rustic Land"
         },
         {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "66",
-            "name": "Exp-Transport"
+            "name": "Taxes"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "661",
+            "name": "Tax-IRPF"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "662",
+            "name": "Tax-Car"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "67",
+            "name": "Insurance"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "670",
+            "name": "Ins-Social"
+        },
+        {
+            "type": "DEBIT",
+            "content": "NOMINAL",
+            "code": "671",
+            "name": "Ins-Car"
         }
     ],
-    "profile": "student"
+    "profile": "senior"
 }

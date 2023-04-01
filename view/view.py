@@ -7,6 +7,7 @@ from .journal import JournalView
 from .ledger import LedgerView
 from .income import IncomeView
 from .balance import BalanceView
+from dbase import db_get_yearRange
 from locale import currency
 
 class View(ttk.Frame):
@@ -26,14 +27,9 @@ class View(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.create_menu()
         self.create_gui()
-        
-        self.bind('<<DataBaseContentChanged>>', self.render_views)
-
-    def set_controller(self, controller):
-        self.controller = controller
+        self.change_text_color()
        
     def create_gui(self):
-
         #shortcut_bar = Frame(self, height=25, background='light sea green')
         #shortcut_bar.pack(expand='no', fill='x')
         #upload_icon = PhotoImage(file='./view/icons/open_file.gif')
@@ -46,7 +42,6 @@ class View(ttk.Frame):
         #btn.pack(side='left')
         
         #top = self.winfo_toplevel()
-        
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
         ## --- Input
@@ -57,34 +52,38 @@ class View(ttk.Frame):
         ## ---- Journal
         self.journal = JournalView(self.notebook)
         self.notebook.add(self.journal, text='Journal')
-        self.journal.render()
         
         ## ---- Ledger
         self.ledger = LedgerView(self.notebook)
         self.notebook.add(self.ledger, text='Ledger')
-        self.ledger.render()
+
         
         ## ---- Income
         self.income = IncomeView(self.notebook)
         self.notebook.add(self.income, text='Income')
-        self.income.render()
         
         ## ---- Balance
         self.balance = BalanceView(self.notebook)
         self.notebook.add(self.balance, text='Balance')
-        self.balance.render()
-        
-    #def show_year_range(self):
+
     def toggle_input_tab(self):
         if not self.input_tab_sem.get():
             self.notebook.hide(self.input)
         else:
             self.notebook.add(self.input)
             self.notebook.select(self.input)
+            
     def change_text_color(self):
         selected_color = self.text_color_choice.get()
         foreground,background = self.color_schemes.get(selected_color).split('.')
-        self.input.text.config(background=background, foreground=foreground)
+        tabs = ('input', 'journal', 'income', 'balance')
+        for tab in tabs:
+            eval(f'self.{tab}.text.config(background=background, foreground=foreground)')
+        self.ledger.acc_lbox.config(background=background, foreground=foreground)
+        self.journal.filter.config(background=background)
+        self.ledger.filter.config(background=background)
+        self.income.title.config(background=background)
+        self.balance.title.config(background=background)
         
     def create_menu(self): 
         menu_bar = Menu(self.master)
@@ -121,7 +120,8 @@ class View(ttk.Frame):
         
 
         self.text_color_choice = StringVar()
-        self.text_color_choice.set('Default')
+        #self.text_color_choice.set('Default')
+        self.text_color_choice.set('Bold Beige')
         text_menu = Menu(menu_bar)
         view_menu.add_cascade(label='Text Colors', menu=text_menu)
         for k in sorted(self.color_schemes):
@@ -139,28 +139,13 @@ class View(ttk.Frame):
                                        command=lambda: self.master.style.theme_use(theme_choice.get()))
         
         menu_bar.add_cascade(label='View', menu=view_menu)
-        
         self.master.config(menu=menu_bar)
 
     def exit_app(self):
         print('exit')
         self.parent.destroy()
         
-    def file_upload(self):
-        filename = filedialog.askopenfilename(defaultextension='.json',
-                                              filetypes=[("All Files","*.*"),("Json Documents","*.json")])
-        if filename:
-            self.notebook.add(self.upload)
-        else:
-            self.notebook.hide(self.upload)
         
-    def render_views(self, *args):
-        # print('render views')
-        self.journal.render()
-        self.ledger.render()
-        self.income.render()
-        self.balance.render()
-        return "break"
 
         
          

@@ -82,9 +82,9 @@ class InputView(ttk.Frame):
         #file_name_entry.configure(insertcolor='blue')
         file_name_entry.pack(side='left')
         
-        self.line_number_bar = Text(self, width=4, padx=3, takefocus=0, border=0,
-                                    background='khaki', foreground='dark blue', state='disabled', wrap=None)
-        self.line_number_bar.pack(side='left', fill='y')
+        #self.line_number_bar = Text(self, width=4, padx=3, takefocus=0, border=0,
+          #                          background='khaki', foreground='dark blue', state='disabled', wrap=None)
+        #self.line_number_bar.pack(side='left', fill='y')
         
         self.text = Text(self, wrap='word')
         self.text.pack(fill='both', expand=True)
@@ -117,7 +117,6 @@ class InputView(ttk.Frame):
             self.text.delete(1.0, 'end')
             with open(file_name) as _file:
                 self.text.insert(1.0, _file.read())
-            self.render()
             self.text.focus_set()
         #return 'break'
 
@@ -136,6 +135,7 @@ class InputView(ttk.Frame):
         #return 'break'
 
     def content_verification(self):
+        ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\/\s\w]+')
         content = self.text.get(1.0, 'end-1c')
         data = loads(content)
         for trans in data:
@@ -144,85 +144,62 @@ class InputView(ttk.Frame):
             else:
                 try: datetime.strptime(trans['date'], '%d-%m-%Y').date()
                 except: raise Exception('Wrong date format')
-                
             if 'description' not in trans:
                 raise Exception('Transaction miss description')
-            elif not re.fullmatch(r'[\w\s]+', trans['description']):
-                raise Exception('Transaction description with wrong string format')
-            else: pass
-                        
             if 'entries' not in trans:
                 raise Exception('Transaction miss entries')
             elif len(trans['entries']) < 2:
                 raise Exception('At least two entries are required in a transaction')
             else:
-                for entry in trans['entries']:
-                    if 'account' not in entry:
-                        raise Exception('Transaction entry misses account')
-                    if 'debit' not in entry and 'credit' not in entry:
-                        raise  Exception('debit or credit amount miss in entry')
+                with db_session() as db:
+                    for entry in trans['entries']:
+                        if 'account' not in entry:
+                            raise Exception('Transaction entry misses account')
+                        else:
+                            _account = entry['account']
+                            if match := ptrn.fullmatch(_account):
+                                code = match.group('code')
+                                try: account = db.query(Account).filter_by(code=code).one()
+                                except: raise Exception(f'Unknown account code:"{code}"')
+                            if 'debit' not in entry and 'credit' not in entry:
+                                raise  Exception('debit or credit amount miss in entry')
                                                  
     def execute(self, *args):
-        try:
-            self.content_verification()
+        try: self.content_verification()
         except Exception as e:
             print(e)
-            #self.text.focus_set()
+            raise Exception('Verification failed')
         else:
             content = self.text.get(1.0, 'end-1c')
             data = loads(content)
-            progress_ndx = IntVar()
-            for n,trans in enumerate(data):
-                self.new_transaction(trans)
-            else:
-                title = "Transaction Input"
-                msg = f"{len(data)} transactions has/have been created"
-                messagebox.showinfo(title=title, message=msg)
-
-    def new_transaction(self, trans):
-        ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\s\w]+')
-        with db_session() as db:
-            description = trans['description']
-            date = datetime.strptime(trans['date'], '%d-%m-%Y').date()
-            transaction = Transaction(date=date, description=description)
-            db.add(transaction)
-            for entry in trans['entries']:
-                _account = entry['account']
-                if match := ptrn.fullmatch(_account):
-                    code = match.group('code')
-                    try: account = db.query(Account).filter_by(code=code).one()
-                    except: raise Exception(f'Unknown account code:"{code}"')
-                    else:
-                        debit = float(entry['debit']) if 'debit' in entry else 0.0
-                        credit = float(entry['credit']) if 'credit' in entry else 0.0
-                        db.add(BookEntry(account=account, transaction=transaction, debit=debit, credit=credit))
+            with db_session() as db:
+                for n,trans in enumerate(data):
+                    self.new_transaction(db, trans)
                 else:
-                    raise Exception(f'Wrong account pattern:"{_account}"')
+                    title = "Transaction Input"
+                    msg = f"{len(data)} transactions has/have been created"
+                    messagebox.showinfo(title=title, message=msg)
         self.master.master.event_generate("<<DataBaseContentChanged>>")
+
+    def new_transaction(self, db, trans):
+        ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\/\s\w]+')
+        description = trans['description']
+        date = datetime.strptime(trans['date'], '%d-%m-%Y').date()
+        transaction = Transaction(date=date, description=description)
+        db.add(transaction)
+        for entry in trans['entries']:
+            _account = entry['account']
+            if match := ptrn.fullmatch(_account):
+                code = match.group('code')
+                try: account = db.query(Account).filter_by(code=code).one()
+                except: raise Exception(f'Unknown account code:"{code}"')
+                else:
+                    debit = float(entry['debit']) if 'debit' in entry else 0.0
+                    credit = float(entry['credit']) if 'credit' in entry else 0.0
+                    db.add(BookEntry(account=account, transaction=transaction, debit=debit, credit=credit))
+            else:
+                raise Exception(f'Wrong account pattern:"{_account}"')
+
     
-    def get_line_numbers(self):
-        output = ''
-        row, col = self.text.index('end').split('.')
-        for i in range(1, int(row)):
-            output += str(i) + '\n'
-        return output
-    
-    def update_line_numbers(self):
-        line_numbers = self.get_line_numbers()
-        self.line_number_bar.config(state='normal')
-        self.line_number_bar.delete('1.0', 'end')
-        self.line_number_bar.insert('1.0', line_numbers)
-        self.line_number_bar.config(state='disabled')
-        
-    #def update_cursor_info(self):
-    #    row, col = self.text.index(INSERT).split('.')
-    #    line_num, col_num = str(int(row)), str(int(col) + 1)
-    #    infotext = "Line: {0} | Column: {1}".format(line_num, col_num)
-    #    self.cursor_info.config(text=infotext)
-        
-    def render(self, *args):
-        self.update_line_numbers()
-        #self.update_cursor_info()
-        #self.update_shortcut_bar()
 
         

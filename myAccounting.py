@@ -10,7 +10,7 @@ class App(Tk):
     def __init__(self):
         super().__init__()
         self.title('Personal Accounting')
-        window_size = 800,600
+        window_size = 1100,600
         screen_size = self.winfo_screenwidth(), self.winfo_screenheight()
         center =  int((screen_size[0] - window_size[0]) / 2) , int((screen_size[1] - window_size[1]) / 2)
         self.geometry(f'{window_size[0]}x{window_size[1]}+{center[0]}+{center[1]}')
@@ -25,7 +25,8 @@ class App(Tk):
         self.rowconfigure(0, weight=1)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.createcommand('tk::mac::Quit', self.destroy)
-        
+
+        #controller = Controller()        
         view = View(self)
         
         #sg = ttk.Sizegrip(self)
@@ -34,8 +35,8 @@ class App(Tk):
         #self.bind("<Return>", view.calculate)
         #model = Model()
         #controller = Controller(model,view)
-        controller = Controller(view)
-        view.set_controller(controller)
+
+        #view.set_controller(controller)
         #print(self.tk.call('tk', 'windowingsystem'))
         
         

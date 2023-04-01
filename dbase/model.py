@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship, backref, object_session
 from sqlalchemy import func, select, CheckConstraint
 from datetime import datetime, date
 from sqlalchemy import Enum
-import enum
+import enum, re
 
 Base = declarative_base()
 
@@ -13,7 +13,7 @@ Content = enum.Enum('Content', ['REAL', 'NOMINAL'])
 #Content = enum.Enum('Content', ['STATE', 'FLOW'])
 #Content = enum.Enum('Content', ['PROPERTY', 'ACTIVITY'])
 #Content = enum.Enum('Content', ['BALANCE', 'INCOME'])
-
+        
 class Account(Base):
     __tablename__ = 'accounts'
     id = Column(Integer, primary_key=True)
@@ -21,22 +21,33 @@ class Account(Base):
     content = Column(Enum(Content))
     code = Column(String(6),  unique=True)
     name = Column(String(50), unique=True)
-#    attributes = Column(PickleType)
     entries = relationship('BookEntry', back_populates='account')
 
-    @property
-    def debit(self) -> float:
-        return sum((entry.debit for entry in self.entries))
+#    def debit(self) -> float:
+#        return sum((entry.debit for entry in self.entries))
     
-    @property
-    def credit(self) -> float:
-        return sum((entry.credit for entry in self.entries))
+    def debit(self, year=None) -> float:
+        entries = filter(lambda x:x.transaction.date.year == year, self.entries) if year else self.entries
+        return sum((entry.debit for entry in entries))
+    
+#    def credit(self) -> float:
+#        return sum((entry.credit for entry in self.entries))
+    
+    def credit(self, year=None) -> float:
+        entries = filter(lambda x:x.transaction.date.year == year, self.entries) if year else self.entries
+        return sum((entry.credit for entry in entries))
     
     @property
     def isEmpty(self) -> bool:
         try: item = self.entries[0]
         except IndexError: return True
         else: return False
+
+    def isQuiet(self, year) -> bool:
+        try: next(filter(lambda x:x.transaction.date.year == year, self.entries))
+        except StopIteration: return True
+        else: return False
+
         
     @property
     def isReal(self) -> bool:
@@ -73,13 +84,20 @@ class Account(Base):
             else: raise Exception('Unknown Account content')
         else: raise Exception('Unknown Account type')
         
-    @property
-    def balance(self) -> float:
-        if self.type == Type.DEBIT:
-            return self.debit - self.credit
-        elif self.type == Type.CREDIT:
-            return self.credit - self.debit
-        else: raise Exception('Unknown Account type')
+        
+    def balance(self, year=None) -> float:
+        if year:
+            if self.type == Type.DEBIT:
+                return self.debit(year) - self.credit(year)
+            elif self.type == Type.CREDIT:
+                return self.credit(year) - self.debit(year)
+            else: raise Exception('Unknown Account type')
+        else:
+            if self.type == Type.DEBIT:
+                return self.debit() - self.credit()
+            elif self.type == Type.CREDIT:
+                return self.credit() - self.debit()
+            else: raise Exception('Unknown Account type')
     
 class BookEntry(Base):
     __tablename__ = 'ledger'
@@ -95,6 +113,14 @@ class BookEntry(Base):
         CheckConstraint('credit >= 0.0')
     )
 
+    @property
+    def amount(self) -> float:
+        if self.account.type == Type.DEBIT:
+            return self.debit if self.debit > 0 else -self.credit
+        elif self.account.type == Type.CREDIT:
+            return self.credit if self.credit > 0 else -self.debit
+        else: raise Exception("Error in database")
+        
     def __repr__(self):
         return "Entry({0.id} | {0.account.name} | {0.transaction_id} | {0.amount} | {0.balance})".format(self)
 
