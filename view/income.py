@@ -62,12 +62,11 @@ class IncomeView(ttk.Frame):
         self.render()
         
     def display_concept_items(self, event):
-        print('display concept')
         year = self.eyear.get()
         min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
         max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
         if iid := event.widget.focus():
-            concept = self.table.item(iid)['values'][0]
+            concept = self.table.item(iid)['values'][0].replace('\t','')
             if codes:= self.table.item(iid)['values'][2]:
                 codes = eval(codes)
                 with db_session() as db:
@@ -76,8 +75,18 @@ class IncomeView(ttk.Frame):
                     entries = filter(lambda x: x.transaction.date >= min_date and x.transaction.date <= max_date, entries)
                     entries = sorted(entries, key=lambda x:x.transaction.date)
                     entries = [entry.id for entry in entries]
-                self.parent.master.ledger.render_entries(concept, entries)
-                self.parent.master.notebook.select(2)
+            else:
+                codes = map(lambda x: eval(self.table.item(x)['values'][2]), self.table.get_children(iid))
+                codes = [item for code in codes for item in code]
+                with db_session() as db:
+                    accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)
+                    entries = (entry for account in accounts for entry in account.entries)
+                    entries = filter(lambda x: x.transaction.date >= min_date and x.transaction.date <= max_date, entries)
+                    entries = sorted(entries, key=lambda x:x.transaction.date)
+                    entries = [entry.id for entry in entries]
+            concept = 'Income: ' + concept
+            self.parent.master.ledger.render_entries(concept, entries)
+            self.parent.master.notebook.select(2)                        
         return 'break'    
 
     def render(self, *args):

@@ -23,7 +23,7 @@ class ConceptTree(ttk.Treeview):
             for key in data:
                 value = data[key]
                 title = f'{head}.{key}' if head else f'{key}'
-                print(title)
+                #print(title)
                 if isinstance(value, dict):
                     values = title.title(), ''
                     branch_id = self.insert(iid, 'end', values=values,  open=True)
