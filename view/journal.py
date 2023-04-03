@@ -6,6 +6,7 @@ from datetime import datetime
 class JournalView(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
+        self.parent = parent
         self.pack(fill='both', expand=True)
         
         self.filter = LabelFrame(self, text='Filter')
@@ -26,9 +27,9 @@ class JournalView(ttk.Frame):
         year_combo = ttk.Combobox(frame, state='readonly', width=5, textvariable=self.etrans_year)
         year_combo.pack(ipadx=2, ipady=2)
         min_year,max_year = db_get_yearRange()
-        values = [''] + [*range(max_year, min_year-1, -1)]
-        year_combo['values'] = values
+        year_combo['values'] = [*range(max_year, min_year-1, -1)] + ['']
         year_combo.bind('<<ComboboxSelected>>', self.render_request)
+        year_combo.current(0)
 
         self.etrans_date = StringVar()
         frame = Frame(self.filter)
@@ -46,10 +47,8 @@ class JournalView(ttk.Frame):
         desc_entry.pack(ipadx=2, ipady=2)
         desc_entry.bind('<Return>', self.render_request)
 
-        frame = Frame(self.filter)
-        frame.pack(side='right')
-        ttk.Button(frame, text='Filter', command=self.render_request).pack(side='left', padx=5)
-        ttk.Button(frame, text='Clear', command=self.clear_filter).pack(padx=5)
+        ttk.Button(self.filter, text='Filter', command=self.render_request).pack(side='left', padx=20,pady=2)
+        ttk.Button(self.filter, text='Clear', command=self.clear_filter).pack(padx=0, pady=2)
 
             
         self.text = Text(self)
@@ -60,17 +59,18 @@ class JournalView(ttk.Frame):
         scroll_bar.pack(side='right', fill='y')
         self.text.tag_configure('transaction', background='blue', foreground='yellow', justify='left')
         self.text.tag_configure('account', background='blue')
-        # display last 20 transactions
-        with db_session() as db:
-            query = db.query(Transaction).order_by(Transaction.id.desc()).limit(20)
-            if items := [item.id for item in query]:
-                items.reverse()
-                self.render(items)
+        self.render_request()
+        ## display last 20 transactions
+        #with db_session() as db:
+        #    query = db.query(Transaction).order_by(Transaction.id.desc()).limit(20)
+        #    if items := [item.id for item in query]:
+        #        items.reverse()
+        #        self.render(items)
 
     def clear_filter(self, *args):
         self.etrans_id.set('')
         self.etrans_description.set('')
-        self.etrans_year.set('')
+        #self.etrans_year.set('')
         self.etrans_date.set('')
         
     def render_request(self, *args):
@@ -128,6 +128,7 @@ class JournalView(ttk.Frame):
         data['credit'] = {'text':'Credit', 'width':100, 'anchor':'e'}
         
         table = ttk.Treeview(self.text, columns=columns, show='headings')
+        table.bind('<<TreeviewSelect>>', self.display_account)
         self.text.window_create('end', window=table)
         for topic in columns:
             table.heading(topic, text=data[topic]['text'])
@@ -163,4 +164,12 @@ class JournalView(ttk.Frame):
                 db.delete(trans)
         self.master.master.event_generate("<<DataBaseContentChanged>>")
             
-        
+    def display_account(self, event):
+        if iid := event.widget.focus():
+            account_gname = event.widget.item(iid)['values'][1]
+            print(account_gname)
+            self.parent.master.ledger.account.set(account_gname)
+            self.parent.master.ledger.render_filter()
+            self.parent.master.notebook.select(2)
+        return 'break'
+

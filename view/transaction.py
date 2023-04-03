@@ -118,10 +118,10 @@ class TransactionView(Toplevel):
         frame.pack(side='top', anchor='n', fill='x', expand=True)
         date_entry.focus()
 
-        self.date_entry.set('23-03-2022')
-        self.data.insert('','end', values=('[DR-51] Bank Account', '100', '0'))
-        self.data.insert('','end', values=('[CN-70] Income-Parents', '0', '100'))
-        self.text.insert(1.0, 'apoyo mensual')
+        #self.date_entry.set('23-03-2022')
+        #self.data.insert('','end', values=('[DR-51] Bank Account', '100', '0'))
+        #self.data.insert('','end', values=('[CN-70] Income-Parents', '0', '100'))
+        #self.text.insert(1.0, 'apoyo mensual')
             
         self.protocol("WM_DELETE_WINDOW", self.dismiss) # intercept close button
         self.wait_visibility() # can't grab until window appears, so we wait
@@ -199,9 +199,12 @@ class TransactionView(Toplevel):
                         except ValueError: debit = 0.0
                         try: credit = abs(float(credit))
                         except ValueError: credit = 0.0
-                        db.add(BookEntry(account=account, transaction=transaction, debit=debit, credit=credit))
-                    else :
-                        raise Exception(f'Wrong account pattern:"{acc_name}"')
+                        if debit > 0:
+                            db.add(BookEntry(account=account, transaction=transaction, type='DEBIT', amount=debit))
+                        elif credit > 0:
+                            db.add(BookEntry(account=account, transaction=transaction, type='CREDIT', amount=debit))
+                        else: raise Exception(f'Wrong BookEntry format')
+                    else : raise Exception(f'Wrong account pattern:"{acc_name}"')
             self.master.event_generate("<<DataBaseContentChanged>>")
             self.dismiss()
     

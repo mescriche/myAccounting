@@ -30,7 +30,11 @@ class JSON_TransactionView(TransactionView):
                 except ValueError: debit = 0.0
                 try: credit = abs(float(credit))
                 except ValueError: credit = 0.0
-                trans['entries'].append({'account': acc_name, 'debit': debit, 'credit': credit })
+                if debit > 0:
+                    trans['entries'].append({'account': acc_name, 'debit': debit })
+                elif credit > 0:
+                    trans['entries'].append({'account': acc_name, 'credit': credit })
+                else: raise Exception(f'Wrong BookEntry Format')
             self.parent.write_transaction(trans)
             self.dismiss()
 
@@ -38,9 +42,7 @@ class InputView(ttk.Frame):
     op_brace = dict([("{","}"),("}","{"),("[","]"),("]","[")])
     def __init__(self, parent):
         super().__init__(parent)
-        self.dirname = StringVar()
-        self.filename = StringVar()
-        self.trns_index = 0
+        
         self.pack(fill='both', expand=True)
         
         shortcut_bar = Frame(self, height=15, background='light sea green')
@@ -67,6 +69,11 @@ class InputView(ttk.Frame):
                                    
         self.file_control_bar = Frame(shortcut_bar)
         self.file_control_bar.pack(side='left', expand=False, fill='x', padx=10)
+
+                
+        DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        self.dirname = os.path.join(DIR, 'datafiles')
+        self.filename = StringVar()
         
         open_file_icon = PhotoImage(file='./view/icons/open_file.gif')
         self.open_file_btn = ttk.Button(self.file_control_bar, image=open_file_icon, command=self.open_file)
@@ -79,12 +86,8 @@ class InputView(ttk.Frame):
         self.save_file_btn.pack(side='left')
 
         file_name_entry = Entry(shortcut_bar, textvariable=self.filename, width=25)
-        #file_name_entry.configure(insertcolor='blue')
         file_name_entry.pack(side='left')
         
-        #self.line_number_bar = Text(self, width=4, padx=3, takefocus=0, border=0,
-          #                          background='khaki', foreground='dark blue', state='disabled', wrap=None)
-        #self.line_number_bar.pack(side='left', fill='y')
         
         self.text = Text(self, wrap='word')
         self.text.pack(fill='both', expand=True)
@@ -92,13 +95,12 @@ class InputView(ttk.Frame):
         self.text.configure(yscrollcommand=scroll_bar.set)
         scroll_bar.config(command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
-        
+
         
     def new_edit(self, *args):
         self.text.delete(1.0, 'end')
         if filename := self.filename.get():
             self.filename.set('')
-            self.dirname.set('')
         
     def write_transaction(self, data):
         if content := self.text.get(1.0, 'end-1c'):
@@ -109,10 +111,11 @@ class InputView(ttk.Frame):
         self.text.insert('end', dumps(content, indent=4))
         
     def open_file(self, *args):
+        print(self.dirname)
         file_name = filedialog.askopenfilename(defaultextension="*.json",
+                                               initialdir = self.dirname,
                                                filetypes=[("All Files", "*.*"),("Json Documents","*.json")])
         if file_name:
-            self.dirname.set(os.path.dirname(file_name))
             self.filename.set(os.path.basename(file_name))            
             self.text.delete(1.0, 'end')
             with open(file_name) as _file:
@@ -122,17 +125,16 @@ class InputView(ttk.Frame):
 
     def save_file(self, *args):
         if not self.filename.get():
-            file_name = filedialog.asksaveasfilename(defaultextension='*.json',
+            file_name = filedialog.asksaveasfilename(defaultextension='*.json', initialdire = self.dirname,
                                                      filetypes=[("All Files", "*.*"),("Json Documents","*.json")])
-            self.dirname.set(os.path.dirname(file_name))
+            self.dirname = os.path.dirname(file_name)
             self.filename.set(os.path.basename(file_name))
             with open(file_name, 'w') as _file:
                 _file.write(self.text.get(1.0, 'end'))
         else:
-            file_name  = os.path.join(self.dirname.get(), self.filename.get())
+            file_name  = os.path.join(self.dirname, self.filename.get())
             with open(file_name, 'w') as _file:
                 _file.write(self.text.get(1.0, 'end'))
-        #return 'break'
 
     def content_verification(self):
         ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\/\s\w]+')
@@ -172,14 +174,22 @@ class InputView(ttk.Frame):
         else:
             content = self.text.get(1.0, 'end-1c')
             data = loads(content)
-            with db_session() as db:
-                for n,trans in enumerate(data):
-                    self.new_transaction(db, trans)
-                else:
-                    title = "Transaction Input"
-                    msg = f"{len(data)} transactions has/have been created"
-                    messagebox.showinfo(title=title, message=msg)
-        self.master.master.event_generate("<<DataBaseContentChanged>>")
+            answer = messagebox.askokcancel(title='Confirmation',
+                                            message=f"{len(data)} transactiosn are ready",
+                                            icon=WARNING)
+            if answer:
+                with db_session() as db:
+                    for n,trans in enumerate(data):
+                        self.new_transaction(db, trans)
+                        #answer = messagebox.askyesno(title='Step by step',
+                        #                             message="Next transaction?",
+                        #                             icon=WARNING)
+                        #if not answer: break
+                    else:
+                        title = "Transaction Input"
+                        msg = f"{len(data)} transactions has/have been created"
+                        messagebox.showinfo(title=title, message=msg)
+                #self.master.master.event_generate("<<DataBaseContentChanged>>")
 
     def new_transaction(self, db, trans):
         ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\/\s\w]+')

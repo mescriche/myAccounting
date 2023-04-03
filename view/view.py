@@ -79,7 +79,6 @@ class View(ttk.Frame):
         tabs = ('input', 'journal', 'income', 'balance')
         for tab in tabs:
             eval(f'self.{tab}.text.config(background=background, foreground=foreground)')
-        self.ledger.acc_lbox.config(background=background, foreground=foreground)
         self.journal.filter.config(background=background)
         self.ledger.filter.config(background=background)
         self.income.title.config(background=background)

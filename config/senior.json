@@ -74,31 +74,31 @@
  "balance":{
      "purpose":"report",
      "assets":{
-	 "fixed": {
-	     "Houses": ["20"],
-	     "Land": ["21"],
-	     "Vehicles": ["22"],
-	     "Tools": ["23"],
-	     "Furniture": ["24"],
-	     "Devices" : ["25"],
-	     "Pension Plan" : ["26"]
-
+	 "fixed_assets": {
+	     "houses": ["20"],
+	     "land": ["21"],
+	     "vehicles": ["22"],
+	     "tools": ["23"],
+	     "furniture": ["24"],
+	     "devices" : ["25"],
+	     "pension plan" : ["26"]
 	 },
-	 "current":{
-	     "Bank CA": [ "50", "51", "511"],
-	     "Bank SA" : ["512"],
-	     "Investment Fund" : ["53"],
-	     "Shares" : ["54"]
+	 "current_assets":{
+	     "bank current acc": [ "50", "51", "511"],
+	     "bank saving acc" : ["512"],
+	     "bank invest": ["513"],
+	     "investment fund" : ["53"],
+	     "shares" : ["54"]
 	 }
      },
      "claims":{
-	 "short_term": {
-	     "Credit Card": ["12"]
+	 "short_term_debt": {
+	     "credit card": ["12"]
 	 },
-	 "long_term": {},
+	 "long_term_debt": {},
 	 "net_worth":{
-	     "Wealth": ["10"],
-	     "Income": ["11"]
+	     "wealth": ["10"],
+	     "income": ["11"]
 	 }
      }
  },
@@ -111,14 +111,15 @@
 	 "discounts":["74"],
 	 "others" :["70"]
      },
+     "taxes": ["66", "661", "662"],          
+     "insurance" :  ["67", "670", "671"],
      "expenses":{
-	 "insurance": ["67", "670", "671"],
-	 "taxes":     ["66", "661", "662"],
 	 "family": ["61", "610", "611", "612", "613", "6131", "6132","614", "615", "616", "617", "618", "619"],
 	 "house": ["62", "621", "622", "623", "624", "625", "626"],
 	 "cars": ["63", "631", "632", "633", "634"],
 	 "services": ["64", "641", "642", "643", "644", "645", "646"],
-	 "land": ["65"]
+	 "land": ["65"],
+	 "others": ["60"]
      }
  }
 }

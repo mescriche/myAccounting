@@ -1,58 +1,61 @@
 {
     "purpose": "report",
     "assets": {
-        "fixed": {
-            "Houses": [
+        "fixed_assets": {
+            "houses": [
                 "20"
             ],
-            "Land": [
+            "land": [
                 "21"
             ],
-            "Vehicles": [
+            "vehicles": [
                 "22"
             ],
-            "Tools": [
+            "tools": [
                 "23"
             ],
-            "Furniture": [
+            "furniture": [
                 "24"
             ],
-            "Devices": [
+            "devices": [
                 "25"
             ],
-            "Pension Plan": [
+            "pension plan": [
                 "26"
             ]
         },
-        "current": {
-            "Bank CA": [
+        "current_assets": {
+            "bank current acc": [
                 "50",
                 "51",
                 "511"
             ],
-            "Bank SA": [
+            "bank saving acc": [
                 "512"
             ],
-            "Investment Fund": [
+            "bank invest": [
+                "513"
+            ],
+            "investment fund": [
                 "53"
             ],
-            "Shares": [
+            "shares": [
                 "54"
             ]
         }
     },
     "claims": {
-        "short_term": {
-            "Credit Card": [
+        "short_term_debt": {
+            "credit card": [
                 "12"
             ]
         },
-        "long_term": {},
+        "long_term_debt": {},
         "net_worth": {
-            "Wealth": [
+            "wealth": [
                 "10"
             ],
-            "Income": [
+            "income": [
                 "11"
             ]
         }
