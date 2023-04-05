@@ -35,8 +35,8 @@ class BalanceView(ttk.Frame):
         scroll_bar.config(command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
 
-        pw = ttk.Panedwindow(self.text, orient=HORIZONTAL, width=750)
-        self.text.window_create(3.10, window=pw)
+        pw = ttk.Panedwindow(self.text, orient=HORIZONTAL, width=800)
+        self.text.window_create('end', window=pw)
 
         report_file = 'balance.json'
         DIR = path.dirname(path.realpath(__file__))
@@ -47,14 +47,12 @@ class BalanceView(ttk.Frame):
         
         dbit_frame = ttk.Labelframe(pw, text='Assets', labelanchor='n')
         pw.add(dbit_frame, weight=1)
-        columns = ('name', 'balance')
-
-        self.assets = ConceptTree(dbit_frame, self.balance_repo['assets'], columns=columns, selectmode='browse', show='headings')
+        self.assets = ConceptTree(dbit_frame, self.balance_repo['assets'], selectmode='browse', show='headings')
         self.assets.pack(fill='both', expand=True)
-        self.assets.heading('name', text='Account')
-        self.assets.column('name', width=250, anchor='w')
-        self.assets.heading('balance', text='Amount(€)')
-        self.assets.column('balance', width=100, anchor='e')
+        self.assets.column('topic', width=250, anchor='w')
+        self.assets.column('amount', width=100, anchor='e')
+        self.assets.column('percent', width=50, anchor='e')
+        self.assets['displaycolumns'] = ['topic', 'amount', 'percent']
         self.assets.tag_configure('fixed_assets', background='green2')
         self.assets.tag_configure('current_assets', background='green1')
         self.assets.tag_configure('total', background='lightgray')
@@ -62,21 +60,28 @@ class BalanceView(ttk.Frame):
         
         cdit_frame = ttk.Labelframe(pw, text='Claims', labelanchor='n')
         pw.add(cdit_frame, weight=1)
-        columns = ('name', 'balance')
-        self.claims = ConceptTree(cdit_frame, self.balance_repo['claims'], columns=columns, selectmode='browse', show='headings')
+        self.claims = ConceptTree(cdit_frame, self.balance_repo['claims'], selectmode='browse', show='headings')
         self.claims.pack(fill='both', expand=True)
-        self.claims.heading('name', text='Account')
-        self.claims.column('name', width=250, anchor='w')
-        self.claims.heading('balance', text='Amount(€)')
-        self.claims.column('balance', width=100, anchor='e')
+        self.claims.column('topic', width=250, anchor='w')
+        self.claims.column('amount', width=100, anchor='e')
+        self.claims.column('percent', width=40, anchor='e') 
+        self.claims['displaycolumns'] = ['topic', 'amount', 'percent']
         self.claims.tag_configure('short_term_debt', background='lightblue')
         self.claims.tag_configure('long_term_debt', background='lightblue1')
         self.claims.tag_configure('net_worth', background='gold')
         self.claims.tag_configure('total', background='lightgray')
-        self.claims.bind('<<TreeviewSelect>>', self.display_concept_items)
-        
+        self.claims.bind('<<TreeviewSelect>>', self.display_concept_items)        
         self.render()
 
+    def render(self, *args):
+        year = self.eyear.get()
+        self.text['state'] = 'normal'
+        self.assets.delete(*self.assets.get_children())
+        self.claims.delete(*self.claims.get_children())
+        self.assets.balance_render(year)
+        self.claims.balance_render(year)
+        self.text['state'] = 'disabled'
+        
     def display_concept_items(self, event):
         year = self.eyear.get()
         min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
@@ -105,13 +110,3 @@ class BalanceView(ttk.Frame):
             self.parent.master.ledger.render_entries(concept, entries)
             self.parent.master.notebook.select(2)   
         return 'break'   
-
-    
-    def render(self, *args):
-        year = self.eyear.get()
-        self.text['state'] = 'normal'
-        self.assets.delete(*self.assets.get_children())
-        self.claims.delete(*self.claims.get_children())
-        self.assets.render(year)
-        self.claims.render(year)
-        self.text['state'] = 'disabled'

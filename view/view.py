@@ -76,7 +76,7 @@ class View(ttk.Frame):
     def change_text_color(self):
         selected_color = self.text_color_choice.get()
         foreground,background = self.color_schemes.get(selected_color).split('.')
-        tabs = ('input', 'journal', 'income', 'balance')
+        tabs = ('input', 'journal','income', 'balance')
         for tab in tabs:
             eval(f'self.{tab}.text.config(background=background, foreground=foreground)')
         self.journal.filter.config(background=background)

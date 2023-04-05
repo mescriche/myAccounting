@@ -33,9 +33,9 @@ class IncomeView(ttk.Frame):
         scroll_bar.config(command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
 
-        self.text.tag_configure('title', background='blue')
-        self.text.tag_configure('subtitle', background='light blue')
-        self.text.tag_configure('total', background='purple')
+        #pw = ttk.Panedwindow(self.text, orient=VERTICAL, width=800)
+        inframe = Frame(self.text)
+        self.text.window_create('end', window=inframe)
         
         report_file = 'income.json'
         DIR = path.dirname(path.realpath(__file__))
@@ -44,30 +44,62 @@ class IncomeView(ttk.Frame):
         self.income_repo.pop('purpose')
         self.income_repo.pop('profile')
         
-        columns = ('topic', 'amount', 'accounts')
-        self.table = ConceptTree(self.text, self.income_repo, height=20, selectmode='browse', columns=columns, show='headings')
-        self.text.window_create('end', window=self.table)
-        self.table.heading('topic', text='Topic')
-        self.table.column('topic', width=250, anchor='w')
-        self.table.heading('amount', text='Amount(€)')
-        self.table.column('amount', width=80, anchor='e')
-        self.table['displaycolumns'] = ['topic','amount']
-        self.table.tag_configure('revenues', background='lightblue')
-        self.table.tag_configure('taxes', background='darksalmon')        
-        self.table.tag_configure('insurance', background='coral')
-        self.table.tag_configure('expenses', background='lightsalmon')
-        self.table.tag_configure('total', background='lightgray')
-        self.table.bind('<<TreeviewSelect>>', self.display_concept_items)
+
+        #pw.add(inframe, weight=1)
+        self.inflow = ConceptTree(inframe, self.income_repo['inflows'], height=20, selectmode='browse', show='headings')
+        self.inflow.pack()
+        self.inflow.column('topic', width=250, anchor='w')
+        self.inflow.column('amount', width=100, anchor='e')
+        self.inflow.column('percent', width=50, anchor='e')
+        self.inflow['displaycolumns'] = ['topic','amount', 'percent']
+        self.inflow.tag_configure('revenues', background='lightblue')
+        self.inflow.tag_configure('taxes', background='darksalmon')        
+        self.inflow.tag_configure('insurance', background='coral')
+        self.inflow.tag_configure('expenses', background='lightsalmon')
+        self.inflow.tag_configure('total', background='lightgray')
+        self.inflow.bind('<<TreeviewSelect>>', self.display_concept_items)
+
+        self.outflow = ConceptTree(inframe, self.income_repo['outflows'], height=20, selectmode='browse', show='headings')
+        self.outflow.pack()
+        self.outflow.column('topic', width=250, anchor='w')
+        self.outflow.column('amount', width=100, anchor='e')
+        self.outflow.column('percent', width=50, anchor='e')
+        self.outflow['displaycolumns'] = ['topic','amount', 'percent']
+        self.outflow.tag_configure('revenues', background='lightblue')
+        self.outflow.tag_configure('taxes', background='darksalmon')        
+        self.outflow.tag_configure('insurance', background='coral')
+        self.outflow.tag_configure('expenses', background='lightsalmon')
+        self.outflow.tag_configure('total', background='lightgray')
+        self.outflow.bind('<<TreeviewSelect>>', self.display_concept_items)
+
+        self.summary = StringVar()
+        ttk.Label(inframe, textvariable=self.summary, anchor='c').pack(fill='x')
         
         self.render()
-        
+
+    def render(self, *args):
+        year = self.eyear.get()
+        self.text['state'] = 'normal'
+        self.inflow.delete(*self.inflow.get_children())
+        self.inflow.balance_render(year)
+        self.outflow.delete(*self.outflow.get_children())
+        self.outflow.balance_render(year)
+        t_iid = list(self.inflow.get_children())[-1]
+        in_total = float(self.inflow.item(t_iid)['values'][1].replace('.','').replace(',','.'))
+        t_iid = list(self.outflow.get_children())[-1]
+        out_total = float(self.outflow.item(t_iid)['values'][1].replace('.','').replace(',','.'))
+        net_income = db_currency(in_total - out_total)
+        self.summary.set(f'NET INCOME  = {net_income:>10}')
+        self.text['state'] = 'disabled'
+
     def display_concept_items(self, event):
         year = self.eyear.get()
         min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
         max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
+        table = event.widget
         if iid := event.widget.focus():
-            concept = self.table.item(iid)['values'][0].replace('\t','')
-            if codes:= self.table.item(iid)['values'][2]:
+            concept = table.item(iid)['values'][0].replace('\t','')
+            if codes:= table.item(iid)['values'][2]:
                 codes = eval(codes)
                 with db_session() as db:
                     accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)
@@ -89,9 +121,3 @@ class IncomeView(ttk.Frame):
             self.parent.master.notebook.select(2)                        
         return 'break'    
 
-    def render(self, *args):
-        year = self.eyear.get()
-        self.text['state'] = 'normal'
-        self.table.delete(*self.table.get_children())
-        self.table.render(year)
-        self.text['state'] = 'disabled'
