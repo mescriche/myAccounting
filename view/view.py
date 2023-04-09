@@ -1,3 +1,4 @@
+__author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
@@ -76,9 +77,10 @@ class View(ttk.Frame):
     def change_text_color(self):
         selected_color = self.text_color_choice.get()
         foreground,background = self.color_schemes.get(selected_color).split('.')
-        tabs = ('input', 'journal','income', 'balance')
-        for tab in tabs:
-            eval(f'self.{tab}.text.config(background=background, foreground=foreground)')
+        #tabs = ('input', 'journal','income', 'balance')
+        #for tab in tabs:
+        #    eval(f'self.{tab}.text.config(background=background, foreground=foreground)')
+        #self.input.config(background=background)
         self.journal.filter.config(background=background)
         self.ledger.filter.config(background=background)
         self.income.title.config(background=background)

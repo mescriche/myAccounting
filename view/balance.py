@@ -1,3 +1,4 @@
+__author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from dbase import db_session, db_currency, Account, db_get_yearRange
@@ -35,7 +36,7 @@ class BalanceView(ttk.Frame):
         scroll_bar.config(command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
 
-        pw = ttk.Panedwindow(self.text, orient=HORIZONTAL, width=800)
+        pw = ttk.Panedwindow(self.text, orient=HORIZONTAL)
         self.text.window_create('end', window=pw)
 
         report_file = 'balance.json'
@@ -64,7 +65,7 @@ class BalanceView(ttk.Frame):
         self.claims.pack(fill='both', expand=True)
         self.claims.column('topic', width=250, anchor='w')
         self.claims.column('amount', width=100, anchor='e')
-        self.claims.column('percent', width=40, anchor='e') 
+        self.claims.column('percent', width=50, anchor='e') 
         self.claims['displaycolumns'] = ['topic', 'amount', 'percent']
         self.claims.tag_configure('short_term_debt', background='lightblue')
         self.claims.tag_configure('long_term_debt', background='lightblue1')
@@ -88,8 +89,8 @@ class BalanceView(ttk.Frame):
         max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
         if iid := event.widget.focus():
             table = event.widget
-            concept = table.item(iid)['values'][0].replace('\t', '')
-            if codes:= table.item(iid)['values'][2]:
+            concept = table.set(iid, column='topic').replace('\t','')
+            if codes:= table.set(iid, column='accounts'):
                 codes = eval(codes)
                 with db_session() as db:
                     accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)
@@ -98,7 +99,7 @@ class BalanceView(ttk.Frame):
                     entries = sorted(entries, key=lambda x:x.transaction.date)
                     entries = [entry.id for entry in entries]
             else:
-                codes = map(lambda x: eval(table.item(x)['values'][2]), table.get_children(iid))
+                codes = map(lambda x: eval(table.set(x, column='accounts')), table.get_children(iid))
                 codes = [item for code in codes for item in code]
                 with db_session() as db:
                     accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)

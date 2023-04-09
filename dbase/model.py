@@ -1,3 +1,4 @@
+__author__ = 'Manuel Escriche'
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, Float, PickleType
 from sqlalchemy.orm import relationship, backref, object_session

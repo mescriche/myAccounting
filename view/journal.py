@@ -1,3 +1,4 @@
+__author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from dbase import db_session, db_currency, Transaction, db_get_yearRange, db_get_accounts_gname

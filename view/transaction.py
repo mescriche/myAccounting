@@ -1,9 +1,26 @@
+__author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
 from datetime import datetime, date
+from dataclasses import dataclass
 from dbase import db_session, Account, Transaction, BookEntry
-import re
+import re, enum
 
+Type = enum.Enum('Type', ['DEBIT', 'CREDIT'])
+
+@dataclass
+class DBookEntry:
+    account : str
+    type  : Type
+    amount : float
+
+@dataclass
+class DTransaction:
+    date: str
+    description: str
+    entries: list[DBookEntry]
+
+    
 class ValidationError(Exception):
     def __init__(self, message):
         super().__init__(message)

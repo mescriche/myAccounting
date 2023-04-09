@@ -1,3 +1,4 @@
+__author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from dbase import db_session, db_currency, Account, db_get_yearRange
@@ -33,9 +34,8 @@ class IncomeView(ttk.Frame):
         scroll_bar.config(command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
 
-        #pw = ttk.Panedwindow(self.text, orient=VERTICAL, width=800)
-        inframe = Frame(self.text)
-        self.text.window_create('end', window=inframe)
+        pw = ttk.Panedwindow(self.text, orient=VERTICAL, width=425)
+        self.text.window_create('end', window=pw)
         
         report_file = 'income.json'
         DIR = path.dirname(path.realpath(__file__))
@@ -44,8 +44,8 @@ class IncomeView(ttk.Frame):
         self.income_repo.pop('purpose')
         self.income_repo.pop('profile')
         
-
-        #pw.add(inframe, weight=1)
+        inframe = ttk.Labelframe(pw, text='Inflows', labelanchor='n')
+        pw.add(inframe, weight=1)
         self.inflow = ConceptTree(inframe, self.income_repo['inflows'], height=20, selectmode='browse', show='headings')
         self.inflow.pack()
         self.inflow.column('topic', width=250, anchor='w')
@@ -59,7 +59,10 @@ class IncomeView(ttk.Frame):
         self.inflow.tag_configure('total', background='lightgray')
         self.inflow.bind('<<TreeviewSelect>>', self.display_concept_items)
 
-        self.outflow = ConceptTree(inframe, self.income_repo['outflows'], height=20, selectmode='browse', show='headings')
+          
+        outframe = ttk.Labelframe(pw, text='Outflows', labelanchor='n')
+        pw.add(outframe, weight=1)
+        self.outflow = ConceptTree(outframe, self.income_repo['outflows'], height=20, selectmode='browse', show='headings')
         self.outflow.pack()
         self.outflow.column('topic', width=250, anchor='w')
         self.outflow.column('amount', width=100, anchor='e')
@@ -73,8 +76,9 @@ class IncomeView(ttk.Frame):
         self.outflow.bind('<<TreeviewSelect>>', self.display_concept_items)
 
         self.summary = StringVar()
-        ttk.Label(inframe, textvariable=self.summary, anchor='c').pack(fill='x')
-        
+        labelframe = ttk.Frame(pw)
+        pw.add(labelframe, weight=1)
+        ttk.Label(labelframe, textvariable=self.summary, anchor='c').pack()
         self.render()
 
     def render(self, *args):
@@ -98,8 +102,8 @@ class IncomeView(ttk.Frame):
         max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
         table = event.widget
         if iid := event.widget.focus():
-            concept = table.item(iid)['values'][0].replace('\t','')
-            if codes:= table.item(iid)['values'][2]:
+            concept = table.set(iid, column='topic').replace('\t','')
+            if codes:= table.set(iid, column='accounts'):
                 codes = eval(codes)
                 with db_session() as db:
                     accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)
@@ -108,7 +112,7 @@ class IncomeView(ttk.Frame):
                     entries = sorted(entries, key=lambda x:x.transaction.date)
                     entries = [entry.id for entry in entries]
             else:
-                codes = map(lambda x: eval(self.table.item(x)['values'][2]), self.table.get_children(iid))
+                codes = map(lambda x: eval(table.set(x, column='accounts')), self.table.get_children(iid))
                 codes = [item for code in codes for item in code]
                 with db_session() as db:
                     accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)

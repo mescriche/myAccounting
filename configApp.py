@@ -1,3 +1,4 @@
+__author__ = 'Manuel Escriche'
 import argparse, os, json
 
 parser = argparse.ArgumentParser(prog='configApp.py')

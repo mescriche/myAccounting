@@ -1,3 +1,4 @@
+__author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from datetime import datetime

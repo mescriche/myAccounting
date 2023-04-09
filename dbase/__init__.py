@@ -1,3 +1,4 @@
+__author__ = 'Manuel Escriche'
 from os import path
 from json import load
 from datetime import datetime
@@ -9,7 +10,12 @@ from .model import Base, Account, Transaction, BookEntry
 from collections import namedtuple
 import locale, re
 
-
+def db_get_profile() -> str:
+    accounts_file = 'accounts.json'
+    DIR = path.dirname(path.realpath(__file__))
+    with open(path.join(DIR, accounts_file)) as _file:
+        config_data = load(_file)
+    return config_data['profile']
 
 def db_init():
     dbfile = 'accounting.db'

@@ -1,3 +1,4 @@
+__author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from dbase import db_session, db_currency, Account
@@ -45,7 +46,7 @@ class ConceptTree(ttk.Treeview):
             else: return total
 
         def item_value(iid) -> float:
-            return float(self.item(iid)['values'][1].replace('.','').replace(',','.'))
+            return float(self.set(iid, column='amount').replace('.','').replace(',','.'))
         
         def percentage(f_iid=None):
             total = item_value(f_iid)
@@ -56,7 +57,6 @@ class ConceptTree(ttk.Treeview):
                 percentage(c_iid)
                 
         with db_session() as db:
-            #iid = self.insert('', 'end', values=('TOTAL', ''), tag='total')
             total = render_tree('', '', self.concepts, acc_operator )
             self.insert('','end', values=('TOTAL', db_currency(total)), tag='total')
 
