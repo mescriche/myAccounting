@@ -15,7 +15,7 @@ class BalanceView(ttk.Frame):
         self.pack(fill='both', expand=True)
 
         self.eyear = IntVar()
-        self.title = Frame(self, background='green', bd=3)
+        self.title = ttk.Frame(self)
         self.title.pack(expand=False, fill='x', pady=5, padx=5)
         title = f'BALANCE SHEET'
         ttk.Label(self.title, text = f"{title:^157}").pack(expand=False, side='left')

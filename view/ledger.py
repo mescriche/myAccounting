@@ -12,7 +12,7 @@ class LedgerView(ttk.Frame):
         self.parent = parent
         self.pack(fill='both', expand=True)
 
-        self.filter = LabelFrame(self, text='Filter')
+        self.filter = ttk.LabelFrame(self, text='Filter')
         self.filter.pack(fill='x', expand=False)
         
         self.account = StringVar()
@@ -21,9 +21,9 @@ class LedgerView(ttk.Frame):
         ttk.Label(frame, text='Account:').pack(side='left', ipadx=2, ipady=2)
         acc_combo = ttk.Combobox(frame, state='readonly', width=26, textvariable=self.account)
         acc_combo.pack(ipadx=2, ipady=2)
-        acc_combo['values'] = db_get_accounts_gname()
+        acc_combo['values'] = db_get_accounts_gname(False)
         acc_combo.bind('<<ComboboxSelected>>', self.render_filter)
-        acc_combo.current(0)
+        #acc_combo.current(0)
         
         self.etrans_year = StringVar()
         frame = Frame(self.filter)

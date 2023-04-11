@@ -2,7 +2,7 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
-from .transaction import TransactionView
+from .transaction import TransactionEditor
 from .input import InputView
 from .journal import JournalView
 from .ledger import LedgerView
@@ -81,10 +81,10 @@ class View(ttk.Frame):
         #for tab in tabs:
         #    eval(f'self.{tab}.text.config(background=background, foreground=foreground)')
         #self.input.config(background=background)
-        self.journal.filter.config(background=background)
-        self.ledger.filter.config(background=background)
-        self.income.title.config(background=background)
-        self.balance.title.config(background=background)
+        #self.journal.filter.config(background=background)
+        #self.ledger.filter.config(background=background)
+        #self.income.title.config(background=background)
+        #self.balance.title.config(background=background)
         
     def create_menu(self): 
         menu_bar = Menu(self.master)
@@ -108,9 +108,9 @@ class View(ttk.Frame):
         menu_bar.add_cascade(label='File', menu=file_menu)
         
         
-        new_menu = Menu(menu_bar)
-        new_menu.add_command(label='Transaction', command=lambda: TransactionView(self))
-        menu_bar.add_cascade(label='New', menu=new_menu)
+        #new_menu = Menu(menu_bar)
+        #new_menu.add_command(label='Transaction', command=lambda: TransactionEditor(self))
+        #menu_bar.add_cascade(label='New', menu=new_menu)
 
         view_menu = Menu(menu_bar)
         self.input_tab_sem = BooleanVar()

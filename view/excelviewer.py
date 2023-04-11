@@ -1,10 +1,10 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
-from dbase import db_get_accounts_gname, db_get_profile
+from dbase import db_get_accounts_gname, db_get_profile, Type
 from .excelreader import create_excel_reader
 from dataclasses import asdict
-from .transaction import DBookEntry, DTransaction
+from .transaction import DBookEntry, DTransaction, DBookEntry_dict
 import json, os
 
 class ExcelViewer(ttk.Frame):
@@ -12,32 +12,36 @@ class ExcelViewer(ttk.Frame):
         super().__init__(parent, **kwargs)
         self.pack(expand=True, fill='both')
         
-        control_bar = ttk.Frame(self)
-        control_bar.pack(expand=False, fill='x')
+        self.tools_bar = ttk.Frame(parent.tools_bar)
+        self.tools_bar.pack(side='right', fill='x')
+        
         self.master_account = StringVar()
-        labelframe = ttk.Labelframe(control_bar, text='Master Account')
-        labelframe.pack(side='left')
-        account = ttk.Combobox(labelframe, state='readonly', textvariable=self.master_account)
+        labelframe = ttk.Labelframe(self.tools_bar, text='Master Account')
+        labelframe.pack(side='left', ipady=7)
+        account = ttk.Combobox(labelframe, state='readonly', textvariable=self.master_account, width=30)
         account.config(values=db_get_accounts_gname())
-        account.pack(side='left', expand=False)
+        account.pack(side='right')
 
+        
         self.filter_keyword = StringVar()
-        labelframe = ttk.Labelframe(control_bar, text='Filter by description')
-        labelframe.pack(side='left')
+        filter_bar = ttk.Frame(self)
+        filter_bar.pack(fill='x')
+        labelframe = ttk.Labelframe(filter_bar, text='Filter')
+        labelframe.pack(side='left', fill='x')
         self.keyword_wdgt = ttk.Combobox(labelframe, textvariable=self.filter_keyword, width=50)
         self.keyword_wdgt.bind('<<ComboboxSelected>>', self._set_filter_view)
-        self.keyword_wdgt.pack(side='left', expand=False)
+        self.keyword_wdgt.pack(side='left')
         filter_btn = ttk.Button(labelframe, text='Filter', command=self._set_filter_view)
-        filter_btn.pack(side='left', expand=False)
+        filter_btn.pack(side='left')
         clear_filter_btn = ttk.Button(labelframe, text='Clear', command=self._clear_filter_view)
-        clear_filter_btn.pack(side='left', expand=False)
+        clear_filter_btn.pack(side='left')
 
         self.filter_account = StringVar()
-        labelframe = ttk.Labelframe(control_bar, text='Apply to filter')
-        labelframe.pack(side='left')
-        account = ttk.Combobox(labelframe, state='readonly', textvariable=self.filter_account)
+        labelframe = ttk.Labelframe(filter_bar, text='Apply to filter')
+        labelframe.pack(side='right')
+        account = ttk.Combobox(labelframe, state='readonly', textvariable=self.filter_account, width=30)
         account.config(values=db_get_accounts_gname())
-        account.pack(side='left', expand=True)
+        account.pack(side='left')
         account.bind('<<ComboboxSelected>>', self._apply_to_filter)
         
         self.table = ttk.Treeview(self, **kwargs)
@@ -132,9 +136,8 @@ class ExcelViewer(ttk.Frame):
     
     def save_to_file(self):
         with open(self.filename, 'w') as _file:
-            data = list(map(lambda x:asdict(x), self.data()))
+            data = list(map(lambda x:asdict(x, dict_factory=DBookEntry_dict), self.data()))
             json.dump(data, _file, indent=4)
-        #print(json.dumps(data,indent=4))
             
     def data(self):
         self._data = list()
@@ -145,25 +148,30 @@ class ExcelViewer(ttk.Frame):
         except IndexError:
             raise Exception('Master Account missing')
         else:
-            for iid in self.table.get_children():
+            for n,iid in enumerate(self.table.get_children()):
                 date = self.table.set(iid, column='date')
                 description= self.table.set(iid, column='description')
                 entry_account = self.table.set(iid, column='account')
-                if not entry_account: raise Exception('Entry Account missing')
+                #if not entry_account: raise Exception('Entry Account missing')
                 amount = float(self.table.set(iid, column='amount'))
                 if ma_type == 'D':
-                    entry1_type = 'DEBIT' if amount > 0 else 'CREDIT'
+                    entry1_type = Type.DEBIT if amount > 0 else Type.CREDIT
                 elif ma_type == 'C':
-                    entry1_type = 'CREDIT' if amount > 0 else 'DEBIT'
+                    entry1_type = Type.CREDIT if amount > 0 else Type.DEBIT
                 else: raise Exception('unknown account type')
-                if entry1_type == 'DEBIT': entry2_type = 'CREDIT'
-                elif entry1_type == 'CREDIT': entry2_type = 'DEBIT'
+                if entry1_type == Type.DEBIT: entry2_type = Type.CREDIT
+                elif entry1_type == Type.CREDIT: entry2_type = Type.DEBIT
                 amount = abs(amount)
-                trans = DTransaction(date, description,
+                trans = DTransaction(n, date, description,
                                      [DBookEntry(master_account, entry1_type, amount),
                                       DBookEntry(entry_account, entry2_type, amount)])
                 self._data.append(trans)
             else:
                 yield from self._data
 
-        
+
+    def clean_up(self):
+        self.tools_bar.destroy()
+        for child in self.winfo_children():
+            child.destroy()
+        else: self.destroy()        

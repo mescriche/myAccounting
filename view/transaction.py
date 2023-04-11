@@ -3,30 +3,71 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from datetime import datetime, date
 from dataclasses import dataclass
-from dbase import db_session, Account, Transaction, BookEntry
+from dbase import db_session, Account, Transaction, Type, BookEntry, db_currency
 import re, enum
-
-Type = enum.Enum('Type', ['DEBIT', 'CREDIT'])
 
 @dataclass
 class DBookEntry:
     account : str
     type  : Type
     amount : float
-
+    
 @dataclass
 class DTransaction:
+    id: int
     date: str
     description: str
     entries: list[DBookEntry]
 
+def DBookEntry_dict(data):
+    def get_name(obj):
+        if isinstance(obj, enum.Enum):
+            return obj.name
+        return obj
+    return dict((k, get_name(v)) for k, v in data)
+
+def TransformDBTrans(trans:Transaction) -> DTransaction:
+    entries = [DBookEntry(entry.account.gname, entry.type, entry.amount) for entry in trans.entries]
+    for entry in entries: print(entry)
+    return DTransaction(trans.id, trans.date, trans.description, entries)
     
-class ValidationError(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-        self.message = message
-    
-class TransactionView(Toplevel):
+class TransactionViewer(ttk.Frame):
+    def __init__(self, parent, trans:DTransaction, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.pack(expand=False)
+        Label(self, text=f'Transaction #{trans.id}', background='dark cyan').pack(fill='x')
+        text= Text(self, height=3)
+        text.pack(fill='x')
+        text.insert(1.0, f'Date: {trans.date}\n')
+        text.insert(2.0, f'Description: {trans.description}')
+        columns = ('debit', 'account', 'credit')
+        data = dict()
+        data['debit'] = {'text':'Debit', 'width':100, 'anchor':'e'}
+        data['account'] = {'text':'Account', 'width':500, 'anchor':'w'}        
+        data['credit'] = {'text':'Credit', 'width':100, 'anchor':'e'}
+        
+        table = ttk.Treeview(self, columns=columns, show='headings')
+        table.pack()
+        for topic in columns:
+            table.heading(topic, text=data[topic]['text'])
+            table.column(topic, width=data[topic]['width'], anchor=data[topic]['anchor'])
+        else:
+            table.tag_configure('total', background='lightblue')
+        
+        for entry in trans.entries:
+            entry_debit = db_currency(entry.amount) if entry.type == Type.DEBIT else '-'
+            entry_credit = db_currency(entry.amount) if entry.type == Type.CREDIT else '-'                
+            values = entry_debit, entry.account, entry_credit
+            table.insert('','end', values=values)
+        else:
+            trans_debit = sum([entry.amount for entry in trans.entries if entry.type == Type.DEBIT])
+            trans_credit = sum([entry.amount for entry in trans.entries if entry.type == Type.CREDIT])
+            table.insert('','end', values=(db_currency(trans_debit), '', db_currency(trans_credit)), tag='total')
+            table.config(height=1+len(trans.entries))
+        
+        
+        
+class TransactionEditor(Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -135,10 +176,10 @@ class TransactionView(Toplevel):
         frame.pack(side='top', anchor='n', fill='x', expand=True)
         date_entry.focus()
 
-        #self.date_entry.set('23-03-2022')
-        #self.data.insert('','end', values=('[DR-51] Bank Account', '100', '0'))
-        #self.data.insert('','end', values=('[CN-70] Income-Parents', '0', '100'))
-        #self.text.insert(1.0, 'apoyo mensual')
+        self.date_entry.set('23-03-2022')
+        self.data.insert('','end', values=('[DR-51] Bank Account', '100', '0'))
+        self.data.insert('','end', values=('[CN-70] Income-Parents', '0', '100'))
+        self.text.insert(1.0, 'apoyo mensual')
             
         self.protocol("WM_DELETE_WINDOW", self.dismiss) # intercept close button
         self.wait_visibility() # can't grab until window appears, so we wait
@@ -194,7 +235,7 @@ class TransactionView(Toplevel):
 
     def save(self):
         try: self.verify_input()
-        except ValidationError as error:
+        except Exception as error:
             title = "Verifiying transaction"
             messagebox.showerror(title=title, message=error.message)
         else:
@@ -229,8 +270,8 @@ class TransactionView(Toplevel):
         debit_total, credit_total = 0,0
         for idd in self.data.get_children():
             #print(self.data.item(idd))
-            debit = self.data.item(idd)['values'][1]
-            credit = self.data.item(idd)['values'][2]
+            debit = self.data.set(idd, column='debit')
+            credit = self.data.set(idd, column='credit')
             try: debit = float(debit)
             except ValueError: pass    
             else: debit_total += debit
@@ -238,20 +279,75 @@ class TransactionView(Toplevel):
             except ValueError: pass
             else:  credit_total += credit                
         if not debit_total or not credit_total:
-            raise ValidationError('Missing input for accounts')
+            raise Exception('Missing input for accounts')
         if debit_total != credit_total:
-            raise ValidationError('Totals mismatch')
+            raise Exception('Totals mismatch')
         if not self.date_entry.get():
-            raise ValidationError('No Date')
+            raise Exception('No Date')
         comment = self.text.get('1.0', 'end-1c')
         if not comment:
-            raise ValidationError('No Comment')
+            raise Exception('No Comment')
         
     def verify(self):
         try: self.verify_input()
-        except ValidationError as error:
+        except Exception as error:
             title = "Verifiying transaction"
             messagebox.showerror(title=title, message=error.message)
         else:
             self.verify_button.config(text='OK')
             self.after(2000, lambda: self.verify_button.config(text='Verify'))
+
+
+
+class DTransactionEditor(TransactionEditor):
+    def __init__(self, parent):
+        super().__init__(parent)
+        
+    def save(self):
+        try: self.verify_input()
+        except Exception as error:
+            title = "Verifiying transaction"
+            messagebox.showerror(title=title, message=error.message)
+        else:
+            date = self.date_entry.get()
+            description = self.text.get(1.0, 'end-1c')
+            entries = list()
+            for cid in self.data.get_children():
+                #child = self.data.item(cid)
+                account = self.data.set(cid, column='account')
+                try: debit = float(self.data.set(cid, column='debit'))
+                except: debit = 0
+                try: credit = float(self.data.set(cid, column='credit'))
+                except: credit = 0
+                type = Type.DEBIT if debit > 0 else Type.CREDIT
+                amount = debit if type==Type.DEBIT else credit
+                entries.append(DBookEntry(account,type, amount))
+            else:
+                trans = DTransaction(0, date, description, entries)
+            self.parent.add_transaction(trans)
+            self.dismiss()
+        
+    def _save(self):
+        try: self.verify_input()
+        except ValidationError as error:
+            title = "Verifiying transaction"
+            messagebox.showerror(title=title, message=error.message)
+        else:
+            trans = dict()
+            trans['date'] = self.date_entry.get()
+            trans['description'] = self.text.get(1.0, 'end-1c')
+            trans['entries'] = list()
+            for child_id in self.data.get_children():
+                child = self.data.item(child_id)
+                acc_name, debit, credit = tuple(child['values'])
+                try: debit = abs(float(debit))
+                except ValueError: debit = 0.0
+                try: credit = abs(float(credit))
+                except ValueError: credit = 0.0
+                if debit > 0:
+                    trans['entries'].append({'account': acc_name, 'debit': debit })
+                elif credit > 0:
+                    trans['entries'].append({'account': acc_name, 'credit': credit })
+                else: raise Exception(f'Wrong BookEntry Format')
+            self.parent.add_transaction(trans)
+            self.dismiss()

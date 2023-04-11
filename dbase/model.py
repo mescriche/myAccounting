@@ -14,7 +14,7 @@ Content = enum.Enum('Content', ['REAL', 'NOMINAL'])
 #Content = enum.Enum('Content', ['STATE', 'FLOW'])
 #Content = enum.Enum('Content', ['PROPERTY', 'ACTIVITY'])
 #Content = enum.Enum('Content', ['BALANCE', 'INCOME'])
-        
+
 class Account(Base):
     __tablename__ = 'accounts'
     id = Column(Integer, primary_key=True)

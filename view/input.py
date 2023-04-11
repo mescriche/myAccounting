@@ -8,138 +8,110 @@ from json import load, loads, dumps
 from dbase import db_session, Account, Transaction, BookEntry
 from enum import Enum
 import os, re
-from .transaction import TransactionView, ValidationError
+
 from .excelviewer import ExcelViewer
 from .textviewer import TextEditor
-
-class JSON_TransactionView(TransactionView):
-    def __init__(self, parent):
-        super().__init__(parent)
-        
-    def save(self):
-        try: self.verify_input()
-        except ValidationError as error:
-            title = "Verifiying transaction"
-            messagebox.showerror(title=title, message=error.message)
-        else:
-            trans = dict()
-            trans['date'] = self.date_entry.get()
-            trans['description'] = self.text.get(1.0, 'end-1c')
-            trans['entries'] = list()
-            for child_id in self.data.get_children():
-                child = self.data.item(child_id)
-                acc_name, debit, credit = tuple(child['values'])
-                try: debit = abs(float(debit))
-                except ValueError: debit = 0.0
-                try: credit = abs(float(credit))
-                except ValueError: credit = 0.0
-                if debit > 0:
-                    trans['entries'].append({'account': acc_name, 'debit': debit })
-                elif credit > 0:
-                    trans['entries'].append({'account': acc_name, 'credit': credit })
-                else: raise Exception(f'Wrong BookEntry Format')
-            self.parent.write_transaction(trans)
-            self.dismiss()
 
 class InputView(ttk.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        
         self.pack(fill='both', expand=True)
         
-        shortcut_bar = Frame(self, height=15, background='light sea green')
-        shortcut_bar.pack(expand=False, fill='x', padx=1, pady=1)
-        
-        self.edit_control_bar = Frame(shortcut_bar)
-        self.edit_control_bar.pack(side='left', expand=False, fill='x', padx=10) 
-
-        new_trans_icon = PhotoImage(file='./view/icons/add.gif')
-        self.new_trans_btn = ttk.Button(self.edit_control_bar, image=new_trans_icon, command=lambda:JSON_TransactionView(self))
-        self.new_trans_btn.image = new_trans_icon
-        self.new_trans_btn.pack(side='left')
-
-        play_icon = PhotoImage(file='./view/icons/next.gif')
-        self.play_btn = ttk.Button(self.edit_control_bar, image=play_icon, command=self.execute_step)
-        self.play_btn.image = play_icon
-        self.play_btn.pack(side='left')
-        
-        long_play_icon = PhotoImage(file='./view/icons/end.gif')
-        self.long_play_btn = ttk.Button(self.edit_control_bar, image=long_play_icon, command=self.execute)
-        self.long_play_btn.image = long_play_icon
-        self.long_play_btn.pack(side='left')                                   
-        self.file_control_bar = Frame(shortcut_bar)
-        self.file_control_bar.pack(side='left', expand=False, fill='x', padx=10)
-
-                
         DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         self.dirname = os.path.join(DIR, 'datafiles')
         self.filename = StringVar()
-
         
+        self.tools_bar = ttk.Frame(self, height=15)
+        self.tools_bar.pack(expand=False, fill='x', padx=1, pady=1)
+        
+        file_bar = ttk.Labelframe(self.tools_bar, text='File')
+        file_bar.pack(expand=False, side='left', ipady=4, ipadx=3)
         new_edit_icon = PhotoImage(file='./view/icons/new_file.gif')
-        self.new_edit_btn = ttk.Button(self.file_control_bar, image=new_edit_icon, command=self.new_edit)
-        self.new_edit_btn.image = new_edit_icon
-        self.new_edit_btn.pack(side='left')
+        new_edit_btn = ttk.Button(file_bar, image=new_edit_icon, command=self.new_edit)
+        new_edit_btn.image = new_edit_icon
+        new_edit_btn.pack(side='left')
         
         open_file_icon = PhotoImage(file='./view/icons/open_file.gif')
-        self.open_file_btn = ttk.Button(self.file_control_bar, image=open_file_icon, command=self.open_file)
-        self.open_file_btn.image = open_file_icon
-        self.open_file_btn.pack(side='left')
+        open_file_btn = ttk.Button(file_bar, image=open_file_icon, command=self.open_file)
+        open_file_btn.image = open_file_icon
+        open_file_btn.pack(side='left')
 
         save_file_icon = PhotoImage(file='./view/icons/save_file.gif')
-        self.save_file_btn = ttk.Button(self.file_control_bar, image=save_file_icon, command=self.save_file)
-        self.save_file_btn.image = save_file_icon
-        self.save_file_btn.pack(side='left')
+        save_file_btn = ttk.Button(file_bar, image=save_file_icon, command=self.save_file)
+        save_file_btn.image = save_file_icon
+        save_file_btn.pack(side='left')
 
-        file_name_entry = Entry(shortcut_bar, textvariable=self.filename, width=25)
-        file_name_entry.pack(side='left')
-                
-        self.editor = TextEditor(self)
+        #file_name_entry = Entry(file_bar, textvariable=self.filename, width=40)
+        #file_name_entry.pack(side='left')
+        self.file_name_entry = ttk.Combobox(file_bar, textvariable=self.filename, width=40)
+        self.file_name_entry.pack(side='left')
+        self.file_name_entry['values'] = self._get_files()
+        self.file_name_entry.bind('<<ComboboxSelected>>', self._open_file)
+
+        import_bar = ttk.Labelframe(self.tools_bar, text='Import')
+        import_bar.pack(expand=False, side='left', ipadx=10)
+        play_icon = PhotoImage(file='./view/icons/next.gif')
+        play_btn = ttk.Button(import_bar, image=play_icon, command=self.execute_step)
+        play_btn.image = play_icon
+        play_btn.pack(side='left', padx=10)
         
+        long_play_icon = PhotoImage(file='./view/icons/end.gif')
+        long_play_btn = ttk.Button(import_bar, image=long_play_icon, command=self.execute)
+        long_play_btn.image = long_play_icon
+        long_play_btn.pack(padx=0)                                   
+        
+        self.editor = None
+        self.new_edit()
+        
+    def _get_files(self) -> list:
+        files = (file for file in os.listdir(self.dirname) if os.path.isfile(os.path.join(self.dirname, file)))
+        return sorted(list(filter(lambda x: x.endswith('.json') or x.endswith('.xlsx'), files)), reverse=True)
+    
+                        
     def new_edit(self, *args):
-        self.editor.destroy()
-        self.editor = TextEditor(self)
+        if self.editor: self.editor.destroy()
+        basename = 'default.json'
+        filename = os.path.join(self.dirname, basename )
+        self.filename.set(basename)
+        if not os.path.exists(filename):
+            with open(filename, 'w') as _file: pass
+        self.editor = TextEditor(self, filename)
 
+    def _open_file(self, *args):
+        filename = os.path.join(self.dirname, self.filename.get())
+        if self.editor: self.editor.clean_up()
+        if filename.endswith(".xlsx"):
+            self.editor = ExcelViewer(self, filename)
+        elif filename.endswith(".json"):
+            self.editor = TextEditor(self, filename)
+        else: raise Exception('Unknown file extension')
+        
     def open_file(self, *args):
-        print(self.dirname)
         filename = filedialog.askopenfilename(defaultextension="*.json", initialdir = self.dirname,
                                                filetypes=[("All Files", "*.*"),
                                                           ("Json Documents","*.json"),
                                                           ("Excel Documents","*.xlsx")])
         if filename:
-            self.filename.set(os.path.basename(filename))
+            basename = os.path.basename(filename)
+            self.filename.set(basename)
             self.dirname = os.path.dirname(filename)
-            self.editor.destroy()
-            if filename.endswith(".xlsx"):
-                self.editor = ExcelViewer(self, filename)
-            elif filename.endswith("*.json"):
-                self.editor = TexEditor(self, filename)
-            else: raise Exception('Unknown file extension')
+            self.file_name_entry['values'] = self._get_files()
+            self._open_file()
+
 
     def save_file(self, *args):
         if not self.filename.get():
-            file_name = filedialog.asksaveasfilename(defaultextension='*.json', initialdire = self.dirname,
+            file_name = filedialog.asksaveasfilename(defaultextension='*.json',
+                                                     initialdir = self.dirname,
                                                      filetypes=[("All Files", "*.*"),
                                                                 ("Json Documents","*.json")])
             self.dirname = os.path.dirname(file_name)
             self.filename.set(os.path.basename(file_name))
-            with open(file_name, 'w') as _file:
-                _file.write(self.text.get(1.0, 'end'))
+            filename = os.path.join(self.dirname, self.filename)
+            self.editor.save_to_file(filename)
         else:
-            #file_name  = os.path.join(self.dirname, self.filename.get())
-            #with open(file_name, 'w') as _file:
-            #    _file.write(self.text.get(1.0, 'end'))
             self.editor.save_to_file()
 
-                        
-    def write_transaction(self, data):
-        if content := self.text.get(1.0, 'end-1c'):
-            content = loads(content)
-            self.text.delete(1.0, 'end')            
-        else: content = list()
-        content.append(data)
-        self.text.insert('end', dumps(content, indent=4))
-        
     def content_verification(self):
         ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\/\s\w]+')
         content = self.text.get(1.0, 'end-1c')

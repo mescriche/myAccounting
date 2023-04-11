@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from .model import Base, Account, Transaction, BookEntry
+from .model import Base, Account, Transaction, BookEntry, Type
 from collections import namedtuple
 import locale, re
 
@@ -72,9 +72,9 @@ def db_get_account_code(gname:str) -> str:
     else:
         raise Exception(f'Wrong account pattern:"{gname}"')
 
-def db_get_accounts_gname() -> list:
+def db_get_accounts_gname(all=True) -> list:
     with db_session() as db:
-        accounts = filter(lambda x: not x.isEmpty, db.query(Account).all())
+        accounts = db.query(Account).all() if all else filter(lambda x: not x.isEmpty, db.query(Account).all())
         acc_gnames = [account.gname for account in sorted(accounts, key=lambda x:x.code)]
     return acc_gnames
     

@@ -2,15 +2,16 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from dbase import db_session, db_currency, Transaction, db_get_yearRange, db_get_accounts_gname
+from .transaction import TransactionViewer, TransformDBTrans
 from datetime import datetime
 
 class JournalView(ttk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
         
-        self.filter = LabelFrame(self, text='Filter')
+        self.filter = ttk.LabelFrame(self, text='Filter')
         self.filter.pack(fill='x', expand=False)
         
         self.etrans_id = StringVar()
@@ -107,10 +108,15 @@ class JournalView(ttk.Frame):
         self.text.delete('1.0', 'end')
         with db_session() as db:
             for _id in reversed(trans):
-                try: item = db.query(Transaction).get(_id)
+                try: trans = db.query(Transaction).get(_id)
                 except Exception as e:
                     print(e)
-                else: self.render_treeview(item)
+                #else: self.render_treeview(trans)
+                else:
+                    _trans = TransformDBTrans(trans)
+                    wdgt = TransactionViewer(self.text, _trans)
+                    self.text.window_create('end', window=wdgt)
+                    self.text.insert('end', '\n')
         self.text['state'] = 'disabled'
 
     def render_treeview(self, trans):
@@ -138,7 +144,9 @@ class JournalView(ttk.Frame):
             table.tag_configure('total', background='lightblue')
             
         for entry in trans.entries:
-            values = db_currency(entry.debit), entry.account.gname, db_currency(entry.credit)
+            debit = db_currency(entry.debit) if entry.debit > 0 else '-'
+            credit = db_currency(entry.credit) if entry.credit > 0 else '-'
+            values = debit, entry.account.gname, credit
             table.insert('','end', values=values)
         else:
             table.insert('','end', values=(db_currency(trans.debit), '', db_currency(trans.credit)), tag='total')
