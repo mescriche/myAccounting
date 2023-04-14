@@ -4,7 +4,7 @@ from tkinter import ttk
 from dbase import db_get_accounts_gname, db_get_profile, Type
 from .excelreader import create_excel_reader
 from dataclasses import asdict
-from .transaction import DBookEntry, DTransaction, DBookEntry_dict
+from .transaction import DMBookEntry, DMTransaction, DMBookEntry_dict
 import json, os
 
 class ExcelViewer(ttk.Frame):

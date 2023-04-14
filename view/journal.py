@@ -2,7 +2,7 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from dbase import db_session, db_currency, Transaction, db_get_yearRange, db_get_accounts_gname
-from .transaction import TransactionViewer, TransformDBTrans
+from .transaction import TransactionViewer, from_DBTrans_to_DMTrans
 from datetime import datetime
 
 class JournalView(ttk.Frame):
