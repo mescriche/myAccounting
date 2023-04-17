@@ -19,22 +19,22 @@ class LedgerView(ttk.Frame):
         frame = Frame(self.filter)
         frame.pack(side='left', padx=3)
         ttk.Label(frame, text='Account:').pack(side='left', ipadx=2, ipady=2)
-        acc_combo = ttk.Combobox(frame, state='readonly', width=26, textvariable=self.account)
-        acc_combo.pack(ipadx=2, ipady=2)
-        acc_combo['values'] = db_get_accounts_gname(False)
-        acc_combo.bind('<<ComboboxSelected>>', self.render_filter)
+        self.acc_combo = ttk.Combobox(frame, state='readonly', width=26, textvariable=self.account)
+        self.acc_combo.pack(ipadx=2, ipady=2)
+        self.acc_combo['values'] = db_get_accounts_gname(False)
+        self.acc_combo.bind('<<ComboboxSelected>>', self.render_filter)
         #acc_combo.current(0)
         
         self.etrans_year = StringVar()
         frame = Frame(self.filter)
         frame.pack(side='left', padx=3)
         ttk.Label(frame, text='Year:').pack(side='left', ipadx=2, ipady=2)
-        year_combo = ttk.Combobox(frame, state='readonly', width=5, textvariable=self.etrans_year)
-        year_combo.pack(ipadx=2, ipady=2)
+        self.year_combo = ttk.Combobox(frame, state='readonly', width=5, textvariable=self.etrans_year)
+        self.year_combo.pack(ipadx=2, ipady=2)
         min_year,max_year = db_get_yearRange()
-        year_combo['values'] = [*range(max_year, min_year-1, -1)] + ['']
-        year_combo.bind('<<ComboboxSelected>>', self.render_filter)
-        year_combo.current(0)
+        self.year_combo['values'] = [*range(max_year, min_year-1, -1)] + ['']
+        self.year_combo.bind('<<ComboboxSelected>>', self.render_filter)
+        self.year_combo.current(0)
 
         self.etrans_date = StringVar()
         frame = Frame(self.filter)
@@ -79,6 +79,14 @@ class LedgerView(ttk.Frame):
             self.table.column(topic, width=data[topic]['width'], anchor=data[topic]['anchor'])
 
         self.render_filter()
+
+    def refresh(self, date):
+        self.acc_combo['values'] = db_get_accounts_gname(False)
+        min_year,max_year = db_get_yearRange()
+        self.year_combo['values'] = [*range(max_year, min_year-1, -1)] + ['']
+        self.etrans_year.set(date.year)
+        #self.etrans_date.set(date.strftime('%d-%m-%Y'))
+        #self.render_filter()
         
     def display_transaction(self, event):
         #print(event.widget)
@@ -92,7 +100,6 @@ class LedgerView(ttk.Frame):
         self.etrans_description.set('')
         self.etrans_date.set('')
         #self.etrans_year.set('')
-
 
     def render_filter(self, *args):
         if gname := self.account.get():

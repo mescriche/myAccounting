@@ -8,7 +8,7 @@ from .journal import JournalView
 from .ledger import LedgerView
 from .income import IncomeView
 from .balance import BalanceView
-from dbase import db_get_yearRange
+from dbase import db_session, Transaction
 from locale import currency
 
 class View(ttk.Frame):
@@ -66,6 +66,15 @@ class View(ttk.Frame):
         ## ---- Balance
         self.balance = BalanceView(self.notebook)
         self.notebook.add(self.balance, text='Balance')
+        self.notebook.bind("<<DataBaseContentChanged>>", self.refresh_tabs)
+
+    def refresh_tabs(self, event=None):
+        with db_session() as db:
+            trans = db.query(Transaction).order_by(Transaction.id.desc()).first()
+            self.journal.refresh(trans.date)
+            self.ledger.refresh(trans.date)
+            self.income.refresh(trans.date.year)
+            self.balance.refresh(trans.date.year)
 
     def toggle_input_tab(self):
         if not self.input_tab_sem.get():
@@ -143,7 +152,6 @@ class View(ttk.Frame):
         self.master.config(menu=menu_bar)
 
     def exit_app(self):
-        print('exit')
         self.parent.destroy()
         
         

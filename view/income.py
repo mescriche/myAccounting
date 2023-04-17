@@ -19,12 +19,12 @@ class IncomeView(ttk.Frame):
         title = f'INCOME STATEMENT'
         ttk.Label(self.title, text = f"{title:^62}").pack(expand=False, side='left')
         ttk.Label(self.title, text = f"{'YEAR: ':>10}").pack(side='left', ipadx=0, ipady=0)
-        year_combo = ttk.Combobox(self.title, state='readonly', width=5, textvariable=self.eyear)
-        year_combo.pack(side='left', ipadx=0, ipady=0)
+        self.year_combo = ttk.Combobox(self.title, state='readonly', width=5, textvariable=self.eyear)
+        self.year_combo.pack(side='left', ipadx=0, ipady=0)
         min_year,max_year = db_get_yearRange()
         values =[*range(max_year, min_year-1, -1)]
-        year_combo['values'] = values
-        year_combo.bind('<<ComboboxSelected>>', self.render)
+        self.year_combo['values'] = values
+        self.year_combo.bind('<<ComboboxSelected>>', self.render)
         self.eyear.set(values[0])
         
         self.text = Text(self)
@@ -80,7 +80,13 @@ class IncomeView(ttk.Frame):
         pw.add(labelframe, weight=1)
         ttk.Label(labelframe, textvariable=self.summary, anchor='c').pack()
         self.render()
-
+        
+    def refresh(self, year):
+        min_year,max_year = db_get_yearRange()
+        self.year_combo['values'] = values =[*range(max_year, min_year-1, -1)]
+        self.eyear.set(year)
+        self.render()
+        
     def render(self, *args):
         year = self.eyear.get()
         self.text['state'] = 'normal'
@@ -88,6 +94,7 @@ class IncomeView(ttk.Frame):
         self.inflow.balance_render(year)
         self.outflow.delete(*self.outflow.get_children())
         self.outflow.balance_render(year)
+        
         t_iid = list(self.inflow.get_children())[-1]
         in_total = float(self.inflow.item(t_iid)['values'][1].replace('.','').replace(',','.'))
         t_iid = list(self.outflow.get_children())[-1]

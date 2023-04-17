@@ -10,8 +10,9 @@ print("... procesing {} profile ...".format(args.profile))
 config_dir = 'config'
 view_dir = 'view'
 dbase_dir = 'dbase'
-current_dir = os.path.dirname(os.path.realpath(__file__))
-config_dir = os.path.join(current_dir, config_dir)
+tools_dir = os.path.dirname(os.path.realpath(__file__))
+root_dir = os.path.dirname(tools_dir)
+config_dir = os.path.join(root_dir, config_dir)
 source = os.path.join(config_dir, f"{args.profile}.json")
 
 balancefile = 'balance.json'
@@ -20,7 +21,7 @@ accountsfile = 'accounts.json'
 
 if args.dbclean:
     filename = 'accounting.db'
-    target = os.path.join(current_dir, dbase_dir, filename)
+    target = os.path.join(root_dir, dbase_dir, filename)
     if os.path.isfile(target):
         with open(target, 'w', encoding='utf-8') as _file:
             pass
@@ -36,19 +37,19 @@ else:
             filename = os.path.basename(source)
             print(f"{filename}:", error)
         else:
-            target = os.path.join(current_dir, dbase_dir, accountsfile)
+            target = os.path.join(root_dir, dbase_dir, accountsfile)
             data['accounts']['profile'] = data['profile']
             with open(target, 'w', encoding='utf-8') as _file:
                 json.dump(data['accounts'], _file, ensure_ascii=False, indent=4)
             print("... generated {} file ...".format(os.path.basename(target)))
                   
-            target = os.path.join(current_dir,view_dir,balancefile)
+            target = os.path.join(root_dir,view_dir,balancefile)
             data['balance']['profile'] = data['profile']
             with open(target, 'w', encoding='utf-8') as _file:
                 json.dump(data['balance'], _file, ensure_ascii=False, indent=4)
             print("... generated {} file ...".format(os.path.basename(target)))
 
-            target = os.path.join(current_dir,view_dir, incomefile)
+            target = os.path.join(root_dir,view_dir, incomefile)
             data['income']['profile'] = data['profile']
             with open(target, 'w', encoding='utf-8') as _file:
                 json.dump(data['income'], _file, ensure_ascii=False, indent=4)

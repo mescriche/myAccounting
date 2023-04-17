@@ -36,17 +36,12 @@ class ColorView(ttk.Frame):
         self.text.pack(fill='both', expand=True)
         colors_source = 'colors.html'
         colors_target = 'colors.json'
-        config_dir = 'config'
+        config_dir = ''
         current_dir = os.path.dirname(os.path.realpath(__file__))
         config_dir = os.path.join(current_dir, config_dir)
         source = os.path.join(config_dir, colors_source)
         target = os.path.join(config_dir, colors_target)
         
-        #parser = MyHTMLParser()
-        #parser.set_output(target)
-        #with codecs.open(source, 'r', encoding='utf-8', errors='ignore') as _file:
-        #    while line := _file.readline():
-        #        parser.feed(line)
         with open(target) as _file:
             self.colors = load(_file)
             
@@ -60,7 +55,6 @@ class ColorView(ttk.Frame):
             except TclError as e:
                 print(e)
             else:
-                #self.text.insert('end', f"{color:<20}: ")
                 self.text.window_create('end', window=label1)
                 self.text.window_create('end', window=label2)
                 self.text.insert('end', '\n')

@@ -20,12 +20,12 @@ class BalanceView(ttk.Frame):
         title = f'BALANCE SHEET'
         ttk.Label(self.title, text = f"{title:^157}").pack(expand=False, side='left')
         ttk.Label(self.title, text = f"{'YEAR: ':>10}").pack(side='left', ipadx=0, ipady=0)
-        year_combo = ttk.Combobox(self.title, state='readonly', width=5, textvariable=self.eyear)
-        year_combo.pack(side='left', ipadx=0, ipady=0)
+        self.year_combo = ttk.Combobox(self.title, state='readonly', width=5, textvariable=self.eyear)
+        self.year_combo.pack(side='left', ipadx=0, ipady=0)
         min_year,max_year = db_get_yearRange()
         values =[*range(max_year, min_year-1, -1)]
-        year_combo['values'] = values
-        year_combo.bind('<<ComboboxSelected>>', self.render)
+        self.year_combo['values'] = values
+        self.year_combo.bind('<<ComboboxSelected>>', self.render)
         self.eyear.set(values[0])
         
         
@@ -74,6 +74,13 @@ class BalanceView(ttk.Frame):
         self.claims.bind('<<TreeviewSelect>>', self.display_concept_items)        
         self.render()
 
+        
+    def refresh(self, year):
+        min_year,max_year = db_get_yearRange()
+        self.year_combo['values'] = values =[*range(max_year, min_year-1, -1)]
+        self.eyear.set(year)
+        self.render()
+        
     def render(self, *args):
         year = self.eyear.get()
         self.text['state'] = 'normal'

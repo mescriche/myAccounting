@@ -1,10 +1,10 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
-from tkinter import ttk
-from dbase import db_get_accounts_gname, db_get_profile, Type
+from tkinter import ttk, messagebox
+from dbase import db_get_accounts_gname, db_get_profile, Type, db_currency
 from .excelreader import create_excel_reader
 from dataclasses import asdict
-from .transaction import DMBookEntry, DMTransaction, DMBookEntry_dict
+from .transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
 import json, os
 
 class ExcelViewer(ttk.Frame):
@@ -12,15 +12,15 @@ class ExcelViewer(ttk.Frame):
         super().__init__(parent, **kwargs)
         self.pack(expand=True, fill='both')
         
-        self.tools_bar = ttk.Frame(parent.tools_bar)
-        self.tools_bar.pack(side='right', fill='x')
+        #self.tools_bar = ttk.Frame(parent.tools_bar)
+        #self.tools_bar.pack(side='right', fill='x')
         
-        self.master_account = StringVar()
-        labelframe = ttk.Labelframe(self.tools_bar, text='Master Account')
-        labelframe.pack(side='left', ipady=7)
-        account = ttk.Combobox(labelframe, state='readonly', textvariable=self.master_account, width=30)
-        account.config(values=db_get_accounts_gname())
-        account.pack(side='right')
+        #self.master_account = StringVar()
+        #labelframe = ttk.Labelframe(self.tools_bar, text='Master Account')
+        #labelframe.pack(side='left', ipady=7)
+        #account = ttk.Combobox(labelframe, state='readonly', textvariable=self.master_account, width=30)
+        #account.config(values=db_get_accounts_gname())
+        #account.pack(side='right')
 
         
         self.filter_keyword = StringVar()
@@ -70,11 +70,18 @@ class ExcelViewer(ttk.Frame):
         self.table.column('description', width=850, anchor='w')
         self.table.bind('<<TreeviewSelect>>', self._account_edit)
         self.table.bind('<Double-1>', self._on_double_click)
-        
+        self.table.tag_configure('master_account', background='lightsalmon')
+
+        values = '', '', '', 'MASTER ACCOUNT'
+        master_account_iid = self.table.insert('', 'end', values=values, tag='master_account')
         reader = create_excel_reader(filename)
+        total = 0
         for n,item in enumerate(reader.data):
-            values = str(item['vdate']), item['amount'], '', item['comment']
+            values = item['vdate'].strftime("%d-%m-%Y"), item['amount'], '', item['comment']
             self.table.insert('', 'end', text=n, values=values)
+            total += item['amount']
+        else: self.table.set(master_account_iid, column='amount', value=db_currency(total))
+        
         DIR = os.path.dirname(filename)
         basename, ext = os.path.splitext(reader.filename)
         basename += '.json'
@@ -134,44 +141,54 @@ class ExcelViewer(ttk.Frame):
         event.widget.destroy()
         return 'break'
     
-    def save_to_file(self):
-        with open(self.filename, 'w') as _file:
-            data = list(map(lambda x:asdict(x, dict_factory=DBookEntry_dict), self.data()))
-            json.dump(data, _file, indent=4)
+    def save_to_file(self, filename=None):
+        _filename = self.filename if not filename else filename
+        if len(list(self.data())) > 0:
+            with open(_filename, 'w') as _file:
+                json.dump(self.data(), _file, cls=DMTransactionEncoder, indent=4)
+        else:
+            messagebox.showwarning(message = 'empty data list', parent = self )
             
     def data(self):
         self._data = list()
         self._clear_filter_view()
-        master_account = self.master_account.get()
-        try:
-            ma_type = master_account[1]
-        except IndexError:
-            raise Exception('Master Account missing')
-        else:
-            for n,iid in enumerate(self.table.get_children()):
-                date = self.table.set(iid, column='date')
-                description= self.table.set(iid, column='description')
-                entry_account = self.table.set(iid, column='account')
-                #if not entry_account: raise Exception('Entry Account missing')
-                amount = float(self.table.set(iid, column='amount'))
-                if ma_type == 'D':
-                    entry1_type = Type.DEBIT if amount > 0 else Type.CREDIT
-                elif ma_type == 'C':
-                    entry1_type = Type.CREDIT if amount > 0 else Type.DEBIT
-                else: raise Exception('unknown account type')
-                if entry1_type == Type.DEBIT: entry2_type = Type.CREDIT
-                elif entry1_type == Type.CREDIT: entry2_type = Type.DEBIT
-                amount = abs(amount)
-                trans = DTransaction(n, date, description,
-                                     [DBookEntry(master_account, entry1_type, amount),
-                                      DBookEntry(entry_account, entry2_type, amount)])
+        master_account = ''
+        for iid in self.table.get_children():
+            if self.table.tag_has('master_account', iid):
+                master_account = self.table.set(iid, column='account')
+                break
+        else: raise Exception('Missing master_account tag')
+        
+        if not master_account or master_account not in db_get_accounts_gname():
+            #raise Exception('Master account missing, or not known')
+            messagebox.showwarning( message = 'Master account missing or not know, \n please try it again', parent = self )
+            return
+        ma_type = master_account[1]
+        for n,iid in enumerate(self.table.get_children()):
+            if self.table.tag_has('master_account', iid): continue
+            date = self.table.set(iid, column='date')
+            description= self.table.set(iid, column='description')
+            entry_account = self.table.set(iid, column='account')
+
+            amount = float(self.table.set(iid, column='amount'))
+            if ma_type == 'D':
+                entry1_type = Type.DEBIT if amount > 0 else Type.CREDIT
+            elif ma_type == 'C':
+                entry1_type = Type.CREDIT if amount > 0 else Type.DEBIT
+            else: raise Exception('Unknown entry type')
+            if entry1_type == Type.DEBIT: entry2_type = Type.CREDIT
+            elif entry1_type == Type.CREDIT: entry2_type = Type.DEBIT
+            trans = DMTransaction(n, date, description,
+                                  [DBookEntry(master_account, entry1_type, amount),
+                                   DBookEntry(entry_account, entry2_type, amount)])
+            if trans.validate():
                 self._data.append(trans)
             else:
-                yield from self._data
-
+                print(f'transaction {trans} is not ready for recording')
+                break
+        else: yield from self._data
 
     def clean_up(self):
-        self.tools_bar.destroy()
         for child in self.winfo_children():
             child.destroy()
         else: self.destroy()        

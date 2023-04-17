@@ -2,7 +2,7 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from dbase import db_session, db_currency, Transaction, db_get_yearRange, db_get_accounts_gname
-from .transaction import TransactionViewer, from_DBTrans_to_DMTrans
+from .transaction import TransactionViewer, DMTransaction
 from datetime import datetime
 
 class JournalView(ttk.Frame):
@@ -26,12 +26,12 @@ class JournalView(ttk.Frame):
         frame = Frame(self.filter)
         frame.pack(side='left', padx=10)
         ttk.Label(frame, text='Year:').pack(side='left', ipadx=2, ipady=2)
-        year_combo = ttk.Combobox(frame, state='readonly', width=5, textvariable=self.etrans_year)
-        year_combo.pack(ipadx=2, ipady=2)
+        self.year_combo = ttk.Combobox(frame, state='readonly', width=5, textvariable=self.etrans_year)
+        self.year_combo.pack(ipadx=2, ipady=2)
         min_year,max_year = db_get_yearRange()
-        year_combo['values'] = [*range(max_year, min_year-1, -1)] + ['']
-        year_combo.bind('<<ComboboxSelected>>', self.render_request)
-        year_combo.current(0)
+        self.year_combo['values'] = [*range(max_year, min_year-1, -1)] + ['']
+        self.year_combo.bind('<<ComboboxSelected>>', self.render_request)
+        self.year_combo.current(0)
 
         self.etrans_date = StringVar()
         frame = Frame(self.filter)
@@ -51,7 +51,6 @@ class JournalView(ttk.Frame):
 
         ttk.Button(self.filter, text='Filter', command=self.render_request).pack(side='left', padx=20,pady=2)
         ttk.Button(self.filter, text='Clear', command=self.clear_filter).pack(padx=0, pady=2)
-
             
         self.text = Text(self)
         self.text.pack(fill='both', expand=True)
@@ -62,13 +61,15 @@ class JournalView(ttk.Frame):
         self.text.tag_configure('transaction', background='blue', foreground='yellow', justify='left')
         self.text.tag_configure('account', background='blue')
         self.render_request()
-        ## display last 20 transactions
-        #with db_session() as db:
-        #    query = db.query(Transaction).order_by(Transaction.id.desc()).limit(20)
-        #    if items := [item.id for item in query]:
-        #        items.reverse()
-        #        self.render(items)
 
+    
+    def refresh(self, date):
+        min_year,max_year = db_get_yearRange()
+        self.year_combo['values'] = [*range(max_year, min_year-1, -1)] + ['']
+        self.etrans_year.set(date.year)
+        self.etrans_date.set(date.strftime('%d-%m-%Y'))
+        self.render_request()
+            
     def clear_filter(self, *args):
         self.etrans_id.set('')
         self.etrans_description.set('')
@@ -103,55 +104,28 @@ class JournalView(ttk.Frame):
                 self.text.window_create('end', window=label)
                 self.text['state'] = 'disabled'
             
-    def render(self, trans:list):
+    def render(self, trans:list=None):
         self.text['state'] = 'normal'
         self.text.delete('1.0', 'end')
+        if trans is None:
+        ## list of last 20 transactions
+            with db_session() as db:
+                query = db.query(Transaction).order_by(Transaction.id.desc()).limit(20)
+                if items := [item.id for item in query]:
+                    items.reverse()
+                    trans = items
+        ## display list of items id's
         with db_session() as db:
             for _id in reversed(trans):
                 try: trans = db.query(Transaction).get(_id)
                 except Exception as e:
                     print(e)
-                #else: self.render_treeview(trans)
                 else:
-                    _trans = TransformDBTrans(trans)
+                    _trans = DMTransaction.from_DBTransaction(trans)
                     wdgt = TransactionViewer(self.text, _trans)
                     self.text.window_create('end', window=wdgt)
-                    self.text.insert('end', '\n')
+                    self.text.insert('end', '\n')            
         self.text['state'] = 'disabled'
-
-    def render_treeview(self, trans):
-        trans_id = f"Transaction #{trans.id}"
-        trans_id = f"{trans_id: ^180}"
-        label = Label(self.text, text=trans_id, background='dark cyan')
-        self.text.window_create('end', window=label)
-        self.create_popup_menu(label, trans.id)
-        self.text.insert('end', f"\nDate: {trans.date:%d-%m-%Y}\n")
-        self.text.insert('end', f"Description: {trans.description}\n")
-        self.text.insert('end', f"{'':-^100} \n")
-        columns = ('debit', 'account', 'credit')
-        data = dict()
-        data['debit'] = {'text':'Debit', 'width':100, 'anchor':'e'}
-        data['account'] = {'text':'Account', 'width':400, 'anchor':'w'}        
-        data['credit'] = {'text':'Credit', 'width':100, 'anchor':'e'}
-        
-        table = ttk.Treeview(self.text, columns=columns, show='headings')
-        table.bind('<<TreeviewSelect>>', self.display_account)
-        self.text.window_create('end', window=table)
-        for topic in columns:
-            table.heading(topic, text=data[topic]['text'])
-            table.column(topic, width=data[topic]['width'], anchor=data[topic]['anchor'])
-        else:
-            table.tag_configure('total', background='lightblue')
-            
-        for entry in trans.entries:
-            debit = db_currency(entry.debit) if entry.debit > 0 else '-'
-            credit = db_currency(entry.credit) if entry.credit > 0 else '-'
-            values = debit, entry.account.gname, credit
-            table.insert('','end', values=values)
-        else:
-            table.insert('','end', values=(db_currency(trans.debit), '', db_currency(trans.credit)), tag='total')
-            table.config(height=1+len(trans.entries))
-            self.text.insert('end', f"\n{'':^70}\n")
 
     def create_popup_menu(self, widget, value):
         menu = Menu(widget)
@@ -181,4 +155,5 @@ class JournalView(ttk.Frame):
             self.parent.master.ledger.render_filter()
             self.parent.master.notebook.select(2)
         return 'break'
+
 
