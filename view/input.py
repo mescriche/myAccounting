@@ -5,7 +5,7 @@ from tkinter import filedialog, dialog
 import tkinter.font as tkfont 
 from datetime import datetime
 from json import load, loads, dumps
-from dbase import db_session, Account, Transaction, BookEntry
+from dbase import db_session, Account, Transaction, BookEntry, db_get_account_code
 from enum import Enum
 import os, re
 from .transaction import DMTransaction, TransactionEditor, askTransactionRecordDialog
@@ -69,9 +69,10 @@ class InputView(ttk.Frame):
         long_play_btn.pack(padx=0)                                   
         
         self.editor = TextEditor(self)
-        basename = 'blackboard.json'
-        filename = os.path.join(self.dirname, basename )
+        basename = 'blackboard'
+        self.ext = '.json'
         self.filename.set(basename)
+        filename = os.path.join(self.dirname, basename + self.ext )
         if not os.path.exists(filename):
             with open(filename, 'w') as _file: pass
         self.editor.load(filename)
@@ -79,17 +80,18 @@ class InputView(ttk.Frame):
         
     def _get_files(self) -> list:
         files = (file for file in os.listdir(self.dirname) if os.path.isfile(os.path.join(self.dirname, file)))
-        return sorted(list(filter(lambda x: x.endswith('.json'), files)), reverse=True)
+        _files = filter(lambda x: x.endswith('.json'), files)
+        return sorted(list(map(lambda x: x.removesuffix('.json'), _files)), reverse=True)
                    
     def new_blackboard(self, *args):
-        basename = 'blackboard.json'
-        filename = os.path.join(self.dirname, basename )
+        basename = 'blackboard'
+        filename = os.path.join(self.dirname, basename+self.ext )
         self.filename.set(basename)
         open(filename, 'w').close()
         self.editor.load(filename)
 
     def _open_file(self, event=None):
-        filename = os.path.join(self.dirname, self.filename.get())
+        filename = os.path.join(self.dirname, self.filename.get()+self.ext)
         self.editor.load(filename)
         
     def open_file(self, *args):
@@ -97,7 +99,7 @@ class InputView(ttk.Frame):
                                                filetypes=[("All Files", "*.*"),
                                                           ("Json Documents","*.json")])
         if filename:
-            basename = os.path.basename(filename)
+            basename = os.path.basename(filename).removesuffix('.json')
             self.filename.set(basename)
             self.dirname = os.path.dirname(filename)
             self.file_name_entry['values'] = self._get_files()
@@ -111,11 +113,12 @@ class InputView(ttk.Frame):
                                                      filetypes=[("All Files", "*.*"),
                                                                 ("Json Documents","*.json")])
             self.dirname = os.path.dirname(file_name)
-            self.filename.set(os.path.basename(file_name))
-            filename = os.path.join(self.dirname, self.filename)
-            self.editor.save_to_file(filename)
+            self.filename.set(os.path.basename(file_name).removesuffix('.json'))
+            self.editor.save_to_file(file_name)
         else:
-            self.editor.save_to_file()
+            filename = os.path.join(self.dirname, self.filename.get()+self.ext)
+            self.editor.save_to_file(filename)
+        self.file_name_entry['values'] = self._get_files()
         messagebox.showinfo( message = f"File {self.filename.get()} saved", parent = self )
            
     def execute_step_by_step(self, *args):
@@ -135,8 +138,7 @@ class InputView(ttk.Frame):
                         print(f'Problem when recording transaction:{trans}')
                         print(e)
                         break
-                    else:
-                        self.master.event_generate("<<DataBaseContentChanged>>")
+                self.master.event_generate("<<DataBaseContentChanged>>")
                     
     def execute(self, *args):
         data = list(self.editor.data())
@@ -158,17 +160,13 @@ class InputView(ttk.Frame):
             self.master.event_generate("<<DataBaseContentChanged>>")
 
     def record_transaction(self, db, trans:DMTransaction):
-        ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\/\s\w]+')
         transaction = Transaction(date=trans.date, description=trans.description)
         db.add(transaction)
         for entry in trans.entries:
-            if match := ptrn.fullmatch(entry.account):
-                code = match.group('code')
-                try: account = db.query(Account).filter_by(code=code).one()
-                except: raise Exception(f'Unknown account code={code}')
-                else: db.add(BookEntry(account=account, transaction=transaction, type=entry.type, amount=entry.amount))
-            else:
-                raise Exception(f'Wrong account pattern: {entry.account}')
+            code = db_get_account_code(entry.account)
+            try: account = db.query(Account).filter_by(code=code).one()
+            except: raise Exception(f'Unknown account code={code}')
+            else: db.add(BookEntry(account=account, transaction=transaction, type=entry.type, amount=entry.amount))
 
     def get_new_transaction(self):
         editor = TransactionEditor(self)

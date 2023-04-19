@@ -71,6 +71,7 @@ class View(ttk.Frame):
     def refresh_tabs(self, event=None):
         with db_session() as db:
             trans = db.query(Transaction).order_by(Transaction.id.desc()).first()
+            #print(trans)
             self.journal.refresh(trans.date)
             self.ledger.refresh(trans.date)
             self.income.refresh(trans.date.year)

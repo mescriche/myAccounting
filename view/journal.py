@@ -1,8 +1,9 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
-from dbase import db_session, db_currency, Transaction, db_get_yearRange, db_get_accounts_gname
-from .transaction import TransactionViewer, DMTransaction
+from dbase import db_session, db_currency, Account, Transaction
+from dbase import db_get_yearRange, db_get_accounts_gname, db_get_account_code
+from .transaction import TransactionViewer, TransactionEditor, DMTransaction
 from datetime import datetime
 
 class JournalView(ttk.Frame):
@@ -115,37 +116,66 @@ class JournalView(ttk.Frame):
                     items.reverse()
                     trans = items
         ## display list of items id's
+        
         with db_session() as db:
+            #print(trans)
             for _id in reversed(trans):
-                try: trans = db.query(Transaction).get(_id)
+                try: db_trans = db.query(Transaction).get(_id)
                 except Exception as e:
                     print(e)
                 else:
-                    _trans = DMTransaction.from_DBTransaction(trans)
-                    wdgt = TransactionViewer(self.text, _trans)
+                    dm_trans = DMTransaction.from_DBTransaction(db_trans)
+                    wdgt = TransactionViewer(self.text, dm_trans, borderwidth=2)
+                    for child in wdgt.winfo_children():
+                        child.bindtags((dm_trans.id,) + child.bindtags())
+                    else:
+                        wdgt.bindtags((dm_trans.id,) + self.bindtags())
                     self.text.window_create('end', window=wdgt)
-                    self.text.insert('end', '\n')            
+                    self._create_popup_menu(wdgt, dm_trans)
         self.text['state'] = 'disabled'
 
-    def create_popup_menu(self, widget, value):
+    def _create_popup_menu(self, widget, value):
         menu = Menu(widget)
-        menu.add_command(label='Remove Transaction', command= lambda e=value: self.remove_transaction(e) )
+        menu.add_command(label='Remove Transaction', command= lambda e=value.id: self.remove_transaction(e))
+        menu.add_command(label='Edit Transaction', command=lambda e=value: self._get_updated_transaction(e))
         if self.text.tk.call('tk', 'windowingsystem') == 'aqua':
-            widget.bind('<2>',         lambda e: menu.post(e.x_root, e.y_root))
-            widget.bind('<Control-1>', lambda e: menu.post(e.x_root, e.y_root))
+            widget.bind_class(value.id, '<2>',         lambda e: menu.post(e.x_root, e.y_root))
+            widget.bind_class(value.id, '<Control-1>', lambda e: menu.post(e.x_root, e.y_root))
         else:
-            widget.bind('<3>', lambda e: menu.post(e.x_root, e.y_root))
+            widget.bind_class(value.id, '<3>', lambda e: menu.post(e.x_root, e.y_root))
+        return 'break'
 
-        
+    def _get_updated_transaction(self, trans:DMTransaction):
+        print('journal->_get_updated_transaction')
+        editor = TransactionEditor(self, trans)
+        updated_trans = editor.trans
+        with db_session() as db:
+            db_trans = db.query(Transaction).get(updated_trans.id)
+            setattr(db_trans, 'date', updated_trans.date)
+            setattr(db_trans, 'description', updated_trans.description)
+            for i in range(len(updated_trans.entries), len(db_trans.entries)):
+                db.query(BookEntry).filter_by(id=db_trans.entries[i].id).delete()
+            for n,entry in enumerate(updated_trans.entries):
+                code = db_get_account_code(entry.account)
+                account = db.query(Account).filter_by(code=code).one()
+                try: _entry = db_trans.entries[n]
+                except IndexError: #not enough entries
+                    db.add(BookEntry(account=account, transaction=db_trans, type=entry.type, amount=entry.amount))
+                else: # using existing entries
+                    setattr(_entry, 'account', account)
+                    setattr(_entry, 'type', entry.type)
+                    setattr(_entry, 'amount', entry.amount)
+        self.master.event_generate("<<DataBaseContentChanged>>")
+                         
     def remove_transaction(self, trans_id):
-        #print('remove_transaction:', trans_id)
+        print('journal - remove_transaction:', trans_id)
         with db_session() as db:
             trans = db.query(Transaction).get(trans_id)
             for entry in trans.entries:
                 db.delete(entry)
             else:
                 db.delete(trans)
-        self.master.master.event_generate("<<DataBaseContentChanged>>")
+        self.master.event_generate("<<DataBaseContentChanged>>")
             
     def display_account(self, event):
         if iid := event.widget.focus():

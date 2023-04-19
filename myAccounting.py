@@ -5,7 +5,6 @@ locale.setlocale(locale.LC_ALL, '')
 from tkinter import *
 from tkinter import ttk
 from view import View 
-from control import Controller
 
 class App(Tk):
     def __init__(self):
@@ -26,19 +25,8 @@ class App(Tk):
         self.rowconfigure(0, weight=1)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.createcommand('tk::mac::Quit', self.destroy)
-
         #controller = Controller()        
         view = View(self)
-        
-        #sg = ttk.Sizegrip(self)
-        #sg.grid(row=1, sticky=SE)
-        #view.grid(row=0, column=0, padx=10, pady=10)
-        #self.bind("<Return>", view.calculate)
-        #model = Model()
-        #controller = Controller(model,view)
-
-        #view.set_controller(controller)
-        #print(self.tk.call('tk', 'windowingsystem'))
         
         
 if __name__ == '__main__':

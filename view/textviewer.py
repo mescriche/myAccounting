@@ -85,8 +85,8 @@ class TextEditor(ttk.Frame):
                     child.bindtags((trans.id,) + child.bindtags())
                 else:
                     wdgt.bindtags((trans.id,) + self.bindtags())
-                    self.text.window_create('end', window=wdgt)
-                    self._create_popup_menu(wdgt, trans)
+                self.text.window_create('end', window=wdgt)
+                self._create_popup_menu(wdgt, trans)
         self.text['state'] = 'disabled'
         
     def _create_popup_menu(self, widget, value):
@@ -98,6 +98,7 @@ class TextEditor(ttk.Frame):
             widget.bind_class(value.id, '<Control-1>', lambda e: menu.post(e.x_root, e.y_root))
         else:
             widget.bind_class(value.id,'<3>', lambda e: menu.post(e.x_root, e.y_root))
+        return 'break'
 
     def _get_updated_transaction(self, trans:DMTransaction):
         editor = TransactionEditor(self,trans)
