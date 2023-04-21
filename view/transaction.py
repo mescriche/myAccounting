@@ -133,6 +133,7 @@ class TransactionEditor(Dialog):
         data['account'] = {'text':'Account', 'width':500, 'anchor':'w'}        
         data['credit'] = {'text':'Credit', 'width':100, 'anchor':'e'}
         self.table = ttk.Treeview(master, columns=columns, show='headings')
+        self.table.config(selectmode='browse')
         self.table.pack()
         for topic in columns:
             self.table.heading(topic, text=data[topic]['text'])
@@ -171,7 +172,7 @@ class TransactionEditor(Dialog):
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
         ttk.Button(control_bar, text="Cancel", width=10, command=self.cancel).pack(side='left', padx=5, pady=5)
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
-        ttk.Button(control_bar, text="Save", width=10, command=self.ok, default=ACTIVE).pack(side='left', padx=5, pady=5)
+        ttk.Button(control_bar, text="Accept", width=10, command=self.ok, default=ACTIVE).pack(side='left', padx=5, pady=5)
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
         self.bind("<Return>", self.ok)
         self.bind("<Escape>", self.cancel)

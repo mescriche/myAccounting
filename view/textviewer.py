@@ -49,12 +49,22 @@ class TextEditor(ttk.Frame):
         with open(_filename, 'w') as _file:
             json.dump(self._data, _file, cls=DMTransactionEncoder, indent=4)
             
-    def add_new_transaction(self, new_trans:DMTransaction):
-        try: last_trans = self._data[-1]
-        except: new_trans.id = 1
-        else: new_trans.id = last_trans.id + 1
-        self._data.append(new_trans)
-        self.render()
+    def add_new_transaction(self, new_trans):
+        if isinstance(new_trans, DMTransaction):
+            try: last_trans = self._data[-1]
+            except: new_trans.id = 1
+            else: new_trans.id = last_trans.id + 1
+            self._data.append(new_trans)
+            self.render()
+        elif isinstance(new_trans, list):
+            for trans in new_trans:
+                try: last_trans = self._data[-1]
+                except: trans.id = 1
+                else: trans.id = last_trans.id + 1
+                self._data.append(trans)
+            else:
+                self.render()
+        else: raise Exception('Unknown instance ')
         
     def remove_transaction(self, trans_id):
         for trans in self._data:

@@ -9,7 +9,7 @@ from dbase import db_session, Account, Transaction, BookEntry, db_get_account_co
 from enum import Enum
 import os, re
 from .transaction import DMTransaction, TransactionEditor, askTransactionRecordDialog
-from .excelviewer import ExcelViewer
+from .excelviewer import ExcelEditor
 from .textviewer import TextEditor
 
 class InputView(ttk.Frame):
@@ -175,4 +175,10 @@ class InputView(ttk.Frame):
             self.editor.add_new_transaction(new_trans)
 
     def get_transactions_from_excel(self):
-        print('from excell')
+        filename = filedialog.askopenfilename(defaultextension="*.xlsx", initialdir=self.dirname,
+                                              filetypes=[("All files", "*.*"),("Excel Documents","*.xlsx")])
+        if filename:
+            editor = ExcelEditor(self, filename)
+            trans_list = editor.trans_list
+            if trans_list:
+                self.editor.add_new_transaction(trans_list)
