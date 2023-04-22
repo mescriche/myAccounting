@@ -22,13 +22,6 @@
 	 { "type":"DEBIT",  "content":"REAL",    "code": "53",  "name":"Investment Fund"},
 	 { "type":"DEBIT",  "content":"REAL",    "code": "54",  "name":"Shares"},	 
 	 
-	 { "type":"CREDIT", "content":"NOMINAL", "code":"70",  "name":"Income"},
-	 { "type":"CREDIT", "content":"NOMINAL", "code":"71",  "name":"Income-Payroll"},
-	 { "type":"CREDIT", "content":"NOMINAL", "code":"711", "name":"Income-SocialInsurance"},
-	 { "type":"CREDIT", "content":"NOMINAL", "code":"72",  "name":"Income-Dividend"},
-	 { "type":"CREDIT", "content":"NOMINAL", "code":"73",  "name":"Income-Interest"},
-	 { "type":"CREDIT", "content":"NOMINAL", "code":"74",  "name":"Income-Discounts"},
-	 
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"60",  "name":"Expenses"},
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"61",  "name":"Exp-Person"},
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"610", "name":"ExpP-Feeding"},
@@ -68,7 +61,14 @@
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"662", "name":"Tax-Car"},
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"67",  "name":"Insurance"},
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"670", "name":"Ins-Social"},
-	 { "type":"DEBIT",  "content":"NOMINAL", "code":"671", "name":"Ins-Car"}
+	 { "type":"DEBIT",  "content":"NOMINAL", "code":"671", "name":"Ins-Car"},
+	 	 
+	 { "type":"CREDIT", "content":"NOMINAL", "code":"70",  "name":"Income"},
+	 { "type":"CREDIT", "content":"NOMINAL", "code":"71",  "name":"Income-Payroll"},
+	 { "type":"CREDIT", "content":"NOMINAL", "code":"711", "name":"Income-SocialInsurance"},
+	 { "type":"CREDIT", "content":"NOMINAL", "code":"72",  "name":"Income-Dividend"},
+	 { "type":"CREDIT", "content":"NOMINAL", "code":"73",  "name":"Income-Interest"},
+	 { "type":"CREDIT", "content":"NOMINAL", "code":"74",  "name":"Income-Discounts"}
      ]
  },
  "balance":{

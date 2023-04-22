@@ -146,7 +146,6 @@ class JournalView(ttk.Frame):
         return 'break'
 
     def _get_updated_transaction(self, trans:DMTransaction):
-        print('journal->_get_updated_transaction')
         editor = TransactionEditor(self, trans)
         updated_trans = editor.trans
         with db_session() as db:
@@ -168,7 +167,6 @@ class JournalView(ttk.Frame):
         self.master.event_generate("<<DataBaseContentChanged>>")
                          
     def remove_transaction(self, trans_id):
-        print('journal - remove_transaction:', trans_id)
         with db_session() as db:
             trans = db.query(Transaction).get(trans_id)
             for entry in trans.entries:

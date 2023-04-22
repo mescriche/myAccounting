@@ -52,6 +52,7 @@ class DMTransactionEncoder(json.JSONEncoder):
 class TransactionViewer(ttk.Frame):
     def __init__(self, parent, trans:DMTransaction, **kwargs):
         super().__init__(parent, **kwargs)
+        self.parent = parent
         self.pack(expand=False)
         Label(self, text=f'Transaction #{trans.id}', background='dark cyan').pack(fill='x')
         self.text= Text(self, height=3)
@@ -72,6 +73,8 @@ class TransactionViewer(ttk.Frame):
             self.table.column(topic, width=data[topic]['width'], anchor=data[topic]['anchor'])
         else:
             self.table.tag_configure('total', background='lightblue')
+            
+        self.table.bind('<<TreeviewSelect>>', self._display_account)
         
         for entry in trans.entries:
             entry_debit = db_currency(entry.amount) if entry.type == Type.DEBIT else '-'
@@ -83,7 +86,18 @@ class TransactionViewer(ttk.Frame):
             trans_credit = sum([entry.amount for entry in trans.entries if entry.type == Type.CREDIT])
             self.table.insert('','end', values=(db_currency(trans_debit), '', db_currency(trans_credit)), tag='total')
             self.table.config(height=1+len(trans.entries))
-        
+            
+    def _display_account(self, event=None):
+        if iid := event.widget.focus():
+            account_name = event.widget.set(iid, column='account')
+            wdgt = self
+            while ancestor := wdgt.master:
+                wdgt = ancestor
+                if str(ancestor) == '.!view': break
+            ancestor.ledger.account.set(account_name)
+            ancestor.ledger.render_filter()
+            ancestor.notebook.select(2)
+
 class TransactionDialog(Dialog):
     def __init__(self, parent, title, trans:DMTransaction):
         self.trans = trans

@@ -7,7 +7,7 @@ parser.add_argument("-c","--dbclean", help="delete db content", action="store_tr
 args = parser.parse_args()
 print("... procesing {} profile ...".format(args.profile))
 
-config_dir = 'config'
+config_dir = 'configfiles'
 view_dir = 'view'
 dbase_dir = 'dbase'
 tools_dir = os.path.dirname(os.path.realpath(__file__))

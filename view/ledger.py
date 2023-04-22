@@ -91,7 +91,7 @@ class LedgerView(ttk.Frame):
     def display_transaction(self, event):
         #print(event.widget)
         if iid := event.widget.focus():
-            trans_id = self.table.item(iid)['values'][1]
+            trans_id = self.table.set(iid, column='tid')
             self.parent.master.journal.render([trans_id])
             self.parent.master.notebook.select(1)
         return 'break'

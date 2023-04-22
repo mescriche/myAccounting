@@ -11,7 +11,6 @@ class TextEditor(ttk.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
         self.pack(fill='both', expand=True)
-
         self.text = Text(self, **kwargs)
         self.text.pack(expand=True, fill='both')
         scroll_bar = Scrollbar(self.text)
@@ -98,7 +97,7 @@ class TextEditor(ttk.Frame):
                 self.text.window_create('end', window=wdgt)
                 self._create_popup_menu(wdgt, trans)
         self.text['state'] = 'disabled'
-        
+            
     def _create_popup_menu(self, widget, value):
         menu = Menu(widget)
         menu.add_command(label='Remove Transaction', command=lambda e=value.id: self.remove_transaction(e))
