@@ -84,7 +84,8 @@
 	     "pension plan" : ["26"]
 	 },
 	 "current_assets":{
-	     "bank current acc": [ "50", "51", "511"],
+	     "wallet": ["50"],
+	     "bank current acc": [ "51", "511"],
 	     "bank saving acc" : ["512"],
 	     "bank invest": ["513"],
 	     "investment fund" : ["53"],
@@ -98,7 +99,7 @@
 	 "long_term_debt": {},
 	 "net_worth":{
 	     "wealth": ["10"],
-	     "income": ["11"]
+	     "earnings": ["11"]
 	 }
      }
  },
@@ -107,6 +108,7 @@
      "inflows":{
 	 "revenues":{
 	     "payroll":["71"],
+	     "social_insurance": ["711"],
 	     "dividend":["72"],
 	     "interest":["73"],
 	     "discounts":["74"],
