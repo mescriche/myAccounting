@@ -295,7 +295,8 @@ class TransactionEditor(Dialog):
             except: credit = 0.0
             type = Type.DEBIT if debit > credit else Type.CREDIT
             amount = debit if type == Type.DEBIT else credit
-            entries.append(DMBookEntry(account, type, amount))
+            if amount > 0:
+                entries.append(DMBookEntry(account, type, amount))
         date = re.search(r'(?<=^Date:).+', self.text.get(1.0, '1.end')).group(0).strip()
         date = datetime.datetime.strptime(date, "%d-%m-%Y").date()
         description = re.search(r'(?<=^Description:).+',self.text.get(2.0, 'end-1c')).group(0)

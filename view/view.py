@@ -8,6 +8,7 @@ from .journal import JournalView
 from .ledger import LedgerView
 from .income import IncomeView
 from .balance import BalanceView
+from .map import MapView
 from dbase import db_session, Transaction
 from locale import currency
 
@@ -58,6 +59,9 @@ class View(ttk.Frame):
         self.ledger = LedgerView(self.notebook)
         self.notebook.add(self.ledger, text='Ledger')
 
+        ## --- Map
+        self.checking_map = MapView(self.notebook)
+        self.notebook.add(self.checking_map, text='Checking Map')
         
         ## ---- Income
         self.income = IncomeView(self.notebook)

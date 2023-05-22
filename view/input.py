@@ -41,9 +41,8 @@ class InputView(ttk.Frame):
         save_file_btn.image = save_file_icon
         save_file_btn.pack(side='left')
 
-        self.file_name_entry = ttk.Combobox(file_bar, textvariable=self.filename, width=40)
+        self.file_name_entry = ttk.Combobox(file_bar, textvariable=self.filename, width= 40, postcommand= self._get_filenames)
         self.file_name_entry.pack(side='left')
-        self.file_name_entry['values'] = self._get_files()
         self.file_name_entry.bind('<<ComboboxSelected>>', self._open_file)
 
         new_bar = ttk.LabelFrame(tools_bar, text='New Transaction')
@@ -78,10 +77,10 @@ class InputView(ttk.Frame):
         self.editor.load(filename)
         
         
-    def _get_files(self) -> list:
+    def _get_filenames(self):
         files = (file for file in os.listdir(self.dirname) if os.path.isfile(os.path.join(self.dirname, file)))
         _files = filter(lambda x: x.endswith('.json'), files)
-        return sorted(list(map(lambda x: x.removesuffix('.json'), _files)), reverse=True)
+        self.file_name_entry['values'] = sorted(list(map(lambda x: x.removesuffix('.json'), _files)), reverse=True)
                    
     def new_blackboard(self, *args):
         basename = 'blackboard'

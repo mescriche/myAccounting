@@ -1,7 +1,7 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
-from dbase import db_session, db_currency, Account, Transaction
+from dbase import db_session, db_currency, Account, Transaction, BookEntry
 from dbase import db_get_yearRange, db_get_accounts_gname, db_get_account_code
 from .transaction import TransactionViewer, TransactionEditor, DMTransaction
 from datetime import datetime
@@ -177,8 +177,7 @@ class JournalView(ttk.Frame):
             
     def display_account(self, event):
         if iid := event.widget.focus():
-            account_gname = event.widget.item(iid)['values'][1]
-            print(account_gname)
+            account_gname = event.widget.set(iid, column='account')
             self.parent.master.ledger.account.set(account_gname)
             self.parent.master.ledger.render_filter()
             self.parent.master.notebook.select(2)

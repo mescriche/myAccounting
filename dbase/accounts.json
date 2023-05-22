@@ -104,42 +104,6 @@
             "name": "Shares"
         },
         {
-            "type": "CREDIT",
-            "content": "NOMINAL",
-            "code": "70",
-            "name": "Income"
-        },
-        {
-            "type": "CREDIT",
-            "content": "NOMINAL",
-            "code": "71",
-            "name": "Income-Payroll"
-        },
-        {
-            "type": "CREDIT",
-            "content": "NOMINAL",
-            "code": "711",
-            "name": "Income-SocialInsurance"
-        },
-        {
-            "type": "CREDIT",
-            "content": "NOMINAL",
-            "code": "72",
-            "name": "Income-Dividend"
-        },
-        {
-            "type": "CREDIT",
-            "content": "NOMINAL",
-            "code": "73",
-            "name": "Income-Interest"
-        },
-        {
-            "type": "CREDIT",
-            "content": "NOMINAL",
-            "code": "74",
-            "name": "Income-Discounts"
-        },
-        {
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "60",
@@ -378,6 +342,42 @@
             "content": "NOMINAL",
             "code": "671",
             "name": "Ins-Car"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "70",
+            "name": "Income"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "71",
+            "name": "Income-Payroll"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "711",
+            "name": "Income-SocialInsurance"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "72",
+            "name": "Income-Dividend"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "73",
+            "name": "Income-Interest"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "74",
+            "name": "Income-Discounts"
         }
     ],
     "profile": "senior"

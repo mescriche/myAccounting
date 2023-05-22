@@ -8,6 +8,7 @@
 
 	 { "type":"DEBIT",  "content":"REAL",    "code": "20",  "name":"Houses"},
 	 { "type":"DEBIT",  "content":"REAL",    "code": "21",  "name":"Land"},
+	 
 	 { "type":"DEBIT",  "content":"REAL",    "code": "22",  "name":"Vehicles"},
 	 { "type":"DEBIT",  "content":"REAL",    "code": "23",  "name":"Tools"},
 	 { "type":"DEBIT",  "content":"REAL",    "code": "24",  "name":"Furniture"},
