@@ -2,7 +2,7 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 
-from dbase import db_session, db_get_yearRange, db_currency
+from dbase import db_session, db_get_yearRange, db_currency, db_get_account_code
 from dbase import Account, Content, Type #, db_get_year
 
 
@@ -10,7 +10,6 @@ class MapView(ttk.Frame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.pack(fill='both', expand=True)
-
         columns = 'account', 'debit', 'credit', 'debtor', 'creditor'
         data = dict()
         data['account'] = {'text':'Account' , 'width':120, 'anchor':'w'}
@@ -28,9 +27,11 @@ class MapView(ttk.Frame):
         self.table.tag_configure('total', background='SteelBlue1')
         self.table.tag_configure('error', background='salmon')
         self.table.bind("<<TreeviewSelect>>", self.display_account)
-        
-            
         year_min, year = db_get_yearRange()
+        self.display_data(year)
+        
+    def display_data(self, year):
+        self.table.delete(*self.table.get_children())
         total = {'debit':0, 'credit':0, 'debtor':0, 'creditor':0}
         with db_session() as db:
             for account in db.query(Account).filter_by(content=Content.REAL).filter_by(type=Type.CREDIT):
@@ -95,12 +96,18 @@ class MapView(ttk.Frame):
         for n,iid in enumerate(self.table.get_children()):
             if iid == total_iid: continue
             if n%2 == 0: self.table.item(iid, tag='even')
+            
+    def refresh(self, year):
+        self.display_data(year)
         
     def display_account(self, event):
         if iid := event.widget.focus():
             account_gname = event.widget.set(iid, column='account')
-            self.master.master.ledger.account.set(account_gname)
-            self.master.master.ledger.render_filter()
-            self.master.master.notebook.select(2)
+            try: code = db_get_account_code(account_gname)
+            except: pass
+            else:
+                self.master.master.ledger.account.set(account_gname)
+                self.master.master.ledger.render_filter()
+                self.master.master.notebook.select(2)
         return 'break'
 

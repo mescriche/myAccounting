@@ -103,7 +103,8 @@ class LedgerView(ttk.Frame):
 
     def render_filter(self, *args):
         if gname := self.account.get():
-            code = db_get_account_code(gname)
+            try: code = db_get_account_code(gname)
+            except: raise 
             with db_session() as db:
                 account = db.query(Account).filter_by(code=code).one()
                 entries = account.entries

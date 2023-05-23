@@ -78,6 +78,7 @@ class View(ttk.Frame):
             #print(trans)
             self.journal.refresh(trans.date)
             self.ledger.refresh(trans.date)
+            self.checking_map.refresh(trans.date.year)
             self.income.refresh(trans.date.year)
             self.balance.refresh(trans.date.year)
 
