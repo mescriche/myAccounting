@@ -141,7 +141,7 @@ class BalanceView(ttk.Frame):
         _filename = os.path.join(datafile_dir, f'opening_seat_{year}.json')
         with open(_filename, 'w') as _file:
             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)        
-        messagebox.showwarning( message=f"Balance closing seat {year-1} and opening seat {year}  have been created ", parent = self )
+        messagebox.showwarning( message=f"Balance closing seat {year-1} and \nOpening seat {year}  have been created ", parent = self )
         
     def refresh(self, year):
         min_year,max_year = db_get_yearRange()

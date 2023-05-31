@@ -23,7 +23,8 @@ class MapView(ttk.Frame):
         for topic in columns:
             self.table.heading(topic, text=data[topic]['text'])
             self.table.column(topic, width=data[topic]['width'], anchor=data[topic]['anchor'])
-        self.table.tag_configure('even', background='gray90')
+        self.table.tag_configure('even_real', background='bisque')
+        self.table.tag_configure('even_nominal', background='lavender')
         self.table.tag_configure('total', background='SteelBlue1')
         self.table.tag_configure('error', background='salmon')
         self.table.bind("<<TreeviewSelect>>", self.display_account)
@@ -32,70 +33,77 @@ class MapView(ttk.Frame):
         
     def display_data(self, year):
         self.table.delete(*self.table.get_children())
-        total = {'debit':0, 'credit':0, 'debtor':0, 'creditor':0}
+        values = '-','-','-','-'
+        total_iid = self.table.insert('','end', values=values, tag='total')
         with db_session() as db:
+            rtotal = {'debit':0, 'credit':0, 'debtor':0, 'creditor':0}
             for account in db.query(Account).filter_by(content=Content.REAL).filter_by(type=Type.CREDIT):
                 debit = account.debit(year)
                 credit = account.credit(year)
                 balance = account.balance(year)
-                values = account.gname, db_currency(debit), db_currency(credit),\
-                    db_currency(balance) if balance < 0 else '-' ,\
-                    db_currency(balance) if balance > 0 else '-'
-                if balance != 0:
-                    self.table.insert('','end', values=values )
-                total['debit']+= debit
-                total['credit'] += credit
-                total['creditor'] += balance if balance > 0 else 0
-                total['debtor'] += balance if balance < 0 else 0
+                values = account.gname, db_currency(debit), db_currency(credit), '-' , db_currency(balance)
+                if debit or credit:
+                    self.table.insert('','end', values=values, tag='real' )
+                rtotal['debit']+= debit
+                rtotal['credit'] += credit
+                rtotal['creditor'] += balance
+
             for account in db.query(Account).filter_by(content=Content.REAL).filter_by(type=Type.DEBIT):
                 debit = account.debit(year)
                 credit = account.credit(year)
                 balance = account.balance(year)
-                values = account.gname, db_currency(debit), db_currency(credit),\
-                    db_currency(balance) if balance > 0 else '-' ,\
-                    db_currency(balance) if balance < 0 else '-'
-                if balance != 0:
-                    self.table.insert('','end', values=values )
-                total['debit']+= debit
-                total['credit'] += credit
-                total['creditor'] += balance if balance < 0 else 0
-                total['debtor'] += balance if balance > 0 else 0
+                values = account.gname, db_currency(debit), db_currency(credit), db_currency(balance) , '-'
+                if debit or credit:
+                    self.table.insert('','end', values=values, tag='real' )
+                rtotal['debit']+= debit
+                rtotal['credit'] += credit
+                rtotal['debtor'] += balance
+                
+            ntotal = {'debit':0, 'credit':0, 'debtor':0, 'creditor':0}
             for account in db.query(Account).filter_by(content=Content.NOMINAL).filter_by(type=Type.CREDIT):
                 debit = account.debit(year)
                 credit = account.credit(year)
                 balance = account.balance(year)
-                values = account.gname, db_currency(debit), db_currency(credit),\
-                    db_currency(balance) if balance < 0 else '-' ,\
-                    db_currency(balance) if balance > 0 else '-'
-                if balance != 0:
-                    self.table.insert('','end', values=values )
-                total['debit']+= debit
-                total['credit'] += credit
-                total['creditor'] += balance if balance > 0 else 0
-                total['debtor'] += balance if balance < 0 else 0
+                values = account.gname, db_currency(debit), db_currency(credit), '-', db_currency(balance)
+                if debit or credit:
+                    self.table.insert('','end', values=values, tag='nominal' )
+                ntotal['debit']+= debit
+                ntotal['credit'] += credit
+                ntotal['creditor'] += balance
+
             for account in db.query(Account).filter_by(content=Content.NOMINAL).filter_by(type=Type.DEBIT):
                 debit = account.debit(year)
                 credit = account.credit(year)
                 balance = account.balance(year)
-                values = account.gname, db_currency(debit), db_currency(credit),\
-                    db_currency(balance) if balance > 0 else '-' ,\
-                    db_currency(balance) if balance < 0 else '-'
-                if balance != 0:
-                    self.table.insert('','end', values=values )
-                total['debit']+= debit
-                total['credit'] += credit
-                total['creditor'] += balance if balance > 0 else 0
-                total['debtor'] += balance if balance < 0 else 0
-        values = 'TOTAL', db_currency(total['debit']), db_currency(total['credit']),\
-            db_currency(total['debtor']), db_currency(total['creditor'])
-        total_iid = self.table.insert('','end', values=values, tag='total')
+                values = account.gname, db_currency(debit), db_currency(credit), db_currency(balance), '-'
+                if debit or credit :
+                    self.table.insert('','end', values=values, tag='nominal' )
+                ntotal['debit'] += debit
+                ntotal['credit'] += credit
+                ntotal['debtor'] += balance
+                
+        total = {
+            'debit': rtotal['debit'] + ntotal['debit'],
+            'credit': rtotal['credit'] + ntotal['credit'],
+            'debtor': rtotal['debtor'] + ntotal['debtor'],
+            'creditor': rtotal['creditor'] + ntotal['creditor']
+        }
+            
+        if len(self.table.get_children()) > 1:                
+            values = 'TOTAL', db_currency(total['debit']), db_currency(total['credit']),\
+                db_currency(total['debtor']), db_currency(total['creditor'])            
+            self.table.item(total_iid, values=values)
+
+            if round(total['debit'],2)  != round(total['credit'],2): self.table.item(total_iid, tag='error')
+            if round(total['debtor'],2) != round(total['creditor'],2): self.table.item(total_iid, tag='error')
         
-        if total['debit'] != total['credit']: self.table.item(total_iid, tag='error')
-        if total['debtor'] != total['creditor']: self.table.item(total_iid, tag='error')
-        
-        for n,iid in enumerate(self.table.get_children()):
-            if iid == total_iid: continue
-            if n%2 == 0: self.table.item(iid, tag='even')
+            for n,iid in enumerate(self.table.get_children()):
+                if iid == total_iid: continue
+                if n%2 == 0:
+                    if self.table.tag_has('real', iid) : self.table.item(iid, tag='even_real')
+                    elif self.table.tag_has('nominal', iid): self.table.item(iid, tag='even_nominal')
+        else:
+            self.table.delete(*self.table.get_children())
             
     def refresh(self, year):
         self.display_data(year)
