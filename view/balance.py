@@ -23,13 +23,11 @@ class BalanceView(ttk.Frame):
         year_frame = ttk.Frame(title_frame)
         year_frame.pack(side='left')
         ttk.Label(year_frame, text = f"{'YEAR: ':>10}").pack(side='left', ipadx=0, ipady=0)
-        self.year_combo = ttk.Combobox(year_frame, state='readonly', width=5, textvariable=self.eyear)
+        self.year_combo = ttk.Combobox(year_frame, state='readonly', width=5, textvariable=self.eyear, postcommand=self._get_year)
         self.year_combo.pack(side='left', ipadx=0, ipady=0)
-        min_year,max_year = db_get_yearRange()
-        values =[*range(max_year, min_year-1, -1)]
-        self.year_combo['values'] = values
         self.year_combo.bind('<<ComboboxSelected>>', self.render)
-        self.eyear.set(values[0])
+        self._get_year()
+        self.year_combo.current(0)
         ttk.Label(title_frame, text = '').pack(side='left', expand=True, fill='x')
         ttk.Button(title_frame, text='Closing Seat', command=self.create_closing_opening_seat).pack(side='left')
         
@@ -77,7 +75,11 @@ class BalanceView(ttk.Frame):
         self.claims.tag_configure('total', background='lightgray')
         self.claims.bind('<<TreeviewSelect>>', self.display_concept_items)        
         self.render()
-
+    def _get_year(self):
+        min_year,max_year = db_get_yearRange()
+        values =[*range(max_year, min_year-1, -1)]
+        self.year_combo['values'] = values
+        
     def create_closing_opening_seat(self):
         def collect_codes(data:dict) -> list:
             codes = list()
@@ -118,7 +120,7 @@ class BalanceView(ttk.Frame):
         _data = [DMTransaction(id=0, date=date, description=description, entries=closing_entries),]
         root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         datafile_dir = os.path.join(root_dir, 'datafiles')
-        _filename = os.path.join(datafile_dir, f'balance_closing_seat_{year}.json')
+        _filename = os.path.join(datafile_dir, f'{year}_balance_closing_seat.json')
         with open(_filename, 'w') as _file:
             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
 
@@ -138,10 +140,10 @@ class BalanceView(ttk.Frame):
         _data = [DMTransaction(id=0, date=date, description=description, entries=opening_entries),]
         root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         datafile_dir = os.path.join(root_dir, 'datafiles')
-        _filename = os.path.join(datafile_dir, f'opening_seat_{year}.json')
+        _filename = os.path.join(datafile_dir, f'{year}_opening_seat.json')
         with open(_filename, 'w') as _file:
             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)        
-        messagebox.showwarning( message=f"Balance closing seat {year-1} and \nOpening seat {year}  have been created ", parent = self )
+        messagebox.showwarning( message=f"{year-1} Balance closing seat file and \n{year} Opening seat file  have been created ", parent = self )
         
     def refresh(self, year):
         min_year,max_year = db_get_yearRange()

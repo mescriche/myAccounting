@@ -1,7 +1,7 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
-from dbase import db_session, db_currency, Account, Type, db_get_yearRange
+from dbase import Transaction, db_session, db_currency, Account, Type, db_get_yearRange
 from .transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
 from .report import ConceptTree
 from datetime import datetime
@@ -22,13 +22,12 @@ class IncomeView(ttk.Frame):
         year_frame = ttk.Frame(title_frame)
         year_frame.pack(side='left')
         ttk.Label(year_frame, text = f"{'YEAR: ':>10}").pack(side='left', ipadx=0, ipady=0)
-        self.year_combo = ttk.Combobox(year_frame, state='readonly', width=5, textvariable=self.eyear)
+        self.year_combo = ttk.Combobox(year_frame, state='readonly', width=5, textvariable=self.eyear, postcommand=self._get_year)
         self.year_combo.pack(side='left', ipadx=0, ipady=0)
-        min_year,max_year = db_get_yearRange()
-        values =[*range(max_year, min_year-1, -1)]
-        self.year_combo['values'] = values
         self.year_combo.bind('<<ComboboxSelected>>', self.render)
-        self.eyear.set(values[0])
+        self._get_year()
+        self.year_combo.current(0)
+
         ttk.Label(title_frame, text = '').pack(side='left', expand=True, fill='x')
         ttk.Button(title_frame, text='Closing Seat', command=self.create_income_closing_seat).pack(side='left')
         
@@ -87,10 +86,12 @@ class IncomeView(ttk.Frame):
         pw.add(labelframe, weight=1)
         ttk.Label(labelframe, textvariable=self.summary, anchor='c').pack()
         self.render()
+
+    def _get_year(self):
+        min_year,max_year = db_get_yearRange()
+        self.year_combo['values'] = values = [*range(max_year, min_year-1, -1)]
         
     def refresh(self, year):
-        min_year,max_year = db_get_yearRange()
-        self.year_combo['values'] = values =[*range(max_year, min_year-1, -1)]
         self.eyear.set(year)
         self.render()
         
@@ -161,10 +162,26 @@ class IncomeView(ttk.Frame):
         _data = [DMTransaction(id=0, date=date, description=description, entries=entries),]
         root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         datafile_dir = os.path.join(root_dir, 'datafiles')
-        _filename = os.path.join(datafile_dir, f'income_closing_seat_{self.eyear.get()}.json')
+        _filename = os.path.join(datafile_dir, f'{year}_income_closing_seat.json')
         with open(_filename, 'w') as _file:
             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
-        messagebox.showwarning( message=f"Income closing seat {year} has been created ", parent = self )
+
+        with db_session() as db:
+            min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
+            max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
+            query = db.query(Transaction).filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)
+            if items := [item for item in query]:
+                _data = [DMTransaction.from_DBTransaction(item) for item in items]
+                _data = _data[1:]
+                for n,item in enumerate(_data, start=1): item.id = n
+                root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+                datafile_dir = os.path.join(root_dir, 'datafiles')
+                filename = f'{year}_app_seats.json'
+                _filename = os.path.join(datafile_dir, filename )
+                with open(_filename, 'w') as _file:
+                    json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
+            
+        messagebox.showwarning( message=f"{year} Income closing seat file and \n{year} seats file have been created ", parent = self )
 
             
     def display_concept_items(self, event):

@@ -19,21 +19,20 @@ class LedgerView(ttk.Frame):
         frame = Frame(self.filter)
         frame.pack(side='left', padx=3)
         ttk.Label(frame, text='Account:').pack(side='left', ipadx=2, ipady=2)
-        self.acc_combo = ttk.Combobox(frame, state='readonly', width=26, textvariable=self.account)
+        self.acc_combo = ttk.Combobox(frame, state='readonly', width=26, textvariable=self.account, postcommand=self._get_accounts)
         self.acc_combo.pack(ipadx=2, ipady=2)
-        self.acc_combo['values'] = db_get_accounts_gname(False)
         self.acc_combo.bind('<<ComboboxSelected>>', self.render_filter)
-        #acc_combo.current(0)
+        self._get_accounts()
+        self.acc_combo.current(0)
         
         self.etrans_year = StringVar()
         frame = Frame(self.filter)
         frame.pack(side='left', padx=3)
         ttk.Label(frame, text='Year:').pack(side='left', ipadx=2, ipady=2)
-        self.year_combo = ttk.Combobox(frame, state='readonly', width=5, textvariable=self.etrans_year)
+        self.year_combo = ttk.Combobox(frame, state='readonly', width=5, textvariable=self.etrans_year, postcommand=self._get_years)
         self.year_combo.pack(ipadx=2, ipady=2)
-        min_year,max_year = db_get_yearRange()
-        self.year_combo['values'] = [*range(max_year, min_year-1, -1)] + ['']
         self.year_combo.bind('<<ComboboxSelected>>', self.render_filter)
+        self._get_years()
         self.year_combo.current(0)
 
         self.etrans_date = StringVar()
@@ -80,10 +79,14 @@ class LedgerView(ttk.Frame):
 
         self.render_filter()
 
-    def refresh(self, date):
+    def _get_accounts(self):
         self.acc_combo['values'] = db_get_accounts_gname(False)
+        
+    def _get_years(self):
         min_year,max_year = db_get_yearRange()
         self.year_combo['values'] = [*range(max_year, min_year-1, -1)] + ['']
+        
+    def refresh(self, date):
         self.etrans_year.set(date.year)
         #self.etrans_date.set(date.strftime('%d-%m-%Y'))
         #self.render_filter()

@@ -1,16 +1,19 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from tkinter import filedialog
-from .transaction import TransactionEditor
+from .transaction import DMTransaction, DMTransactionEncoder
 from .input import InputView
 from .journal import JournalView
 from .ledger import LedgerView
 from .income import IncomeView
 from .balance import BalanceView
+from .save import askSaveYearToFileDialog
 from .map import MapView
 from dbase import db_session, Transaction
+from datetime import datetime
 from locale import currency
+import os, json
 
 class View(ttk.Frame):
     color_schemes = {
@@ -118,7 +121,7 @@ class View(ttk.Frame):
         
         file_menu = Menu(menu_bar)
         file_menu.add_separator()
-        #file_menu.add_command(label='Upload', command=self.file_upload)
+        file_menu.add_command(label='Save', command=self.save_year_to_file)
         file_menu.add_command(label='Quit', command=self.exit_app)
         menu_bar.add_cascade(label='File', menu=file_menu)
         
@@ -157,6 +160,28 @@ class View(ttk.Frame):
         menu_bar.add_cascade(label='View', menu=view_menu)
         self.master.config(menu=menu_bar)
 
+    def save_year_to_file(self):
+        answer, year = askSaveYearToFileDialog(self)
+        if answer:
+            with db_session() as db:
+                min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
+                max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
+                query = db.query(Transaction).filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)
+                if items := [item for item in query]:
+                    _data = [DMTransaction.from_DBTransaction(item) for item in items]
+                    _data = _data[1:]
+                    for n,item in enumerate(_data, start=1): item.id = n
+                    root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+                    datafile_dir = os.path.join(root_dir, 'datafiles')
+                    filename = f'{year}_app_seats.json'
+                    _filename = os.path.join(datafile_dir, filename )
+                    with open(_filename, 'w') as _file:
+                        json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
+
+                    title = f"Save year {year} seats to file"
+                    msg = f"{filename} saved "
+                    messagebox.showinfo(title=title, message=msg, parent = self)
+        
     def exit_app(self):
         self.parent.destroy()
         

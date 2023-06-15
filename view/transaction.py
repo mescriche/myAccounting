@@ -1,7 +1,6 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
-#from tkinter.simpledialog import Dialog
 from datetime import datetime, date
 from dataclasses import dataclass
 from dbase import db_session, Account, Transaction, Type, BookEntry, db_currency, db_get_accounts_gname
