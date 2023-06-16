@@ -35,7 +35,6 @@ def _place_window(w, parent=None):
     w.wm_geometry('+%d+%d' % (x, y))
     w.wm_deiconify() # Become visible at the desired location
 
-
     
 class Dialog(Toplevel):
     def __init__(self, parent, title=None):

@@ -75,6 +75,7 @@ class BalanceView(ttk.Frame):
         self.claims.tag_configure('total', background='lightgray')
         self.claims.bind('<<TreeviewSelect>>', self.display_concept_items)        
         self.render()
+        
     def _get_year(self):
         min_year,max_year = db_get_yearRange()
         values =[*range(max_year, min_year-1, -1)]

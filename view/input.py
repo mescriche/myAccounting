@@ -9,8 +9,8 @@ from dbase import db_session, Account, Transaction, BookEntry, db_get_account_co
 from enum import Enum
 import os, re
 from .transaction import DMTransaction, TransactionEditor, askTransactionRecordDialog
-from .excelviewer import ExcelEditor
-from .textviewer import TextEditor
+from .excel_editor import ExcelEditor
+from .text_editor import TextEditor
 
 class InputView(ttk.Frame):
     def __init__(self, parent, **kwargs):
