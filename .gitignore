@@ -173,3 +173,4 @@ datafiles/accounts_db_new_mev_2022.json
 datafiles/accounts_db_new_mev_2023.json
 dbase/accounting.db
 importApp.py
+*.py~

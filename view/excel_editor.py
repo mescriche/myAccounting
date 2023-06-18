@@ -1,7 +1,8 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
-from tkinter.simpledialog import Dialog
+#from tkinter.simpledialog import Dialog
+from .dialog import Dialog
 from dbase import db_get_accounts_gname, db_get_profile, Type, db_currency
 from .excelreader import create_excel_reader
 from dataclasses import asdict
@@ -36,7 +37,8 @@ class ExcelEditor(Dialog):
         _labelframe = ttk.Labelframe(labelframe, text='Account')
         _labelframe.pack(side='left')
         account = ttk.Combobox(_labelframe, state='readonly', textvariable=self.filter_account, width=30)
-        account.config(values= [''] + db_get_accounts_gname())
+        account.config(values= ['Any', 'None'] + db_get_accounts_gname())
+        account.current(0)
         account.pack(side='left')
         #account.bind('<<ComboboxSelected>>', self._apply_to_filter)
         
@@ -100,7 +102,7 @@ class ExcelEditor(Dialog):
             else:
                 self.table.set(self.master_account_iid, column='amount', value=db_currency(total))
 
-        self.table.config(height=25)
+        self.table.config(height=20)
         
         self.entry_iids = [iid for iid in self.table.get_children()]
         return self.table
@@ -214,11 +216,14 @@ class ExcelEditor(Dialog):
             self.keyword_wdgt['values'] += add_on
 
         account = self.filter_account.get()
-        for iid in self.table.get_children():
-            item_comment = self.table.set(iid, column='description')
-            item_account = self.table.set(iid, column='account')
-            if  keyword in item_comment and account == item_account: pass
-            else: self.table.detach(iid)
+        if account != 'Any':
+            for iid in self.table.get_children():
+                item_account = self.table.set(iid, column='account')
+                if item_account != account: self.table.detach(iid)
+        if keyword:
+            for iid in self.table.get_children():
+                item_comment = self.table.set(iid, column='description')
+                if  keyword not in item_comment: self.table.detach(iid)
             
         if self.master_account_view.get() == 'show':
             self.table.move(self.master_account_iid, '', 0)
@@ -229,7 +234,7 @@ class ExcelEditor(Dialog):
     def _clear_filter_view(self):
         self.filter_keyword.set('')
         self.filter_account.set('')
-        for iid in self.entries_iids:
+        for iid in self.entry_iids:
             if iid != self.master_account_iid:
                 self.table.move(iid, '', 0) #reattach
     

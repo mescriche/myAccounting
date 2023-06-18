@@ -177,7 +177,7 @@ class InputView(ttk.Frame):
         filename = filedialog.askopenfilename(defaultextension="*.xlsx", initialdir=self.dirname,
                                               filetypes=[("All files", "*.*"),("Excel Documents","*.xlsx")])
         if filename:
-            editor = ExcelEditor(self, filename)
+            editor = ExcelEditor(None, filename)
             trans_list = editor.trans_list
             if trans_list:
                 self.editor.add_new_transaction(trans_list)
