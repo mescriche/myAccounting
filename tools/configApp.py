@@ -12,9 +12,18 @@ def collect_codes(data:dict) -> list:
 
 parser = argparse.ArgumentParser(prog='configApp.py')
 parser.add_argument('profile', choices=['student', 'senior'], help="profile to configure the application")
+parser.add_argument("-u", '--user', nargs=1, help="username used to find out configuration <profile>_<username>.json file")  
 parser.add_argument("-c","--dbclean", help="delete db content", action="store_true")
 args = parser.parse_args()
-print("... procesing {} profile ...".format(args.profile))
+#print(args)
+
+if args.user:
+    basename = f'{args.profile}_{args.user[0]}'
+    print(f'... procesing {args.profile} profile for user {args.user[0]} ...')
+else:
+    basename = f'{args.profile}'
+    print("... procesing {} profile ...".format(args.profile))
+    
 
 config_dir = 'configfiles'
 view_dir = 'view'
@@ -22,14 +31,16 @@ dbase_dir = 'dbase'
 tools_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(tools_dir)
 config_dir = os.path.join(root_dir, config_dir)
-source = os.path.join(config_dir, f"{args.profile}.json")
+
+source = os.path.join(config_dir, f"{basename}.json")
+print(f'... searching file {source}')
 
 balancefile = 'balance.json'
 incomefile = 'income.json'
 accountsfile = 'accounts.json'
 
 if not os.path.isfile(source):
-    print(f"{args.profile} profile is not available")
+    print(f"{source} file is not available")
 else:
     with open(source) as _file:
         try: 

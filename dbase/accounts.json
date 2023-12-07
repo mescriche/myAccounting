@@ -77,13 +77,21 @@
             "type": "DEBIT",
             "content": "REAL",
             "code": "511",
-            "name": "OpenBank Current Account"
+            "name": "OpenBank Current Account",
+            "parameters": {
+                "IBAN": "ES65",
+                "CCC": "0073 0100 5005 2844 0547"
+            }
         },
         {
             "type": "DEBIT",
             "content": "REAL",
             "code": "512",
-            "name": "OpenBank Savings Account"
+            "name": "OpenBank Savings Account",
+            "parameters": {
+                "IBAN": "ES80",
+                "CCC": "0073 0100 5801 5473 8558"
+            }
         },
         {
             "type": "DEBIT",
@@ -257,7 +265,7 @@
             "type": "DEBIT",
             "content": "NOMINAL",
             "code": "634",
-            "name": "ExpV-Motorway"
+            "name": "ExpV-Toll"
         },
         {
             "type": "DEBIT",
@@ -378,6 +386,12 @@
             "content": "NOMINAL",
             "code": "74",
             "name": "Income-Discounts"
+        },
+        {
+            "type": "CREDIT",
+            "content": "NOMINAL",
+            "code": "75",
+            "name": "Income-Regularizations"
         }
     ],
     "profile": "senior"

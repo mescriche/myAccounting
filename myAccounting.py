@@ -1,5 +1,6 @@
 __author__ = 'Manuel Escriche'
 import locale
+
 locale.setlocale(locale.LC_ALL, '')
 
 from tkinter import *

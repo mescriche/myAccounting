@@ -1,20 +1,30 @@
 __author__ = 'Manuel Escriche'
-import os, re, copy
-import openpyxl
+import os, re, copy, locale
+import openpyxl, pandas
 from datetime import datetime, date, time
 from calendar import monthrange
+import locale
 
 class ExcelReader:
-    def __init__(self, path, filename):
+    def __init__(self, data):
         print(self.__class__.__name__)
-        basename, self._ext = os.path.splitext(filename)
-        try: self._wb = openpyxl.load_workbook(os.path.join(path, filename), data_only=True)
-        except: raise
-        self._sheet = self._wb.worksheets[0]
-                                  
+        print(data)
+
+    @property
+    def entity(self):
+        return self._entity_name
+    
     @property
     def account(self):
         return self._account
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def owner(self):
+        return self._owner
     
     @property
     def downloaded_on(self):
@@ -35,33 +45,57 @@ class ExcelReader:
     def __repr__(self):
         return 'Reader({0._entity_name} | {0.journal} | {0.downloaded_on} | {0.filename} | #{0.size} records)'.format(self)
 
+    @classmethod
+    def from_xls(cls, filename):
+        basename, cls._ext = os.path.splitext(filename)
+        try:
+            df = pandas.read_html(f'{filename}', thousands='.', decimal=',')
+        except: raise
+        else:
+            return cls(df[0])
+
+    @classmethod
+    def from_xlsx(cls, filename):
+        basename, cls._ext = os.path.splitext(filename)
+        try:
+            wb = openpyxl.load_workbook(filename, data_only=True)
+        except: raise
+        else:
+            ws = wb.worksheets[0]
+            data = pandas.DataFrame(ws.values)
+            return cls(data)
+
     
 class OpenBankAccountReader(ExcelReader):
-    def __init__(self, path, filename):
-        super().__init__(path, filename)
+    def __init__(self, data):
+        super().__init__(data)
         self._entity_name = re.sub(r'AccountReader', '', self.__class__.__name__)
-        if self._sheet.cell(row=4, column=4).value is not None:
-            self._account = re.sub(r'\s+', '', self._sheet.cell(row=4, column=4).value)
-            match = re.match(r'\d{20}', self._account)
-            if match is None: raise Exception("Missing Bank Account number")
+        data.drop(columns=[0,2,4,6,8], inplace=True)
+        
+        _datetime = data.iat[2,4]
+        if match := re.search(r'\d{2}/\d{2}/\d{4}\s\d+:\d{2}', _datetime):
+            self._download_date = datetime.strptime(match.group(0), '%d/%m/%Y %H:%M')
+        else: raise Exception("Missing download date")
+        
+        _account = re.sub(r'\s+', '', data.iat[3,1])
+        if match := re.match(r'\d{20}', _account):
+            self._account = match.group(0)
         else: raise Exception("Missing Bank Account number")
         
-        match = re.search(r'\d{2}/\d{2}/\d{4}\s\d+:\d{2}', self._sheet.cell(row=3, column=10).value)
-        if match is None:
-            raise InappropiateFileFormat("Missing download date")
-        self._download_date = datetime.strptime(match.group(0), '%d/%m/%Y %H:%M')
-        
-        input_data = [[cell for cell in row if cell is not None] for row in self._sheet.iter_rows(values_only=True)]        
-        input_data = [row for row in input_data if len(row) == 5]
+        self._description = data.iat[5,1]
+        self._owner = data.iat[6,1]
+
+        _data = data.iloc[11:].dropna(how='any').reset_index()
+        #print(_data.to_dict('records'))
         
         self._data = []
-        for item in input_data:
-            try: _date = datetime.strptime(item[0], '%d/%m/%Y').date() if isinstance(item[0],str) else item[0].date()
-            except ValueError:pass
-            else :
-                amount  = float(re.sub(r',', '.', re.sub(r'\.', '', item[3]))) if isinstance(item[3], str) else item[3]
-                balance = float(re.sub(r',', '.', re.sub(r'\.', '', item[4]))) if isinstance(item[4], str) else item[4]
-                self._data.append({'odate':_date, 'vdate':_date, 'comment':str(item[2]), 'amount': amount, 'balance': balance })
+        for index,row in _data.iterrows():
+            _odate = datetime.strptime(row[1], '%d/%m/%Y').date() if isinstance(row[1],str) else row[1].date()
+            _vdate =  datetime.strptime(row[3], '%d/%m/%Y').date() if isinstance(row[3],str) else row[3].date()
+            _comment = row[5]
+            _amount = locale.atof(row[7]) if isinstance(row[7], str) else row[7]
+            _balance = locale.atof(row[9]) if isinstance(row[9], str) else row[9]
+            self._data.append({'odate':_odate, 'vdate':_vdate, 'comment':_comment, 'amount':_amount, 'balance':_balance})
 
 class OpenBankCardReader(ExcelReader):
     def __init__(self, path, filename):
@@ -81,9 +115,8 @@ class OpenBankCardReader(ExcelReader):
             try: _date = datetime.strptime(item[0], '%d/%m/%Y').date()
             except ValueError: pass
             else:
-                amount = float(re.sub(r',', '.', re.sub(r'\.', '', item[2]))) if isinstance(item[2], str) else float(item[2])
-                _data.append({'odate':_date, 'vdate':_date, 'comment': str(item[3]),
-                              'amount': amount, 'balance': None})
+                amount = locale.atof(item[2]) if isinstance(item[2], str) else item[2]
+                _data.append({'odate':_date, 'vdate':_date, 'comment': str(item[3]), 'amount': amount, 'balance': None})
         self._data = [item for item in reversed(_data)]
         self._download_date = datetime.combine(self._data[0]['odate'], time(0,0,0,0))
 
@@ -111,7 +144,8 @@ class OpenBankCardReader2(ExcelReader):
             except ValueError:pass
             else:
                 comment = 'Credit: COMPRA EN ' + str(item[2]) + ' EN ' + str(item[4])
-                self._data.append({'odate':_date, 'vdate':_date, 'comment': comment, 'amount': item[-2], 'balance': None })
+                amount = locale.atof(item[-2]) if isinstance(item[-2], str) else item[-2]
+                self._data.append({'odate':_date, 'vdate':_date, 'comment': comment, 'amount': amount, 'balance': None })
         
 class IngDirectReader(ExcelReader):
     def __init__(self, path, filename):
@@ -137,8 +171,8 @@ class IngDirectReader(ExcelReader):
             try : _date = datetime.strptime(item[0], '%d/%m/%Y').date() if isinstance(item[0], str) else item[0].date()
             except ValueError: pass
             else :
-                amount  = float(re.sub(r',', '.', re.sub(r'\.', '', item[-2]))) if isinstance(item[-2], str) else float(item[-2])
-                balance = float(re.sub(r',', '.', re.sub(r'\.', '', item[-1]))) if isinstance(item[-1], str) else float(item[-1])
+                amount  = locale.atof(item[-2]) if isinstance(item[-2], str) else item[-2]
+                balance = locale.atof(item[-1]) if isinstance(item[-1], str) else item[-1]
                 self._data.append({'odate': _date, 'vdate': _date, 'comment': '->'.join(item[1:-3]),
                                    'amount': amount, 'balance': balance})
 
@@ -161,8 +195,8 @@ class BankinterAccountReader(ExcelReader):
                 _datev =  datetime.strptime(item[1], '%d/%m/%Y').date() if isinstance(item[1],str) else item[1].date()
             except ValueError: pass
             else:
-                amount  = float(re.sub(r',', '.', re.sub(r'\.', '', item[3]))) if isinstance(item[3], str) else item[3]
-                balance = float(re.sub(r',', '.', re.sub(r'\.', '', item[4]))) if isinstance(item[4], str) else item[4]
+                amount =  locale.atof(item[3]) if isinstance(item[3], str) else item[3]
+                balance = locale.atof(item[4]) if isinstance(item[4], str) else item[4]
                 _data.append({'odate':_datec, 'vdate':_datev, 'comment':str(item[2]), 'amount': amount, 'balance': balance })
         self._data = [item for item in reversed(_data)]
         #for item in self._data: print(item)
@@ -199,21 +233,27 @@ class BankinterCreditCardReader(ExcelReader):
         
 def create_excel_reader(filename:str) -> ExcelReader:
     assert os.path.exists(filename), filename + " doesn't exists"
-    assert filename.endswith(".xlsx"), filename + " hasn't got .xlsx extension"
-    path = os.path.dirname(filename)
-    fname = os.path.basename(filename)
-    readers = ('OpenBankAccountReader', 'OpenBankCardReader','OpenBankCardReader2'
-               'IngDirectReader',
-               'BankinterAccountReader','BankinterCreditCardReader' )
+    assert filename.endswith(".xlsx") or filename.endswith(".xls"), filename + " hasn't got .xlsx or .xls extension"
+    #path = os.path.dirname(filename)
+    #fname = os.path.basename(filename)
+    readers = ('OpenBankAccountReader',)
+    #readers = ('OpenBankAccountReader', 'OpenBankCardReader','OpenBankCardReader2',
+    #           'IngDirectReader',
+    #           'BankinterAccountReader','BankinterCreditCardReader' )
     for readername in readers:
-        action = f"{readername}('{path}','{fname}')"
+        if filename.endswith(".xlsx"):
+            action = f"{readername}.from_xlsx('{filename}')"
+        elif filename.endswith(".xls"):
+            action = f"{readername}.from_xls('{filename}')"
+        else: continue
         try: reader = eval(action)
-        except Exception: pass
+        except Exception as e:
+            print(f'{readername}: {e}')
         else:
-            print('#{} records en {} downloaded on {}'.format(len(reader.data),filename, reader.downloaded_on))
+            print('#{} records en {} downloaded on {}'.format(len(reader.data), filename, reader.downloaded_on))
             return reader
     else:
-        raise Exception(f'OpenBank, Bankinter and IngDirect excel readers failed on {filename}')
+        raise Exception(f"OpenBank, Bankinter and IngDirect excel readers failed on {filename}")
 
     
 

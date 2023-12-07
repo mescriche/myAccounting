@@ -1,6 +1,6 @@
 __author__ = 'Manuel Escriche'
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, Float, PickleType
+from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, Float, JSON
 from sqlalchemy.orm import relationship, backref, object_session
 from sqlalchemy import func, select, CheckConstraint
 from datetime import datetime, date
@@ -12,7 +12,6 @@ Base = declarative_base()
 Type = enum.Enum('Type', ['DEBIT', 'CREDIT'])
 Content = enum.Enum('Content', ['REAL', 'NOMINAL']) 
 #Content = enum.Enum('Content', ['STATE', 'FLOW'])
-#Content = enum.Enum('Content', ['PROPERTY', 'ACTIVITY'])
 #Content = enum.Enum('Content', ['BALANCE', 'INCOME'])
 
 class Account(Base):
@@ -22,6 +21,7 @@ class Account(Base):
     content = Column(Enum(Content))
     code = Column(String(6),  unique=True)
     name = Column(String(50), unique=True)
+    parameters = Column(JSON, nullable=True)
     entries = relationship('BookEntry', back_populates='account')
 
     def debit(self, year=None) -> float:

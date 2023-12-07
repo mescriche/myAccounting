@@ -2,34 +2,52 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
 #from tkinter.simpledialog import Dialog
-from .dialog import Dialog
-from dbase import db_get_accounts_gname, db_get_profile, Type, db_currency
+#from .dialog import Dialog
+from dbase import db_session, db_get_accounts_gname, db_get_profile, Type, Account,  db_currency
 from .excelreader import create_excel_reader
 from dataclasses import asdict
 from .transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
 import json, os, pickle, datetime
 
-class ExcelEditor(Dialog):
+class ExcelEditor(ttk.Frame):
     #errormessage = 'Not a Transaction'
-    def __init__(self, master, filename, **kwargs):
-        title = 'Excel Transactions Editor'
+    def __init__(self, master, **kwargs):
         self.trans_list = None
-        self.filename = filename
-        super().__init__(master, title)
+        self.filename = None
+        super().__init__(master, **kwargs)
+        self.pack(fill='both', expand=True)
         
-    def body(self, master):
-        frame = ttk.Frame(master)
+        frame = ttk.Labelframe(self, text='About File')
+        frame.pack(expand=True, fill='x')
+
+        self.owner= StringVar()
+        ttk.Label(frame, textvariable=self.owner).grid(row=1, column=1,  padx=10, sticky='w')
+        
+        self.entity = StringVar()
+        ttk.Label(frame, textvariable=self.entity).grid(row=1, column=2, padx=10, sticky='w')
+        
+        self.description = StringVar()
+        ttk.Label(frame, textvariable=self.description).grid(row=1, column=3,  padx=10, sticky='w')
+
+        self.file_account = StringVar()
+        ttk.Label(frame, textvariable=self.file_account).grid(row=1, column=4,  padx=10, sticky='w')
+
+        self._filename = StringVar()
+        ttk.Label(frame, textvariable=self._filename).grid(row=2, column=1, columnspan=2, padx=10, sticky='w')
+        
+        self.download = StringVar()
+        ttk.Label(frame, textvariable=self.download).grid(row=2, column=3,  padx=10, sticky='w')
+
+        self.account = StringVar()
+        ttk.Label(frame, textvariable=self.account).grid(row=2, column=4, padx=10, sticky='w')
+        
+        self.body()
+        #self.buttonbox()
+        
+    def body(self):
+        frame = ttk.Frame(self)
         frame.pack(fill='x')
 
-        self.master_account_view = StringVar()
-        _labelframe = ttk.Labelframe(frame, text='Master Acc')
-        _labelframe.pack(side='left', fill='x')
-        macc_view = ttk.Combobox(_labelframe, textvariable=self.master_account_view, width=7)
-        macc_view.pack(side='left', padx=10, pady=10)
-        macc_view.config(values=['show', 'hide'])
-        macc_view.current(0)
-        macc_view.bind('<<ComboboxSelected>>', self._set_filter_view)
-        
         labelframe = ttk.Labelframe(frame, text='Filter')
         labelframe.pack(side='left', fill='x')
 
@@ -61,11 +79,11 @@ class ExcelEditor(Dialog):
         _labelframe.pack(side='left', fill='x')
 
         
-        self.table = ttk.Treeview(master)
+        self.table = ttk.Treeview(self)
         self.table.pack(expand=True, fill='both')
         self.table.config(selectmode='browse')
         self.table.config(show='headings')
-        columns = ('date','amount', 'account', 'description')
+        columns = ('account', 'date','amount','description')
         self.table.config(columns=columns)
         self.table.config(displaycolumns=columns)        
         self.table.heading('date', text='Date')
@@ -73,101 +91,119 @@ class ExcelEditor(Dialog):
         self.table.heading('amount', text='Amount(€)')
         self.table.heading('description', text='Description')
         self.table.column('account', width=200, anchor='w')
-        self.table.column('date', width=80, anchor='c')
+        self.table.column('date', width=90, anchor='c')
         self.table.column('amount', width=80, anchor='e')
         self.table.column('description', width=850, anchor='w')
         self.table.bind('<<TreeviewSelect>>', self._account_edit)
         self.table.bind('<Double-1>', self._on_double_click)
         self.table.tag_configure('master_account', background='light sky blue')
         self.table.tag_configure('error', background='lightsalmon')
+        self.table.tag_configure('ok', background='lime green')
+        self.table.config(height=20)
+        
+        return self.table
+    
+    def load(self, filename):
+        basename, ext = os.path.splitext(filename)
+        restore_filename = basename + '.pickle'
+        self.filename = filename
 
-        restore_filename = self.filename.removesuffix('.xlsx') + '.pickle'
+        self.table.delete(*self.table.get_children())
+
+        reader = create_excel_reader(filename)
+        self.entity.set(f'Entity: {reader.entity}')
+        self.owner.set(f'Owner: {reader.owner}')
+        self.description.set(f'Description: {reader.description}')
+        self.file_account.set(f'CCC: {reader.account}')
+        self.download.set(f'Downloaded on: {reader.downloaded_on}')
+        self._filename.set(f'Filename: {reader.filename}')
+
+        with db_session() as db:
+            for account in db.query(Account):
+                if account.parameters and 'CCC' in account.parameters:
+                    _account = account.parameters['CCC'].replace(' ','')
+                    if reader.account == _account:
+                        break
+            acc_name = account.gname if account else 'Not found'
+            self.account.set(f'Account: {acc_name}')
+            
         if os.path.isfile(restore_filename):
             with open(restore_filename, 'rb') as f:
                 data = pickle.load(f)
             for entry in data:
-                if entry[3] == 'MASTER ACCOUNT':
-                    self.master_account_iid = self.table.insert('','end', values=entry, tag='master_account')
-                else:
-                    self.table.insert('', 'end', values=entry)                
-        else:    
-            reader = create_excel_reader(self.filename)
+                self.table.insert('', 'end', values=entry)                
+        else: 
             total = 0
-            values = '', '', '', 'MASTER ACCOUNT'
-            self.master_account_iid = self.table.insert('', 'end', values=values, tag='master_account')
             for n,item in enumerate(reader.data):
-                values = item['vdate'].strftime("%d-%m-%Y"), item['amount'], '', item['comment']
+                values = '', item['vdate'].strftime("%d-%m-%Y"), item['amount'], item['comment']
                 self.table.insert('', 'end', values=values)
                 total += item['amount']
-            else:
-                self.table.set(self.master_account_iid, column='amount', value=db_currency(total))
 
-        self.table.config(height=20)
-        
         self.entry_iids = [iid for iid in self.table.get_children()]
-        return self.table
         
     def buttonbox(self):
         control_bar = ttk.Frame(self)
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
-        ttk.Button(control_bar, text="Cancel", width=10, command=self.cancel).pack(side='left', padx=5, pady=5)
-        ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
+        #ttk.Button(control_bar, text="Cancel", width=10, command=self.cancel).pack(side='left', padx=5, pady=5)
+        #ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
         ttk.Button(control_bar, text="Save", width=10, command=self.save).pack(side='left', padx=5, pady=5)
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
-        ttk.Button(control_bar, text="Accept", width=10, command=self.ok, default=ACTIVE).pack(side='left', padx=5, pady=5)
+        ttk.Button(control_bar, text="Validate", width=10, command=self.validate).pack(side='left', padx=5, pady=5)
+        ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
+        ttk.Button(control_bar, text="to Blackboard", width=10, command=self.ok, default=ACTIVE).pack(side='left', padx=5, pady=5)
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
         self.bind("<Return>", self.ok)
         self.bind("<Escape>", self.cancel)
         control_bar.pack(fill='x')
 
     def validate(self):
-        master_account = self.table.set(self.master_account_iid, column='account')
-        if not master_account:
-            self.table.see(iid)
-            messagebox.showwarning(message= f'Missing Master account at row #{n+1}' + "\n Please, try again", parent=self)
-            return False            
+        #validate entries with account column assigned, others are ignored
         for n,iid in enumerate(self.entry_iids):
             if iid == self.master_account_iid: continue
-            self.table.item(iid, tags = ())
+            self.table.item(iid, tags = ('ok'))
             self.table.see(iid)
             account = self.table.set(iid, column='account')
             if not account:
                 self.table.item(iid, tag='error')
                 messagebox.showwarning(message= f'Missing account at row #{n+1}' + "\n Please, try again", parent=self)
-                return False
-            if account == master_account:
-                self.table.item(iid, tag='error')
-                messagebox.showwarning(message=f'Account at row #{n+1} must be different to Master' + "\n Please, try again", parent = self)
-                return False
+                #return False
+                continue
+
             if account not in db_get_accounts_gname():
                 self.table.item(iid, tag='error')
                 messagebox.showwarning(message=f"Unknown account at row #{n+1}" + "\n Please, try again", parent=self)
-                return False
+                #return False
+                continue
             date = self.table.set(iid, column='date')
             if not date:
                 self.table.item(iid, tag='error')
                 messagebox.showwarning(message=f'Missing date at row #{n+1}' + "\n Please, try again", parent=self)
-                return False
+                #return False
+                continue
             try: date = datetime.datetime.strptime(date, "%d-%m-%Y").date()
             except ValueError:
                 self.table.item(iid, tag='error')
                 messagebox.showwarning(message=f'Wrong date value or format at row #{n+1}' + "\n Please, try again", parent=self)
-                return False       
+                #return False
+                continue
             amount = self.table.set(iid, column='amount')
             if not amount:
                 self.table.item(iid, tag='error')
                 messagebox.showwarning(message=f'Missing amount at row #{n+1}' + "\n Please, try again", parent=self)
-                return False
+                #return False
+                continue
             try: float(amount)
             except ValueError:
                 self.table.item(iid, tag='error')
                 messagebox.showwarning(mesage=f'Wrong amount or format at row #{n+1}' + "\n Please, try again", parent=self)
-                return False
+                #return False
+                continue
             description = self.table.set(iid, column='description')
             if not description:
                 self.table.item(iid, tag='error')
                 messagebox.showwarning(message=f'Missing description at row #{n+1}' + "\n Please, try again", parent=self)
-                return False            
+                #return False
+                continue
         return True
 
     def apply(self):
@@ -177,6 +213,7 @@ class ExcelEditor(Dialog):
         macc_type = master_account[1]
         for n,iid in enumerate(self.entry_iids):
             if iid == self.master_account_iid: continue
+            if not self.table.tag_has('ok', iid): continue
             date, amount, account, description = self.table.item(iid)['values']
             date = datetime.datetime.strptime(date, "%d-%m-%Y").date()
             amount = float(amount)
@@ -194,13 +231,15 @@ class ExcelEditor(Dialog):
             self.trans_list = data
         
     def save(self, show_msgbox=True):
-        filename = self.filename.removesuffix('.xlsx') + '.pickle'
+        basename, ext = os.path.splitext(self.filename)
+        filename = basename + '.pickle'
+
         data = [self.table.item(iid)['values'] for iid in self.entry_iids]
         with open(filename, 'wb') as f:
             # Pickle the 'data' dictionary using the highest protocol available.
             pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
         if show_msgbox:
-            messagebox.showwarning(message='Sheet status saved', parent=self)
+            messagebox.showwarning(message=f'Sheet status saved on file', parent=self)
 
     def _apply_to_view(self, *args):
         items = [iid for iid in self.table.get_children()]
@@ -225,20 +264,13 @@ class ExcelEditor(Dialog):
                 item_comment = self.table.set(iid, column='description')
                 if  keyword not in item_comment: self.table.detach(iid)
             
-        if self.master_account_view.get() == 'show':
-            self.table.move(self.master_account_iid, '', 0)
-        elif self.master_account_view.get() == 'hide':
-            self.table.detach(self.master_account_iid)
-        else: pass
-
     def _clear_filter_view(self):
         self.filter_keyword.set('')
         self.filter_account.set('')
         for iid in self.entry_iids:
-            if iid != self.master_account_iid:
-                self.table.move(iid, '', 0) #reattach
+            self.table.move(iid, '', 0) #reattach
     
-    def _account_edit(self, event):
+    def _account_edit(self, event=None):
         iid = event.widget.focus()
         column_box = self.table.bbox(event.widget.focus(), "2")
         account_edit = ttk.Combobox(self.table, state='readonly', width=column_box[2])
@@ -261,11 +293,20 @@ class ExcelEditor(Dialog):
         event.widget.destroy()
         return 'break'
 
-    def _on_double_click(self, event):
+    def _on_double_click(self, event=None):
         iid = event.widget.focus()
         region = self.table.identify_region(event.x, event.y)
         if region == 'cell':
             description = self.table.set(iid, column='description')
             self.filter_keyword.set(description)
         return 'break'
-    
+
+    def ok(self, event=None):
+        try:
+            self.apply()
+        finally:
+            self.cancel()
+            
+    def cancel(self, event=None):
+        pass
+

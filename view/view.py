@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from tkinter import filedialog
 from .transaction import DMTransaction, DMTransactionEncoder
+from .excel import ExcelView
 from .input import InputView
 from .journal import JournalView
 from .ledger import LedgerView
@@ -49,6 +50,11 @@ class View(ttk.Frame):
         #top = self.winfo_toplevel()
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
+        ## --- Excel
+        self.excel = ExcelView(self.notebook)
+        self.notebook.add(self.excel, text='Excel')
+        #self.notebook.hide(self.excel)
+        
         ## --- Input
         self.input = InputView(self.notebook)
         self.notebook.add(self.input, text='Input')

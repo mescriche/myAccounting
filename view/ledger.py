@@ -23,7 +23,10 @@ class LedgerView(ttk.Frame):
         self.acc_combo.pack(ipadx=2, ipady=2)
         self.acc_combo.bind('<<ComboboxSelected>>', self.render_filter)
         self._get_accounts()
-        self.acc_combo.current(0)
+        try: 
+            self.acc_combo.current(0)
+        except:
+            pass
         
         self.etrans_year = StringVar()
         frame = Frame(self.filter)

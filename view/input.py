@@ -9,7 +9,7 @@ from dbase import db_session, Account, Transaction, BookEntry, db_get_account_co
 from enum import Enum
 import os, re
 from .transaction import DMTransaction, TransactionEditor, askTransactionRecordDialog
-from .excel_editor import ExcelEditor
+#from .excel_editor import ExcelEditor
 from .text_editor import TextEditor
 
 class InputView(ttk.Frame):
@@ -50,12 +50,9 @@ class InputView(ttk.Frame):
         new_trans_icon = PhotoImage(file='./view/icons/add.gif')        
         new_trans_btn = ttk.Button(new_bar, image=new_trans_icon, command=self.get_new_transaction)
         new_trans_btn.image = new_trans_icon
-        new_trans_btn.pack(side='left',padx=5)
+        new_trans_btn.pack(padx=10)
 
-        new_excel_btn = ttk.Button(new_bar, text='Excel', command=self.get_transactions_from_excel)
-        new_excel_btn.pack(padx=5,pady=0,ipady=4)
-        
-        import_bar = ttk.Labelframe(tools_bar, text='Import')
+        import_bar = ttk.Labelframe(tools_bar, text='Import', labelanchor='n')
         import_bar.pack(expand=False, side='left', ipadx=10)
         play_icon = PhotoImage(file='./view/icons/next.gif')
         play_btn = ttk.Button(import_bar, image=play_icon, command=self.execute_step_by_step)
@@ -117,7 +114,6 @@ class InputView(ttk.Frame):
         else:
             filename = os.path.join(self.dirname, self.filename.get()+self.ext)
             self.editor.save_to_file(filename)
-        self.file_name_entry['values'] = self._get_files()
         messagebox.showinfo( message = f"File {self.filename.get()} saved", parent = self )
            
     def execute_step_by_step(self, *args):
@@ -173,11 +169,11 @@ class InputView(ttk.Frame):
         if new_trans:
             self.editor.add_new_transaction(new_trans)
 
-    def get_transactions_from_excel(self):
-        filename = filedialog.askopenfilename(defaultextension="*.xlsx", initialdir=self.dirname,
-                                              filetypes=[("All files", "*.*"),("Excel Documents","*.xlsx")])
-        if filename:
-            editor = ExcelEditor(None, filename)
-            trans_list = editor.trans_list
-            if trans_list:
-                self.editor.add_new_transaction(trans_list)
+#    def get_transactions_from_excel(self):
+#        filename = filedialog.askopenfilename(defaultextension="*.xlsx", initialdir=self.dirname,
+#                                              filetypes=[("All files", "*.*"),("Excel Documents","*.xlsx")])
+#        if filename:
+#            editor = ExcelEditor(None, filename)
+#            trans_list = editor.trans_list
+#            if trans_list:
+#                self.editor.add_new_transaction(trans_list)

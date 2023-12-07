@@ -6,6 +6,9 @@ name = "pypi"
 [packages]
 sqlalchemy = "*"
 openpyxl = "*"
+xlrd = "*"
+pandas = "*"
+lxml = "*"
 
 [dev-packages]
 

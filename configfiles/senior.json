@@ -48,7 +48,7 @@
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"631", "name":"ExpV-Combustible"},
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"632", "name":"ExpV-Parking"},
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"633", "name":"ExpV-Maintenance"},
-	 { "type":"DEBIT",  "content":"NOMINAL", "code":"634", "name":"ExpV-Motorway"},
+	 { "type":"DEBIT",  "content":"NOMINAL", "code":"634", "name":"ExpV-Toll"},
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"64",  "name":"Exp-Services"},
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"641", "name":"ExpS-Notary"},
 	 { "type":"DEBIT",  "content":"NOMINAL", "code":"642", "name":"ExpS-PropertyRegister"},
@@ -69,7 +69,8 @@
 	 { "type":"CREDIT", "content":"NOMINAL", "code":"711", "name":"Income-SocialInsurance"},
 	 { "type":"CREDIT", "content":"NOMINAL", "code":"72",  "name":"Income-Dividend"},
 	 { "type":"CREDIT", "content":"NOMINAL", "code":"73",  "name":"Income-Interest"},
-	 { "type":"CREDIT", "content":"NOMINAL", "code":"74",  "name":"Income-Discounts"}
+	 { "type":"CREDIT", "content":"NOMINAL", "code":"74",  "name":"Income-Discounts"},
+	 { "type":"CREDIT", "content":"NOMINAL", "code":"75",  "name":"Income-Regularizations"}
      ]
  },
  "balance":{
@@ -113,6 +114,7 @@
 	     "dividend":["72"],
 	     "interest":["73"],
 	     "discounts":["74"],
+	     "regularizations":["75"],
 	     "others" :["70"]
 	 }
      },
