@@ -3,29 +3,15 @@ from os import path
 from json import load
 from datetime import datetime
 from contextlib import contextmanager
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, engine_from_config
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from .model import Base, Account, Transaction, BookEntry, Type, Content
 from collections import namedtuple
 import locale, re
 
-def db_get_profile() -> str:
-    accounts_file = 'accounts.json'
-    DIR = path.dirname(path.realpath(__file__))
-    with open(path.join(DIR, accounts_file)) as _file:
-        config_data = load(_file)
-    return config_data['profile']
+Session = sessionmaker()
 
-def db_init():
-    dbfile = 'accounting.db'
-    DIR = path.dirname(path.realpath(__file__))
-    engine = create_engine ('sqlite+pysqlite:///{}'.format(path.join(DIR, dbfile)))
-    Base.metadata.bind = engine
-    Base.metadata.create_all(bind=engine)
-    return sessionmaker(bind=engine)
-
-Session = db_init()
 
 @contextmanager
 def db_session():
@@ -39,10 +25,22 @@ def db_session():
     finally:
         session.close()
 
+
+def db_get_profile() -> str:
+    accounts_file = 'accounts.json'
+    DIR = path.dirname(path.realpath(__file__))
+    with open(path.join(DIR, accounts_file)) as _file:
+        config_data = load(_file)
+    return config_data['profile']
+
+def db_init(config):
+    engine = engine_from_config(config)
+    Base.metadata.create_all(bind=engine)
+    Session.configure(bind=engine)
+
 def db_currency(data:float) -> str:
     return locale.currency(data, symbol=False, grouping=True)
-    
-        
+            
 def db_setup():
     DIR = path.dirname(path.realpath(__file__))
     accounts_file = 'accounts.json'    
@@ -61,8 +59,6 @@ def db_setup():
                     print("Created account: type:{type} content:{content} code:{code} name:{name}".format(**record))
                 #else:
                     #print("{} already existing in data base".format(account))
-db_setup()
-
 
 def db_get_account_code(gname:str) -> str:
     ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\/\s\w]+')

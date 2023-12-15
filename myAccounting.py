@@ -1,11 +1,12 @@
 __author__ = 'Manuel Escriche'
-import locale
+import locale, os
 
 locale.setlocale(locale.LC_ALL, '')
 
 from tkinter import *
 from tkinter import ttk
 from view import View 
+from dbase import db_init, db_setup
 
 class App(Tk):
     def __init__(self):
@@ -26,6 +27,15 @@ class App(Tk):
         self.rowconfigure(0, weight=1)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.createcommand('tk::mac::Quit', self.destroy)
+
+        root_dir = os.path.dirname(os.path.realpath(__file__))
+        db_dir = os.path.join(root_dir, 'dbase')
+        db_file = os.path.join(db_dir,'accounting.db')
+        db_config = {'sqlalchemy.url':f"sqlite+pysqlite:///{db_file}",
+                     'sqlalchemy.echo':False}
+        db_init(db_config)
+        db_setup()
+
         #controller = Controller()        
         view = View(self)
         

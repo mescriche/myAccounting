@@ -121,7 +121,7 @@ class BalanceView(ttk.Frame):
         _data = [DMTransaction(id=0, date=date, description=description, entries=closing_entries),]
         root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         datafile_dir = os.path.join(root_dir, 'datafiles')
-        _filename = os.path.join(datafile_dir, f'{year}_balance_closing_seat.json')
+        _filename = os.path.join(datafile_dir, f'{year}_app_balance_closing_seat.json')
         with open(_filename, 'w') as _file:
             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
 
@@ -141,7 +141,7 @@ class BalanceView(ttk.Frame):
         _data = [DMTransaction(id=0, date=date, description=description, entries=opening_entries),]
         root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         datafile_dir = os.path.join(root_dir, 'datafiles')
-        _filename = os.path.join(datafile_dir, f'{year}_opening_seat.json')
+        _filename = os.path.join(datafile_dir, f'{year}_app_opening_seat.json')
         with open(_filename, 'w') as _file:
             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)        
         messagebox.showwarning( message=f"{year-1} Balance closing seat file and \n{year} Opening seat file  have been created ", parent = self )

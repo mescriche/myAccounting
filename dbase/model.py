@@ -1,5 +1,6 @@
 __author__ = 'Manuel Escriche'
-from sqlalchemy.ext.declarative import declarative_base
+#from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, Float, JSON
 from sqlalchemy.orm import relationship, backref, object_session
 from sqlalchemy import func, select, CheckConstraint
@@ -7,7 +8,9 @@ from datetime import datetime, date
 from sqlalchemy import Enum
 import enum, re
 
-Base = declarative_base()
+#Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 Type = enum.Enum('Type', ['DEBIT', 'CREDIT'])
 Content = enum.Enum('Content', ['REAL', 'NOMINAL']) 
