@@ -6,12 +6,10 @@ from .excel_editor import ExcelEditor
 import os
 
 class ExcelView(ttk.Frame):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, user_dir, **kwargs):
         super().__init__(parent, **kwargs)
         self.pack(fill='both', expand=True)
-        view_dir = os.path.dirname(os.path.realpath(__file__))
-        root_dir = os.path.dirname(view_dir)
-        self.dirname = os.path.join(root_dir, 'excelfiles')
+        self.dirname = os.path.join(user_dir, 'excelfiles')
         self.filename = StringVar()
         
         file_bar = ttk.Labelframe(self, text='File')

@@ -92,7 +92,7 @@ ipython_config.py
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
 #   having no cross-platform support, pipenv may install dependencies that don't work, or not
 #   install all needed dependencies.
-#Pipfile.lock
+Pipfile.lock
 
 # poetry
 #   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
@@ -158,64 +158,8 @@ doc/myAccounting.toc
 *.json#
 *.json~
 *.html~
-datafiles/test0.json
-dbase/accounting.db
-datafiles/accounts_db_mev.json
-datafiles/accounts_db_new_mev.json
-datafiles/accounts_db_new_mev_2015.json
-datafiles/accounts_db_new_mev_2016.json
-datafiles/accounts_db_new_mev_2017.json
-datafiles/accounts_db_new_mev_2018.json
-datafiles/accounts_db_new_mev_2019.json
-datafiles/accounts_db_new_mev_2020.json
-datafiles/accounts_db_new_mev_2021.json
-datafiles/accounts_db_new_mev_2022.json
-datafiles/accounts_db_new_mev_2023.json
 dbase/accounting.db
 importApp.py
-datafiles/2015_balance_closing_seat.json
-datafiles/2015_income_closing_seat.json
-datafiles/2015_mev_opening.json
-datafiles/2015_mev_seats.json
 configfiles/senior_mev.json
-datafiles/2016_balance_closing_seat.json
-datafiles/2016_income_closing_seat.json
-datafiles/2016_mev_seats.json
-datafiles/2016_opening_seat.json
-datafiles/2017_balance_closing_seat.json
-datafiles/2017_income_closing_seat.json
-datafiles/2017_mev_seats.json
-datafiles/2017_opening_seat.json
-datafiles/2018_balance_closing_seat.json
-datafiles/2018_income_closing_seat.json
-datafiles/2018_mev_seats.json
-datafiles/2018_opening_seat.json
-datafiles/2019_balance_closing_seat.json
-datafiles/2019_income_closing_seat.json
-datafiles/2019_mev_seats.json
-datafiles/2019_opening_seat.json
-datafiles/2020_balance_closing_seat.json
-datafiles/2020_income_closing_seat.json
-datafiles/2020_mev_seats.json
-datafiles/2020_opening_seat.json
-datafiles/2021_balance_closing_seat.json
-datafiles/2021_income_closing_seat.json
-datafiles/2021_mev_seats.json
-datafiles/2021_opening_seat.json
-datafiles/2022_balance_closing_seat.json
-datafiles/2022_income_closing_seat.json
-datafiles/2022_mev_seats.json
-datafiles/2022_opening_seat.json
-datafiles/2023_app_seats.json
-datafiles/2023_income_closing_seat.json
-datafiles/2023_mev_seats.json
-datafiles/2023_opening_seat.json
-dbase/accounting.db.bkup
-dbase/accounting.db
-excelfiles/OpenBank_00730100500528440547_20230109.xlsx
-excelfiles/OpenBank_00730100500528440547_20230619.xls
-excelfiles/OpenBank_00730100500528440547_20230619.xlsx
-excelfiles/OpenBank_00730100580154738558_20230619.xls
-excelfiles/OpenBank_00730100580154738558_20230619.xlsx
-*.db
 Pipfile.lock
+users

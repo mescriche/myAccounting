@@ -13,12 +13,11 @@ from .transaction import DMTransaction, TransactionEditor, askTransactionRecordD
 from .text_editor import TextEditor
 
 class InputView(ttk.Frame):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, user_dir, **kwargs):
         super().__init__(parent, **kwargs)
         self.pack(fill='both', expand=True)
         
-        DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        self.dirname = os.path.join(DIR, 'datafiles')
+        self.dirname = os.path.join(user_dir, 'datafiles')
         self.filename = StringVar()
         
         tools_bar = ttk.Frame(self, height=15)

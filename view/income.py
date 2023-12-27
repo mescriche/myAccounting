@@ -8,11 +8,12 @@ from datetime import datetime
 import os, json
 
 class IncomeView(ttk.Frame):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, user_dir, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
-
+        self.configfiles_dir = os.path.join(user_dir, 'configfiles')
+        self.datafiles_dir = os.path.join(user_dir, 'datafiles')
         self.eyear = IntVar()
         title_frame = ttk.Frame(self)
         title_frame.pack(expand=False, fill='x', pady=5, padx=5)
@@ -42,8 +43,7 @@ class IncomeView(ttk.Frame):
         self.text.window_create('end', window=pw)
         
         report_file = 'income.json'
-        DIR = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(DIR, report_file)) as _file:
+        with open(os.path.join(self.configfiles_dir, report_file)) as _file:
             self.income_repo = json.load(_file)
         self.income_repo.pop('purpose')
         self.income_repo.pop('profile')
@@ -160,9 +160,8 @@ class IncomeView(ttk.Frame):
         date = datetime.strptime(f'31-12-{year}', '%d-%m-%Y').date()
         description = f"Income closing seat for year {self.eyear.get()}"
         _data = [DMTransaction(id=0, date=date, description=description, entries=entries),]
-        root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        datafile_dir = os.path.join(root_dir, 'datafiles')
-        _filename = os.path.join(datafile_dir, f'{year}_app_income_closing_seat.json')
+
+        _filename = os.path.join(self.datafiles_dir, f'{year}_app_income_closing_seat.json')
         with open(_filename, 'w') as _file:
             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
 
@@ -174,10 +173,8 @@ class IncomeView(ttk.Frame):
                 _data = [DMTransaction.from_DBTransaction(item) for item in items]
                 _data = _data[1:]
                 for n,item in enumerate(_data, start=1): item.id = n
-                root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-                datafile_dir = os.path.join(root_dir, 'datafiles')
                 filename = f'{year}_app_seats.json'
-                _filename = os.path.join(datafile_dir, filename )
+                _filename = os.path.join(self.datafiles_dir, filename )
                 with open(_filename, 'w') as _file:
                     json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
             

@@ -9,11 +9,12 @@ from datetime import datetime
 import os, json
 
 class BalanceView(ttk.Frame):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, user_dir, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
-
+        self.configfiles_dir = os.path.join(user_dir, 'configfiles')
+        self.datafiles_dir = os.path.join(user_dir, 'datafiles')
         self.eyear = IntVar()
         title_frame = ttk.Frame(self)
         title_frame.pack(expand=False, fill='x', pady=5, padx=5)
@@ -42,8 +43,7 @@ class BalanceView(ttk.Frame):
         self.text.window_create('end', window=pw)
 
         report_file = 'balance.json'
-        DIR = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(DIR, report_file)) as _file:
+        with open(os.path.join(self.configfiles_dir, report_file)) as _file:
             self.balance_repo = json.load(_file)
         self.balance_repo.pop('purpose')
         self.balance_repo.pop('profile')
@@ -119,9 +119,7 @@ class BalanceView(ttk.Frame):
         date = datetime.strptime(f'31-12-{year}', '%d-%m-%Y').date()
         description = f"Balance closing seat for year {year}"
         _data = [DMTransaction(id=0, date=date, description=description, entries=closing_entries),]
-        root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        datafile_dir = os.path.join(root_dir, 'datafiles')
-        _filename = os.path.join(datafile_dir, f'{year}_app_balance_closing_seat.json')
+        _filename = os.path.join(self.datafiles_dir, f'{year}_app_balance_closing_seat.json')
         with open(_filename, 'w') as _file:
             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
 
@@ -139,9 +137,7 @@ class BalanceView(ttk.Frame):
         date = datetime.strptime(f'1-1-{year}', '%d-%m-%Y').date()
         description = f"Balance opening seat for year {year}"
         _data = [DMTransaction(id=0, date=date, description=description, entries=opening_entries),]
-        root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        datafile_dir = os.path.join(root_dir, 'datafiles')
-        _filename = os.path.join(datafile_dir, f'{year}_app_opening_seat.json')
+        _filename = os.path.join(self.datafiles_dir, f'{year}_app_opening_seat.json')
         with open(_filename, 'w') as _file:
             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)        
         messagebox.showwarning( message=f"{year-1} Balance closing seat file and \n{year} Opening seat file  have been created ", parent = self )

@@ -3,15 +3,26 @@ import locale, os
 
 locale.setlocale(locale.LC_ALL, '')
 
+
+import argparse
+
+parser = argparse.ArgumentParser(prog='myAccounting',
+                                 description='program for your personal finances',
+                                 epilog='')
+parser.add_argument('user',help="username used")
+args = parser.parse_args()
+#print(args)
+
 from tkinter import *
 from tkinter import ttk
-from view import View 
+from view import View
+import dbase
 from dbase import db_init, db_setup
 
 class App(Tk):
-    def __init__(self):
+    def __init__(self, username):
         super().__init__()
-        self.title('Personal Accounting')
+        self.title(f'{username.upper()} - Personal Accounting')
         window_size = 1100,600
         screen_size = self.winfo_screenwidth(), self.winfo_screenheight()
         center =  int((screen_size[0] - window_size[0]) / 2) , int((screen_size[1] - window_size[1]) / 2)
@@ -28,20 +39,29 @@ class App(Tk):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.createcommand('tk::mac::Quit', self.destroy)
 
+        
         root_dir = os.path.dirname(os.path.realpath(__file__))
-        db_dir = os.path.join(root_dir, 'dbase')
-        db_file = os.path.join(db_dir,'accounting.db')
-        db_config = {'sqlalchemy.url':f"sqlite+pysqlite:///{db_file}",
+        user_dir = os.path.join(root_dir, 'users', username)
+        if not os.path.isdir(user_dir):
+            print(f"user {username} hasn't been configured yet: use configApp tool for configuration")
+            exit()
+
+        config_dir = os.path.join(user_dir, 'configfiles')
+        dbase_dir = os.path.join(user_dir, 'dbase')
+        dbase_file = os.path.join(dbase_dir,f'{username}_accounting.db')
+        db_config = {'sqlalchemy.url':f"sqlite+pysqlite:///{dbase_file}",
                      'sqlalchemy.echo':False}
         db_init(db_config)
-        db_setup()
+        
+        db_file = os.path.join(config_dir, 'accounts.json')
+        db_setup(db_file)
 
         #controller = Controller()        
-        view = View(self)
+        view = View(self, user_dir)
         
         
 if __name__ == '__main__':
-    app = App()
+    app = App(args.user)
     app.mainloop()
 
 

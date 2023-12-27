@@ -26,10 +26,10 @@ def db_session():
         session.close()
 
 
-def db_get_profile() -> str:
-    accounts_file = 'accounts.json'
-    DIR = path.dirname(path.realpath(__file__))
-    with open(path.join(DIR, accounts_file)) as _file:
+def db_get_profile(accounts_file) -> str:
+    #accounts_file = 'accounts.json'
+    #DIR = path.dirname(path.realpath(__file__))
+    with open(accounts_file) as _file:
         config_data = load(_file)
     return config_data['profile']
 
@@ -41,10 +41,8 @@ def db_init(config):
 def db_currency(data:float) -> str:
     return locale.currency(data, symbol=False, grouping=True)
             
-def db_setup():
-    DIR = path.dirname(path.realpath(__file__))
-    accounts_file = 'accounts.json'    
-    with open(path.join(DIR, accounts_file)) as acc_file, db_session() as db:
+def db_setup(accounts_file):
+    with open(accounts_file) as acc_file, db_session() as db:
         data = load(acc_file)
         if 'purpose' not in data: raise Exception('Wrong data file format')
         elif data['purpose'] != 'database': raise Exception('Wrong purpose for accounts definition')

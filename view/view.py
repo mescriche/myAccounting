@@ -26,14 +26,16 @@ class View(ttk.Frame):
         'Olive Green': '#D1E7E0.#5B8340',
         'Night Mode': '#FFFFFF.#000000',
     }
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, parent, user_dir,  **kwargs):
+        super().__init__(parent, **kwargs)
         self.pack(fill='both', expand=True)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
+        self.user_dir = user_dir
         self.create_menu()
         self.create_gui()
         self.change_text_color()
+
        
     def create_gui(self):
         #shortcut_bar = Frame(self, height=25, background='light sea green')
@@ -51,12 +53,12 @@ class View(ttk.Frame):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
         ## --- Excel
-        self.excel = ExcelView(self.notebook)
+        self.excel = ExcelView(self.notebook, self.user_dir)
         self.notebook.add(self.excel, text='Excel')
         #self.notebook.hide(self.excel)
         
         ## --- Input
-        self.input = InputView(self.notebook)
+        self.input = InputView(self.notebook, self.user_dir)
         self.notebook.add(self.input, text='Input')
         #self.notebook.hide(self.input)
         
@@ -73,11 +75,11 @@ class View(ttk.Frame):
         self.notebook.add(self.checking_map, text='Checking Map')
         
         ## ---- Income
-        self.income = IncomeView(self.notebook)
+        self.income = IncomeView(self.notebook, self.user_dir)
         self.notebook.add(self.income, text='Income')
         
         ## ---- Balance
-        self.balance = BalanceView(self.notebook)
+        self.balance = BalanceView(self.notebook, self.user_dir)
         self.notebook.add(self.balance, text='Balance')
         self.notebook.bind("<<DataBaseContentChanged>>", self.refresh_tabs)
 
