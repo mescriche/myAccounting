@@ -1,8 +1,9 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
-from dbase import Transaction, db_session, db_currency, Account, Type, db_get_yearRange
-from .transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
+from dbase import Transaction, db_session, Account, Type
+from controller.utility import db_currency, db_get_yearRange
+from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
 from .report import ConceptTree
 from datetime import datetime
 import os, json

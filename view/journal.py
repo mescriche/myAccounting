@@ -1,9 +1,10 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
-from dbase import db_session, db_currency, Account, Transaction, BookEntry
-from dbase import db_get_yearRange, db_get_accounts_gname, db_get_account_code
-from .transaction import TransactionViewer, TransactionEditor, DMTransaction
+from dbase import db_session, Account, Transaction, BookEntry
+from controller.utility import db_currency, db_get_yearRange, db_get_accounts_gname, db_get_account_code
+from datamodel.transaction import DMTransaction
+from .transaction import TransactionViewer, TransactionEditor
 from datetime import datetime
 
 class JournalView(ttk.Frame):

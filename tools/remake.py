@@ -1,22 +1,31 @@
 __author__ = 'Manuel Escriche'
-import argparse, os, re, sys, json
+import argparse, os, re, sys, json, textwrap
 
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 
-from datamodel.seat import record_file, create_app_income_closing_seat, create_app_balance_closing_seat
+from controller.closing_seats import record_file, create_app_income_closing_seat, create_app_balance_closing_seat
 from dbase import db_init, db_setup, db_session
 
 
-parser = argparse.ArgumentParser(description="Process data over the years to work out four app files:  \
-                                 income closing seat, \
-                                 balance closing seat, \
-                                 running year seats, \
-                                 and next year opening seat. \
-                                 Data base can be created with files' content",
-                                 epilog='Use this tool carefully. ')
+parser = argparse.ArgumentParser(
+    formatter_class = argparse.RawDescriptionHelpFormatter,
+    description=textwrap.dedent('''\
+    Process data over the years to work out four app files:  
+    -> year income closing seat, 
+    -> year balance closing seat, 
+    -> year seats, 
+    -> and next year opening seat. 
+    The user data base is built according to files content '''),
+    epilog=textwrap.dedent('''\
+    This tool is meant to be used to amend the first opening seat, remake all database
+    and subsequent yearly closing and opening seats. 
+    Use this tool carefully!!
+    Good bye! Good luck!
+    ''')
+)
 parser.add_argument('user', help='username used to find data')
-parser.add_argument("--db", action='store_true', help="regenerate data base. Previous db is backed up as .bk file")
+#parser.add_argument("--db", action='store_true', help="regenerate data base. Previous db is backed up as .bk file")
 args = parser.parse_args()
 #print(args)
 
@@ -38,20 +47,23 @@ else:
     sys.exit()
 
 print('... creating data  ...')
-db_store = os.path.join(dbase_dir, f"{args.user}_accounting.db") if args.db else ":memory:" 
-db_config = {'sqlalchemy.url':f"sqlite+pysqlite:///{db_store}", 'sqlalchemy.echo':False}
+db_file = os.path.join(dbase_dir, f"{args.user}_accounting.db")
+db_config = {'sqlalchemy.url':f"sqlite+pysqlite:///{db_file}", 'sqlalchemy.echo':False}
 
-if args.db and os.path.isfile(db_store):
-    os.rename(db_store , f'{db_store}.bk')
+if os.path.isfile(db_file):
+    backup_file = db_file + '.bk'
+    os.rename(db_file , backup_file)
+    print(f'... renamed database file as {os.path.basename(backup_file)}')
 
 print(db_config)
+print('... init data base ...')
 db_init(db_config)
 
 accounts_file = os.path.join(config_dir, 'accounts.json')
-#print(accounts_file)
+print(f'... setup data base from user accounts file: {accounts_file}')
 db_setup(accounts_file)
 
-print(f'starting file: {filename}')
+print(f'starting opening data file: {filename}')
 starting_year = int(filename[:4])
 
 pattern = re.compile(r'\d{4}_'+ args.user + '_seats.json')

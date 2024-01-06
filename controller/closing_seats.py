@@ -1,8 +1,9 @@
 import os, json
 from datamodel.transaction import DMTransaction, DMBookEntry, DMTransactionEncoder
-from dbase import db_session, db_get_account_code
+from dbase import db_session
 from dbase import Transaction, Account, BookEntry, Type, Content
 from datetime import datetime
+from .utility import db_get_account_code
 
 def record_file(filename):
     def record_transaction(db, trans:DMTransaction):

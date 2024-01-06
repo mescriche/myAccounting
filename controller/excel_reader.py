@@ -81,7 +81,7 @@ class OpenBankAccountReader(ExcelReader):
         if match := re.match(r'\d{20}', _account):
             self._account = match.group(0)
         else: raise Exception("Missing Bank Account number")
-        
+
         self._description = data.iat[5,1]
         self._owner = data.iat[6,1]
 

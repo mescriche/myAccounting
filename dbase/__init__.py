@@ -1,14 +1,12 @@
 __author__ = 'Manuel Escriche'
-from os import path
-from json import load
-from datetime import datetime
+
+import os, json
 from contextlib import contextmanager
-from sqlalchemy import create_engine, engine_from_config
+from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from .model import Base, Account, Transaction, BookEntry, Type, Content
-from collections import namedtuple
-import locale, re
+
 
 Session = sessionmaker()
 
@@ -26,24 +24,19 @@ def db_session():
         session.close()
 
 
-def db_get_profile(accounts_file) -> str:
-    #accounts_file = 'accounts.json'
-    #DIR = path.dirname(path.realpath(__file__))
-    with open(accounts_file) as _file:
-        config_data = load(_file)
-    return config_data['profile']
 
 def db_init(config):
     engine = engine_from_config(config)
     Base.metadata.create_all(bind=engine)
     Session.configure(bind=engine)
 
-def db_currency(data:float) -> str:
-    return locale.currency(data, symbol=False, grouping=True)
+def db_open(config):
+    engine = engine_from_config(config)
+    Session.configure(bind=engine)    
             
 def db_setup(accounts_file):
     with open(accounts_file) as acc_file, db_session() as db:
-        data = load(acc_file)
+        data = json.load(acc_file)
         if 'purpose' not in data: raise Exception('Wrong data file format')
         elif data['purpose'] != 'database': raise Exception('Wrong purpose for accounts definition')
         else: pass
@@ -57,28 +50,3 @@ def db_setup(accounts_file):
                     print("Created account: type:{type} content:{content} code:{code} name:{name}".format(**record))
                 #else:
                     #print("{} already existing in data base".format(account))
-
-def db_get_account_code(gname:str) -> str:
-    ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\/\s\w]+')
-    if match := ptrn.fullmatch(gname):
-        code = match.group('code')
-        return code
-    else:
-        raise Exception(f'Wrong account pattern:"{gname}"')
-
-def db_get_accounts_gname(all=True) -> list:
-    with db_session() as db:
-        accounts = db.query(Account).all() if all else filter(lambda x: not x.isEmpty, db.query(Account).all())
-        acc_gnames = [account.gname for account in sorted(accounts, key=lambda x:x.code)]
-    return acc_gnames
-    
-def db_get_yearRange() -> tuple:
-    today = datetime.today()
-    with db_session() as db:
-        if first := db.query(Transaction).order_by(Transaction.date.asc()).first():
-            _min = first.date.year
-        else: _min = today.year
-        if last := db.query(Transaction).order_by(Transaction.date.desc()).first():
-            _max = last.date.year
-        else: _max = today.year
-    return _min,_max

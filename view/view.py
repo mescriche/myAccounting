@@ -2,8 +2,8 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
 from tkinter import filedialog
-from .transaction import DMTransaction, DMTransactionEncoder
-from .excel import ExcelView
+from datamodel.transaction import DMTransaction, DMTransactionEncoder
+#from .excel import ExcelView
 from .input import InputView
 from .journal import JournalView
 from .ledger import LedgerView
@@ -53,8 +53,8 @@ class View(ttk.Frame):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
         ## --- Excel
-        self.excel = ExcelView(self.notebook, self.user_dir)
-        self.notebook.add(self.excel, text='Excel')
+        #self.excel = ExcelView(self.notebook, self.user_dir)
+        #self.notebook.add(self.excel, text='Excel')
         #self.notebook.hide(self.excel)
         
         ## --- Input

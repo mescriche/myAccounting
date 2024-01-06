@@ -1,7 +1,8 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
-from dbase import db_session, db_currency, Account
+from dbase import db_session, Account
+from controller.utility import db_currency
 
 class ConceptTree(ttk.Treeview):
     def __init__(self, parent, concept, **kwargs):

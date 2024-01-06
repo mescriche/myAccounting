@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk, messagebox
 from tkinter.simpledialog import Dialog
-from dbase import  db_get_yearRange
+from controller.utility import  db_get_yearRange
 
 class SaveYearSeatsDialog(Dialog):
     def __init__(self, parent, title):

@@ -65,7 +65,7 @@ class Account(Base):
         return True if self.type == Type.CREDIT and self.content == Content.REAL else False
 
     def __repr__(self):
-        return "Account({0.id} | {0.type} | {0.content} | {0.code} | {0.name} )".format(self)
+        return "Account({0.id} | {0.type} | {0.content} | {0.code} | {0.name} | {0.parameters} )".format(self)
 
     @property
     def gname(self) -> str:

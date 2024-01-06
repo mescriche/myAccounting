@@ -2,7 +2,8 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 from datetime import datetime
-from dbase import db_session, db_currency, db_get_account_code, db_get_accounts_gname, db_get_yearRange
+from dbase import db_session
+from controller.utility import db_currency, db_get_account_code, db_get_accounts_gname, db_get_yearRange
 from dbase import Account, Transaction, BookEntry
 from locale import currency
 

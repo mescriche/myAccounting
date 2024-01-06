@@ -1,0 +1,110 @@
+__author__ = 'Manuel Escriche'
+
+import argparse, os, sys, json, textwrap
+root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(root_dir)
+import dbase
+
+class DBaseTool:
+    def __init__(self, root_dir):
+        parser = argparse.ArgumentParser(
+            formatter_class = argparse.RawDescriptionHelpFormatter,
+            description = textwrap.dedent('''\
+            Tool to manage the user database file.
+            -> It uses the dbase model to init the user database
+            -> It uses the config file for accounts located at the user folder to setup the user database.
+            '''),
+            epilog = textwrap.dedent('''\
+            After having created, inited and setup the user data base, it's ready for use with:
+            - myAccounting.py
+            - excel_tool.py ''')
+        )
+
+        parser.add_argument('user', help='username whose database file is targeted for operation')
+        subparsers = parser.add_subparsers(required=True, help='commands available for database user file')
+
+        parser_create = subparsers.add_parser('create', help='create database file')
+        parser_create.set_defaults(func=self.db_create)
+
+        parser_init = subparsers.add_parser('init', help='init database')
+        parser_init.set_defaults(func=self.db_init)
+
+        parser_setup = subparsers.add_parser('setup', help='setup database')
+        parser_setup.add_argument('-c', "--check",
+                                  help='check consistency between Accounts table in data base, and accounts.json file',
+                                  action='store_true')
+        parser_setup.set_defaults(func=self.db_setup)
+
+        parser_query = subparsers.add_parser('query', help='simple database query for accounts created with setup')
+        parser_query.set_defaults(func=self.db_query)
+        
+        parser_remove = subparsers.add_parser('remove', help='remove database file')
+        parser_remove.set_defaults(func=self.db_remove)
+
+        args = parser.parse_args()
+        #print(args)
+        
+        self.user_dir = os.path.join(root_dir, 'users', args.user)
+        dbase_file = f'{args.user}_accounting.db'
+        self.dbase_dir = os.path.join(self.user_dir, 'dbase')
+        self.dbase_file = os.path.join(self.dbase_dir, dbase_file)
+        self.db_config = {'sqlalchemy.url'  : f'sqlite+pysqlite:///{self.dbase_file}',
+                          'sqlalchemy.echo' : False}
+        
+        # call method
+        args.func(args)        
+
+    def db_create(self, args):
+        print('create', args.user)
+        try:
+            os.makedirs(self.dbase_dir)
+        except FileExistsError:
+            pass
+        
+        if not os.path.isfile(self.dbase_file):
+            open(self.dbase_file, 'w', encoding='utf-8').close()
+            print(f'... created database file: {os.path.basename(self.dbase_file)} ...')
+        else:
+            print(f'... it already exists database file: {os.path.basename(self.dbase_file)}  ...')
+            print(f'... please, remove it before executing this command again ....')
+
+    def db_init(self, args):
+        print('init', args.user)
+        dbase.db_init(self.db_config)
+        
+    def db_setup(self, args):
+        print('setup', args)
+        dbase.db_open(self.db_config)
+        accounts_file = os.path.join(self.user_dir,'configfiles','accounts.json')
+        if not args.check:
+            dbase.db_setup(accounts_file)
+        else:
+            with open(accounts_file) as acc_file, dbase.db_session() as db:
+                data = json.load(acc_file)
+                for record in data['accounts']:
+                    print(record)
+                    try: account = db.query(dbase.Account).filter_by(name=record['name']).one()
+                    except NoResultFound:
+                        print('-> account missing in data base')
+                    else:
+                        print(account)
+            
+
+    def db_query(self, args):
+        print('test', args.user)
+        dbase.db_open(self.db_config)
+        with dbase.db_session() as db:
+            for account in db.query(dbase.Account):
+                print(account)
+
+    def db_remove(self, args):
+        print('remove', args.user)
+        backup_file = self.dbase_file + '.bk'
+        if os.path.isfile(self.dbase_file):
+            os.rename(self.dbase_file, backup_file)
+            print(f'... renamed database file as {os.path.basename(backup_file)} ...')
+        else:
+            print(f"... it doesn't exist database file: {os.path.basename(self.dbase_file)}")
+
+if __name__ == '__main__':
+    app = DBaseTool(root_dir)

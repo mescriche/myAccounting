@@ -2,9 +2,8 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
 
-from dbase import db_session, db_get_yearRange, db_currency, db_get_account_code
-from dbase import Account, Content, Type #, db_get_year
-
+from dbase import db_session, Account, Content, Type 
+from controller.utility import db_get_yearRange, db_currency, db_get_account_code
 
 class MapView(ttk.Frame):
     def __init__(self, master, **kwargs):
