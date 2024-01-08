@@ -2,6 +2,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
 \usepackage{graphicx}
+\usepackage{enumitem}
 \graphicspath{{./images/}}
 \title{my Accounting}
 \author{Manuel Escriche Vicente}
@@ -58,16 +59,75 @@ Set proper version in working folder.
  \begin{verbatim}
  >> pipenv install sqlalchemy
  \end{verbatim}
- Config the application profile by editing its configuration file under folder config, or just take one already defined and distribute its content by executing:
+ Now you're ready to configure the application for any user 
+ and, finally, execute the program
  \begin{verbatim}
- >> python configApp <profile>
- >> python configApp student
- \end{verbatim}
- And, finally, execute the program
- \begin{verbatim}
- >> python myAccounting.py
+ >> python myAccounting.py <user>
  \end{verbatim} 
- \section{Config application profile}
- MyAccounting application configure its database, its income and balance reports based on the user profile, which is defined in a file named <profile>.json.
+ 
+ \section{Configuration tools}
+ There are two  tools available to configure users for the application:
+ \begin{description}
+ \item[config\_user.py] used to create user's folder, copy the generic profile chosen, and generate specific operative files.  
+ \item[db\_tool.py] used to create user's data base, and populate it with the accounts.json file, created with previous tool.
+ \end{description}
+ 
+ \subsection{config\_user.py}
+ This tool is used to create the user folder where to store all their specific data, included configuration data. 
+ 
+ Execute \verb!>>config_user.py <user> create <profile>! to create the user with the specied profile. 
+ This command creates users' folders, and stores its accounting profile at due place: \verb!.\users\<user>\configfiles!
+ 
+ The accounting profile file is stored as \verb!<user>_profile.json!, that you can edit to adapt it to your specifics needs. 
+ Once editing is finished, you have to execute \verb!>> config_user.py <user> refresh! to regenerate consistently the application files:
+ 
+ \begin {enumerate}
+ \item accounts.json used to create database accounts
+ \item income.json used to create income reporting
+ \item balance.json used to create balance reporting
+ \end{enumerate}
+ 
+ \paragraph{Commands}
+ \begin{verbatim}
+ >> python tools/config_user.py <user> create <profile> 
+ >> python tools/config_user.py <user> refresh
+ \end{verbatim}
+ 
+ \subsection{db\_tool.py}
+ Before starting you have to use this tool to create and prepare the user database. 
+ Execute the following sequence:
+ \begin{enumerate}[wide, labelwidth=!, labelindent=0pt]
+ \item \verb!db_tool.py <user> create! to create user database file
+ \item \verb!db_tool.py <user> init! to create user database structure		
+ \item \verb!db_tool.py <user> setup!	 to populate user database with accounts
+ \item \verb!db_tool.py <user> query! to verify accounts creation
+\end{enumerate}
+\paragraph{Commands}
+\begin{verbatim}
+>> python tools/db_tool.py <user> create
+>> python tools/db_tool.py <user> init
+>> python tools/db_tool.py <user> setup
+>> python tools/db_tool.py <user> query
+>> python tools/db_tool.py <user> remove
+\end{verbatim}
+ \section{Edition tools}
+ There are two additional tools available: 
+ \begin{description}
+ \item[excel.py] tool used to take bank accounts excel files to export their transactions into json format so that main program can use them. 
+ \item[remake.py] tool used to modify first opening seat and reconstruct the user data base and their year closing and opening seats consistently 
+ \end{description}
+ \paragraph{Commands}
+ \begin{verbatim}
+ >> python tools/excel.py <user>
+ >> python tools/remake.py <user>
+ \end{verbatim}
   
+  \section{Main Program}
+ Make sure \verb!<user>! has been created before 
+ executing:
+ \begin{verbatim}
+ >> python myAccounting.py <user>
+ \end{verbatim}
+
+   
 \end{document}
