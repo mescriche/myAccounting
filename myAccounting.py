@@ -41,10 +41,7 @@ class App(Tk):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.createcommand('tk::mac::Quit', self.destroy)
 
-
-
-        dbase_dir = os.path.join(user_dir, 'dbase')
-        dbase_file = os.path.join(dbase_dir,f'{username}_accounting.db')
+        dbase_file = os.path.join(user_dir,'dbase',f'{username}_accounting.db')
         db_config = {'sqlalchemy.url':f'sqlite+pysqlite:///{dbase_file}',
                      'sqlalchemy.echo':False}
         db_open(db_config)

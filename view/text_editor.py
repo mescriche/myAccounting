@@ -17,6 +17,7 @@ class TextEditor(ttk.Frame):
         self.text.configure(yscrollcommand=scroll_bar.set)
         scroll_bar.config(command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
+        self._data = list()
         
     def load(self, filename):
         self.text['state'] = 'normal'
@@ -41,6 +42,12 @@ class TextEditor(ttk.Frame):
                             break
                         else: self._data.append(trans)
                     else: self.render()
+        self.text['state'] = 'disabled'
+
+    def clear(self):
+        self._data = list()
+        self.text['state'] = 'normal'
+        self.text.delete(1.0, 'end')
         self.text['state'] = 'disabled'
         
     def save_to_file(self, filename=None):
