@@ -5,7 +5,7 @@ from datetime import datetime
 from dbase import db_session
 from controller.utility import db_currency, db_get_account_code, db_get_accounts_gname, db_get_yearRange
 from dbase import Account, Transaction, BookEntry
-from locale import currency
+import locale
 
 class LedgerView(ttk.Frame):
     def __init__(self, parent):
@@ -67,22 +67,38 @@ class LedgerView(ttk.Frame):
 
         
         columns = ('eid', 'tid', 'date', 'amount', 'description')
-        data = dict()
-        data['eid'] = {'text':'Eid', 'width':40, 'anchor':'c'}
-        data['tid'] = {'text':'Tid', 'width':40, 'anchor':'c'}
-        data['date'] = {'text':'Date', 'width':100, 'anchor':'c'}
-        data['amount'] = {'text':'Amount', 'width':80, 'anchor':'e'}
-        data['description'] = {'text':'Description', 'width':800, 'anchor':'w'}
         
         self.table = ttk.Treeview(vframe, columns=columns, selectmode='browse', show='headings')
         self.table.pack(fill='both', expand=True)
+        self.table.heading('eid', text='Eid', command=lambda:self._sort_column('eid'))
+        self.table.heading('tid', text='Tid', command=lambda:self._sort_column('tid'))
+        self.table.heading('date', text='Date', command=lambda:self._sort_column('date'))
+        self.table.heading('amount', text='Amount', command=lambda:self._sort_column('amount'))
+        self.table.heading('description', text='Description', command=lambda:self._sort_column('description'))
+        self.table.column('eid', width=40, anchor='c')
+        self.table.column('tid', width=40, anchor='c')
+        self.table.column('date', width=100, anchor='c')
+        self.table.column('amount', width=80, anchor='e')
+        self.table.column('description', width=800, anchor='w')        
         self.table.bind('<<TreeviewSelect>>', self.display_transaction)
-        for topic in columns:
-            self.table.heading(topic, text=data[topic]['text'])
-            self.table.column(topic, width=data[topic]['width'], anchor=data[topic]['anchor'])
-
+        
         self.render_filter()
-
+        
+    def _sort_column(self, col, reverse=False):
+        #print('hola', self.table.column(col, option='id'))
+        if col == 'description': key = lambda x: str(x[0])
+        elif col in ( 'eid', 'tid') : key = lambda x: int(x[0])
+        elif col == 'date':   key = lambda x: datetime.strptime(x[0], "%d-%m-%Y").date()
+        elif col == 'amount': key = lambda x: locale.atof(x[0].replace('.','').replace(',','.'))
+        else: return
+        
+        l = [(self.table.set(iid, col), iid) for iid in self.table.get_children()]
+        l.sort(key=key, reverse=reverse)
+        for ndx, (val, iid) in enumerate(l):
+            self.table.move(iid, '', ndx)
+        else:
+            self.table.heading(col, command=lambda: self._sort_column(col, not reverse))
+            
     def _get_accounts(self):
         self.acc_combo['values'] = db_get_accounts_gname(False)
         

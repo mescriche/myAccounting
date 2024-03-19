@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from datetime import datetime, date
 from dbase.model import Type
-import json
+from controller.utility import db_get_accounts_gname
+import json, datetime
 
 @dataclass
 class DMBookEntry:
@@ -19,7 +19,7 @@ class DMTransaction:
     @classmethod
     def from_json(cls, data):
         entries = [DMBookEntry(entry['account'], Type[entry['type']], entry['amount']) for entry in data['entries']]
-        return cls(data['id'], datetime.strptime(data['date'], '%d-%m-%Y').date(), data['description'], entries)
+        return cls(data['id'], datetime.datetime.strptime(data['date'], '%d-%m-%Y').date(), data['description'], entries)
     @classmethod
     def from_DBTransaction(cls, trans):
         entries = [DMBookEntry(entry.account.gname, entry.type, entry.amount) for entry in trans.entries]

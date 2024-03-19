@@ -10,18 +10,19 @@ class MapView(ttk.Frame):
         super().__init__(master, **kwargs)
         self.pack(fill='both', expand=True)
         columns = 'account', 'debit', 'credit', 'debtor', 'creditor'
-        data = dict()
-        data['account'] = {'text':'Account' , 'width':120, 'anchor':'w'}
-        data['debit'] =   {'text':'Debit', 'width':80, 'anchor':'e'}
-        data['credit'] =  {'text':'Credit', 'width':80, 'anchor':'e'}
-        data['debtor'] =  {'text':'Debtor', 'width':80, 'anchor':'e'}
-        data['creditor'] = {'text':'Creditor', 'width':80, 'anchor':'e'}
-
         self.table = ttk.Treeview(self, columns=columns, selectmode='browse', show='headings')
         self.table.pack(fill='both', expand=True)
-        for topic in columns:
-            self.table.heading(topic, text=data[topic]['text'])
-            self.table.column(topic, width=data[topic]['width'], anchor=data[topic]['anchor'])
+        self.table.heading('account', text='Account')
+        self.table.heading('debit', text='Debit')
+        self.table.heading('credit', text='Credit')
+        self.table.heading('debtor', text='Debtor')
+        self.table.heading('creditor', text='Creditor')
+        self.table.column('account', width=120, anchor='w')
+        self.table.column('debit', width=80, anchor='e')
+        self.table.column('credit', width=80, anchor='e')
+        self.table.column('debtor', width=80, anchor='e')
+        self.table.column('creditor', width=80, anchor='e')
+        
         self.table.tag_configure('even_real', background='bisque')
         self.table.tag_configure('even_nominal', background='lavender')
         self.table.tag_configure('total', background='SteelBlue1')

@@ -97,7 +97,6 @@ class ExcelEditor(ttk.Frame):
         account.config(values= ['Any', 'None'] + db_get_accounts_gname())
         account.current(0)
         account.pack(side='left')
-        #account.bind('<<ComboboxSelected>>', self._apply_to_filter)
         
         self.filter_keyword = StringVar()
         _labelframe = ttk.Labelframe(filterframe, text='Description')
@@ -143,18 +142,19 @@ class ExcelEditor(ttk.Frame):
         self.table.config(show='headings')
         columns = ('account', 'date','amount','description')
         self.table.config(columns=columns)
-        self.table.config(displaycolumns=columns)        
-        self.table.heading('date', text='Date')
-        self.table.heading('account', text='Account')
-        self.table.heading('amount', text='Amount(€)')
-        self.table.heading('description', text='Description')
+        self.table.config(displaycolumns=columns)
+        self.table.heading('account', text='Account',
+                           command=lambda: self._sort_column('account'))
+        self.table.heading('date', text='Date', command=lambda: self._sort_column('date'))
+        self.table.heading('amount', text='Amount(€)', command=lambda: self._sort_column('amount'))
+        self.table.heading('description', text='Description', command=lambda: self._sort_column('description'))
         self.table.column('account', width=200, anchor='w')
         self.table.column('date', width=90, anchor='c')
         self.table.column('amount', width=80, anchor='e')
         self.table.column('description', width=850, anchor='w')
         #self.table.bind('<<TreeviewSelect>>', self._account_edit)
+        #self.table.bind('<Button-1>', self._on_single_click)
         self.table.bind('<Double-1>', self._on_double_click)
-        self.table.tag_configure('master_account', background='light sky blue')
         self.table.tag_configure('error', background='lightsalmon')
         self.table.tag_configure('ok', background='lime green')
         self.table.config(height=17)
@@ -165,13 +165,24 @@ class ExcelEditor(ttk.Frame):
         else:
             self.table.bind('<3>', self._show_popup_menu)
         return self.table
-    
+
+    def _sort_column(self, col, reverse=False):
+        #_id = self.table.column(col, option='id')
+        if col in ('account', 'description'): key = lambda x: str(x[0])
+        elif col == 'date':   key = lambda x:  datetime.strptime(x[0], "%d-%m-%Y").date()
+        elif col == 'amount': key = lambda x: float(x[0])
+        else: return
+        
+        l = [(self.table.set(iid, col), iid) for iid in self.table.get_children()]
+        l.sort(key=key, reverse=reverse)
+        for ndx, (val, iid) in enumerate(l):
+            self.table.move(iid, '', ndx)
+        else:
+            self.table.heading(col, command=lambda: self._sort_column(col, not reverse))
+            
     def _show_popup_menu(self, event):
-        #iid = self.table.identify_row(event.y)
-        #self.table.focus(iid)
         menu = Menu(self.table)
         menu.add_command(label='Assign account', command=lambda:self._show_accounts_list(event))
-        #menu.add_command(label='Extend account', command=lambda:self._extend_account_(event))
         menu.add_command(label='Clear account', command=lambda:self._clean_selection(event))
         menu.post(event.x_root, event.y_root)        
            
@@ -236,7 +247,6 @@ class ExcelEditor(ttk.Frame):
 
         with db_session() as db:
             for account in db.query(Account):
-                #print(account)
                 if account.parameters and 'CCC' in account.parameters:
                     _account = account.parameters['CCC'].replace(' ','')       
                     if reader.account == _account:
@@ -383,7 +393,24 @@ class ExcelEditor(ttk.Frame):
             self.table.selection_remove(items)
         event.widget.destroy()
         return 'break'
-
+    
+    def _on_single_click(self, event=None):
+        print(event)
+        region = self.table.identify_region(event.x, event.y)
+        print(region)
+        if region == 'heading':
+            column = self.table.identify_column(event.x)
+            print(column)
+        #return 'break'
+        
+    def _on_double_click(self, event=None):
+        iid = event.widget.focus()
+        region = self.table.identify_region(event.x, event.y)
+        if region == 'cell':
+            description = self.table.set(iid, column='description')
+            self.filter_keyword.set(description)
+        return 'break'
+    
     def _set_time_filter(self, event=None):
         try:
             _from_date = datetime.strptime(self.from_date.get(), "%d-%m-%Y").date()
@@ -425,11 +452,5 @@ class ExcelEditor(ttk.Frame):
         self.filter_account.set('')
         self._set_time_filter()
     
-    def _on_double_click(self, event=None):
-        iid = event.widget.focus()
-        region = self.table.identify_region(event.x, event.y)
-        if region == 'cell':
-            description = self.table.set(iid, column='description')
-            self.filter_keyword.set(description)
-        return 'break'
+
       

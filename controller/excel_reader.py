@@ -8,7 +8,8 @@ import locale
 class ExcelReader:
     def __init__(self, data):
         print(self.__class__.__name__)
-        print(data)
+        #print(data)
+        self._data = data
 
     @property
     def entity(self):

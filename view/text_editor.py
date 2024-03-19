@@ -34,7 +34,8 @@ class TextEditor(ttk.Frame):
                     for item in data:
                         try: trans = DMTransaction.from_json(item)
                         except Exception as e:
-                            print(f'Wrong format when reading item= {item}')
+                            print(f'Wrong item in file: {filename}')
+                            print(f'when reading item = {item}')
                             print(e)
                             self.text['state'] = 'normal'
                             self.text.insert(1.0, json.dumps(data, indent=4))
