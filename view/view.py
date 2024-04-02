@@ -9,7 +9,8 @@ from .journal import JournalView
 from .ledger import LedgerView
 from .income import IncomeView
 from .balance import BalanceView
-from .save import askSaveYearToFileDialog
+from .log import LogView
+from .save import askSaveDBToFileDialog
 from .map import MapView
 from dbase import db_session, Transaction
 from datetime import datetime
@@ -83,6 +84,10 @@ class View(ttk.Frame):
         self.notebook.add(self.balance, text='Balance')
         self.notebook.bind("<<DataBaseContentChanged>>", self.refresh_tabs)
 
+        ## ---- Log
+        self.log = LogView(self.notebook)
+        self.notebook.add(self.log, text='Log')
+
     def refresh_tabs(self, event=None):
         with db_session() as db:
             trans = db.query(Transaction).order_by(Transaction.id.desc()).first()
@@ -129,7 +134,7 @@ class View(ttk.Frame):
         
         file_menu = Menu(menu_bar)
         file_menu.add_separator()
-        file_menu.add_command(label='Save', command=self.save_year_to_file)
+        file_menu.add_command(label='Save', command=self.save_db_to_file)
         file_menu.add_command(label='Quit', command=self.exit_app)
         menu_bar.add_cascade(label='File', menu=file_menu)
         
@@ -168,29 +173,35 @@ class View(ttk.Frame):
         menu_bar.add_cascade(label='View', menu=view_menu)
         self.master.config(menu=menu_bar)
 
-    def save_year_to_file(self):
-        answer, year = askSaveYearToFileDialog(self)
+    def save_db_to_file(self):
+        answer, years = askSaveDBToFileDialog(self)
         if answer:
+            datafile_dir = os.path.join(self.user_dir, 'datafiles')
             with db_session() as db:
-                min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
-                max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
-                query = db.query(Transaction).filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)
-                if items := [item for item in query]:
-                    _data = [DMTransaction.from_DBTransaction(item) for item in items]
-                    _data = _data[1:]
-                    for n,item in enumerate(_data, start=1): item.id = n
-                    root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-                    datafile_dir = os.path.join(root_dir, 'datafiles')
-                    filename = f'{year}_app_seats.json'
-                    _filename = os.path.join(datafile_dir, filename )
-                    with open(_filename, 'w') as _file:
-                        json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
+                for year in years:
+                    min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
+                    max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
+                    query = db.query(Transaction).filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)
+                    if items := [item for item in query]:
+                        _data = [DMTransaction.from_DBTransaction(item) for item in items]
+                        _data = _data[1:]
+                        for n,item in enumerate(_data, start=1): item.id = n
+                        filename = f'{year}_app_seats.json'
+                        _filename = os.path.join(datafile_dir, filename )
+                        with open(_filename, 'w') as _file:
+                            json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
+                        _msg = f"{filename} saved"
+                        self.log.print(_msg)
+                else:
+                    title = "Save DB seats to file"
+                    msg = f'{len(years)} files saved'
+                    messagebox.showinfo(title=title, message=msg, parent=self)
 
-                    title = f"Save year {year} seats to file"
-                    msg = f"{filename} saved "
-                    messagebox.showinfo(title=title, message=msg, parent = self)
-        
+                    
+                
+
     def exit_app(self):
+
         self.parent.destroy()
         
         

@@ -108,8 +108,9 @@ class TextEditor(ttk.Frame):
             
     def _create_popup_menu(self, widget, value):
         menu = Menu(widget)
-        menu.add_command(label='Remove Transaction', command=lambda e=value.id: self.remove_transaction(e))
-        menu.add_command(label='Edit Transaction', command=lambda e=value: self._get_updated_transaction(e))
+        menu.add_command(label='Edit', command=lambda e=value: self._get_updated_transaction(e))
+        menu.add_command(label='Duplicate', command=lambda e=value: self._duplicate_transaction(e))
+        menu.add_command(label='Remove', command=lambda e=value.id: self.remove_transaction(e))        
         if self.text.tk.call('tk', 'windowingsystem') == 'aqua':
             widget.bind_class(value.id, '<2>',         lambda e: menu.post(e.x_root, e.y_root))
             widget.bind_class(value.id, '<Control-1>', lambda e: menu.post(e.x_root, e.y_root))
@@ -122,4 +123,10 @@ class TextEditor(ttk.Frame):
         updated_trans = editor.trans
         if updated_trans != trans:
             self.update_transaction(updated_trans)
+
+    def _duplicate_transaction(self, trans:DMTransaction):
+        entries = [DMBookEntry(entry.account, entry.type, entry.amount) for entry in trans.entries]        
+        new_trans = DMTransaction(0, trans.date, trans.description, entries)
+        self.add_new_transaction(new_trans)
+
         
