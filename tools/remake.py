@@ -77,6 +77,7 @@ if starting_year != years[0]:
 for year in years[:-1]:
     print(year)
     filename = f'{year}_{args.user}_opening_seat.json' if year == starting_year else f'{year}_app_opening_seat.json'
+    print(f'recording {filename}')
     filename = os.path.join(datafiles_dir, filename)
     try: record_file(filename)
     except Exception as e:
@@ -84,6 +85,7 @@ for year in years[:-1]:
         break
 
     filename = f'{year}_{args.user}_seats.json'
+    print(f'recording {filename}')
     filename = os.path.join(datafiles_dir, filename)
     try: record_file(filename)
     except Exception as e:
@@ -91,6 +93,7 @@ for year in years[:-1]:
         break
     
     filename = create_app_income_closing_seat(year, config_dir, datafiles_dir)
+    print(f'recording {filename}')
     filename = os.path.join(datafiles_dir, filename)
     try: record_file(filename)
     except Exception as e:
@@ -98,6 +101,7 @@ for year in years[:-1]:
         break
 
     filename = create_app_balance_closing_seat(year, config_dir, datafiles_dir)
+    print(f'recording {filename}')
     filename = os.path.join(datafiles_dir, filename)
     try: record_file(filename)
     except Exception as e:
