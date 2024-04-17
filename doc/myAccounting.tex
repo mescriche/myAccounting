@@ -129,5 +129,30 @@ Set proper version in working folder.
  >> python myAccounting.py <user>
  \end{verbatim}
 
-   
+\section{Admin}
+\paragraph{Modify a record in the data base}
+\begin{verbatim}
+python
+>>> import os
+>>> root_dir = os.getcwd()
+>>> username = 'mev'
+>>> user_dir = os.path.join(root_dir, 'users', username)
+>>> import dbase
+>>> dbase_file = os.path.join(user_dir, 'dbase', f'{username}_accounting.db')
+>>> db_config =  {'sqlalchemy.url':f'sqlite+pysqlite:///{dbase_file}', 
+	'sqlalchemy.echo':False}
+>>> dbase.db_open(db_config)
+>>> db = dbase.Session()
+>>> item = db.get(dbase.Transaction,1)
+>>> item
+Transaction(1 | 2015-11-15 | #entries=5 |  Opening statement)
+>>> item.description
+' Opening statement'
+>>> item.description = 'Balance Opening Statement'
+>>> db.commit()
+>>> item = db.get(dbase.Transaction,1)
+>>> item
+Transaction(1 | 2015-11-15 | #entries=5 | Balance Opening Statement)
+\end{verbatim}
+  
 \end{document}
