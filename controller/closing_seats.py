@@ -96,24 +96,8 @@ def create_app_income_closing_seat(year, config_dir, datafiles_dir) -> str:
     _filename = os.path.join(datafiles_dir, filename)
     with open(_filename, 'w') as _file:
         json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
-    print(f'created {filename} with #records: {len(_data)}')
-    closing_filename = filename
-    
-    with db_session() as db:
-        min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
-        max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
-        query = db.query(Transaction).filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)
-        if items := [item for item in query]:
-            _data = [DMTransaction.from_DBTransaction(item) for item in items]
-            _data = _data[1:]
-            for n,item in enumerate(_data, start=1): item.id = n
-            filename = f'{year}_app_seats.json'
-            _filename = os.path.join(datafiles_dir, filename)
-            with open(_filename, 'w') as _file:
-                json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
-    print(f'created {filename} with #records: {len(_data)}')
-    return closing_filename
-
+    print(f'...created {filename} with #records: {len(_data)}')
+    return filename
 
 def create_app_balance_closing_seat(year, config_dir, datafiles_dir) -> str:
     def collect_codes(data:dict) -> list:
@@ -162,7 +146,7 @@ def create_app_balance_closing_seat(year, config_dir, datafiles_dir) -> str:
     _filename = os.path.join(datafiles_dir, filename)
     with open(_filename, 'w') as _file:
         json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
-    print(f'created {filename} with #records: {len(_data)}')
+    print(f'...created {filename} with #records: {len(_data)}')
     closing_filename = filename
         
     with db_session() as db:
@@ -181,5 +165,5 @@ def create_app_balance_closing_seat(year, config_dir, datafiles_dir) -> str:
     _filename = os.path.join(datafiles_dir, filename )
     with open(_filename, 'w') as _file:
         json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)        
-    print(f'created {filename} with #records: {len(_data)}')
+    print(f'...created {filename} with #records: {len(_data)}')
     return closing_filename
