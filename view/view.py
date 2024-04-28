@@ -182,15 +182,25 @@ class View(ttk.Frame):
                     min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
                     max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
                     query = db.query(Transaction).filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)
+                    _opening_statement = "Balance Opening Statement"
+                    _balance_opening_seat = f"Balance opening seat for year {year}"
+                    _income_closing_seat =  f"Income closing seat for year {year}"
+                    _balance_closing_seat = f"Balance closing seat for year {year}"
+                    _exclude_seats = (_opening_statement, _balance_opening_seat, _income_closing_seat, _balance_closing_seat)
+
                     if items := [item for item in query]:
-                        _data = [DMTransaction.from_DBTransaction(item) for item in items]
-                        _data = _data[1:]
-                        for n,item in enumerate(_data, start=1): item.id = n
+                        _data = map(lambda x: DMTransaction.from_DBTransaction(x), items)
+                        _data = list(filter(lambda x:x.description not in _exclude_seats, _data))       
+                        _data = sorted(_data, key=lambda x:x.date)
+                        for n,item in enumerate(_data, start=1):
+                            item.id = n
+                            print(n, item.date, item.description)
+                        
                         filename = f'{year}_app_seats.json'
                         _filename = os.path.join(datafile_dir, filename )
                         with open(_filename, 'w') as _file:
                             json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
-                        _msg = f"{filename} saved"
+                        _msg = f"{filename} saved, {n} records"
                         self.log.print(_msg)
                 else:
                     title = "Save DB seats to file"

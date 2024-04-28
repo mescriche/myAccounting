@@ -6,7 +6,7 @@ from dbase import db_session, Account, Transaction, Type, BookEntry
 from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
 from controller.utility import db_currency, db_get_accounts_gname
 from .dialog import Dialog
-import re, enum, datetime, json
+import re, enum, datetime, json, textwrap
     
 class TransactionViewer(ttk.Frame):
     def __init__(self, parent, trans:DMTransaction, **kwargs):
@@ -14,10 +14,13 @@ class TransactionViewer(ttk.Frame):
         self.parent = parent
         self.pack(expand=False)
         Label(self, text=f'Transaction #{trans.id}', background='dark cyan').pack(fill='x')
-        self.text= Text(self, height=3)
+        self.text= Text(self, width=80, height=2+trans.description.count('\n'))
         self.text.pack(fill='x')
-        self.text.insert(1.0, f'Date: {trans.date.strftime("%d-%m-%Y")}\n')
-        self.text.insert(2.0, f'Description: {trans.description}')
+        self.text.tag_config('label', background='blue')
+        self.text.insert(1.0, 'Date:', 'label')
+        self.text.insert('end', f' {trans.date.strftime("%d-%m-%Y")}\n')
+        self.text.insert(2.0, 'Description:', 'label')
+        self.text.insert('end', f' {trans.description}\n')
         self.text['state']='disabled'
         columns = ('debit', 'account', 'credit')
         data = dict()
@@ -74,7 +77,7 @@ class TransactionDialog(Dialog):
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
         ttk.Button(control_bar, text="Record", width=10, command=self.ok, default=ACTIVE).pack(side='left', padx=5, pady=5)
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
-        self.bind("<Return>", self.ok)
+        #self.bind("<Return>", self.ok)
         self.bind("<Escape>", self.cancel)
         control_bar.pack(fill='x')
         
@@ -97,9 +100,10 @@ class TransactionEditor(Dialog):
         super().__init__(parent, title)
         
     def body(self, master):
-        self.text= Text(master, height=3)
-        self.text.pack(fill='x')
-        
+        _height = 0 if self.trans is None else 2 + self.trans.description.count('\n')        
+        self.text= Text(master, width=80, height=5+_height)
+        self.text.pack(fill='both')
+        self.text.tag_config('label', background='blue')
         columns = ('debit', 'account', 'credit')
         data = dict()
         data['debit'] = {'text':'Debit', 'width':100, 'anchor':'e'}
@@ -121,8 +125,11 @@ class TransactionEditor(Dialog):
     def render(self):
         if self.trans is not None:
             self.table.delete(*self.table.get_children())
-            self.text.insert(1.0, f'Date: {self.trans.date.strftime("%d-%m-%Y")}\n')
-            self.text.insert(2.0, f'Description:{self.trans.description}\n')
+            self.text.insert(1.0, 'Date:', 'label')
+            self.text.insert('end', f' {self.trans.date.strftime("%d-%m-%Y")}\n')
+            self.text.insert(2.0, 'Description:', 'label')
+            self.text.insert('end', f' {self.trans.description}\n')
+            
             total = {Type.DEBIT:0, Type.CREDIT:0}
             for entry in self.trans.entries:
                 values = (db_currency(entry.amount),entry.account,0) if entry.type == Type.DEBIT else (0 ,entry.account,db_currency(entry.amount))
@@ -147,7 +154,7 @@ class TransactionEditor(Dialog):
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
         ttk.Button(control_bar, text="Accept", width=10, command=self.ok, default=ACTIVE).pack(side='left', padx=5, pady=5)
         ttk.Label(control_bar, text='').pack(side='left', expand=True, fill='x')
-        self.bind("<Return>", self.ok)
+        #self.bind("<Return>", self.ok)
         self.bind("<Escape>", self.cancel)
         control_bar.pack(fill='x')
 
@@ -167,7 +174,7 @@ class TransactionEditor(Dialog):
             return False
         # validate description
         try:
-            description = re.search(r'(?<=^Description:).+',self.text.get(2.0, 'end-1c')).group(0)
+            description = re.search(r'(?<=^Description:).+', self.text.get(2.0, 'end-1c'), re.DOTALL).group(0)
         except AttributeError:
             messagebox.showwarning( message = self.errormessage + "\nMissing Description" + "\nPlease try again", parent = self )
             return False        
@@ -258,9 +265,9 @@ class TransactionEditor(Dialog):
                 entries.append(DMBookEntry(account, type, amount))
         date = re.search(r'(?<=^Date:).+', self.text.get(1.0, '1.end')).group(0).strip()
         date = datetime.datetime.strptime(date, "%d-%m-%Y").date()
-        description = re.search(r'(?<=^Description:).+',self.text.get(2.0, 'end-1c')).group(0)
+        description = re.search(r'(?<=^Description:).+',self.text.get(2.0, 'end-1c'), re.DOTALL).group(0)
         _id = self.trans.id if self.trans else 0
-        self.trans = DMTransaction(id=_id, date=date, description=description, entries=entries)
+        self.trans = DMTransaction(id=_id, date=date, description=description.strip(), entries=entries)
 
     def _edit_table(self, event):
         table = event.widget

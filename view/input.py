@@ -169,11 +169,3 @@ class InputView(ttk.Frame):
         if new_trans:
             self.editor.add_new_transaction(new_trans)
 
-#    def get_transactions_from_excel(self):
-#        filename = filedialog.askopenfilename(defaultextension="*.xlsx", initialdir=self.dirname,
-#                                              filetypes=[("All files", "*.*"),("Excel Documents","*.xlsx")])
-#        if filename:
-#            editor = ExcelEditor(None, filename)
-#            trans_list = editor.trans_list
-#            if trans_list:
-#                self.editor.add_new_transaction(trans_list)

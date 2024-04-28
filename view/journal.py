@@ -137,8 +137,9 @@ class JournalView(ttk.Frame):
 
     def _create_popup_menu(self, widget, value):
         menu = Menu(widget)
-        menu.add_command(label='Remove Transaction', command= lambda e=value.id: self.remove_transaction(e))
-        menu.add_command(label='Edit Transaction', command=lambda e=value: self._get_updated_transaction(e))
+        menu.add_command(label='Edit', command=lambda e=value: self._get_updated_transaction(e))
+        menu.add_command(label='Remove', command= lambda e=value.id: self.remove_transaction(e))
+
         if self.text.tk.call('tk', 'windowingsystem') == 'aqua':
             widget.bind_class(value.id, '<2>',         lambda e: menu.post(e.x_root, e.y_root))
             widget.bind_class(value.id, '<Control-1>', lambda e: menu.post(e.x_root, e.y_root))
