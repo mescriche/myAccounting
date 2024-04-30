@@ -190,11 +190,13 @@ class View(ttk.Frame):
 
                     if items := [item for item in query]:
                         _data = map(lambda x: DMTransaction.from_DBTransaction(x), items)
-                        _data = list(filter(lambda x:x.description not in _exclude_seats, _data))       
+                        
+                        _data = list(filter(lambda x:x.description.splitlines()[0].strip() not in _exclude_seats, _data))
+                        
                         _data = sorted(_data, key=lambda x:x.date)
                         for n,item in enumerate(_data, start=1):
                             item.id = n
-                            print(n, item.date, item.description)
+                            #print(n, item.date, item.description)
                         
                         filename = f'{year}_app_seats.json'
                         _filename = os.path.join(datafile_dir, filename )
