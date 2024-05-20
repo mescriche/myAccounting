@@ -23,7 +23,7 @@ class ConfigTool:
                the three files: accounts, income and balance
             '''),
             epilog=textwrap.dedent('''\
-            You have to create the user room before using any other tools or the main application.
+            You have to create the user folder before using any other tools or the main application.
             After using this tool, you have to create the user database by using db_tool.py
             Good bye! Good luck!
             ''')
@@ -119,7 +119,7 @@ class ConfigTool:
                 filename = os.path.basename(source)
                 print(f"{filename}:", error)
             else:
-                accounts = data['accounts']['accounts']
+                accounts = data['accounts']
                 acc_real_debit_codes = sorted([acc['code'] for acc in accounts
                                                if acc['content'] == 'REAL' and acc['type'] == 'DEBIT'])
                 acc_real_credit_codes = sorted([acc['code'] for acc in accounts
@@ -143,34 +143,31 @@ class ConfigTool:
                     print(f'Real credit account codes = {acc_real_credit_codes}')
                     exit()
             
-                inflows_codes = sorted(collect_codes(data['income']['inflows']))
-                if inflows_codes != acc_nom_credit_codes:
+                revenue_codes = sorted(collect_codes(data['income']['revenue']))
+                if revenue_codes != acc_nom_credit_codes:
                     print("Account codes in income inflows don't correspond with NOMINAL CREDIT account codes")
                     print(f'Income inflows codes = {inflows_codes}')
                     print(f'Nominal credit account codes = {acc_nom_credit_codes}')
                     exit()
             
-                outflows_codes = sorted(collect_codes(data['income']['outflows']))
-                if outflows_codes != acc_nom_debit_codes:
+                outgoing_codes = sorted(collect_codes(data['income']['outgoing']))
+                if outgoing_codes != acc_nom_debit_codes:
                     print("Account codes in income outflows don't correspond with NOMINAL DEBIT account codes")
                     print(f'Income outflows codes = {outflows_codes}')
                     print(f'Nominal debit account codes = {acc_nom_debit_codes}')
                     exit()
                     
                 target = os.path.join(self.user_dir, config_dir, accounts_file)
-                data['accounts']['profile'] = data['profile']
                 with open(target, 'w', encoding='utf-8') as _file:
                     json.dump(data['accounts'], _file, ensure_ascii=False, indent=4)
                     print(f"... generated accounts file {os.path.basename(target)} ")
 
                 target = os.path.join(self.user_dir, config_dir, income_file)
-                data['income']['profile'] = data['profile']
                 with open(target, 'w', encoding='utf-8') as _file:
                     json.dump(data['income'], _file, ensure_ascii=False, indent=4)
                 print(f"... generated income file {os.path.basename(target)}")
         
                 target = os.path.join(self.user_dir, config_dir, balance_file)
-                data['balance']['profile'] = data['profile']
                 with open(target, 'w', encoding='utf-8') as _file:
                     json.dump(data['balance'], _file, ensure_ascii=False, indent=4)
                 print(f"... generated balance file {os.path.basename(target)}")

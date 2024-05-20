@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from dbase import db_session, Account, Type
 from controller.utility import db_currency, db_get_yearRange
+from controller.app_seats import create_app_balance_closing_seat, db_record_file
 from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
 from .report import ConceptTree
 from locale import currency
@@ -14,6 +15,7 @@ class BalanceView(ttk.Frame):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
+        self.user_dir = user_dir
         self.configfiles_dir = os.path.join(user_dir, 'configfiles')
         self.datafiles_dir = os.path.join(user_dir, 'datafiles')
         self.eyear = IntVar()
@@ -46,8 +48,6 @@ class BalanceView(ttk.Frame):
         report_file = 'balance.json'
         with open(os.path.join(self.configfiles_dir, report_file)) as _file:
             self.balance_repo = json.load(_file)
-        self.balance_repo.pop('purpose')
-        self.balance_repo.pop('profile')
         
         dbit_frame = ttk.Labelframe(pw, text='Assets', labelanchor='n')
         pw.add(dbit_frame, weight=1)
@@ -83,66 +83,22 @@ class BalanceView(ttk.Frame):
         self.year_combo['values'] = values
         
     def create_closing_opening_seat(self):
-        def collect_codes(data:dict) -> list:
-            codes = list()
-            for k in data:
-                if isinstance(data[k], dict):
-                    codes.extend(collect_codes(data[k]))
-                elif isinstance(data[k], list):
-                    codes.extend(data[k])
-            else: return codes
         year = self.eyear.get()
-        closing_entries = list()
-        opening_entries = list()
-        assets_accounts = collect_codes(self.balance_repo['assets'])
-        with db_session() as db:
-            for code in assets_accounts:
-                account = db.query(Account).filter_by(code=code).one()
-                amount = account.balance(year)
-                if amount > 0:
-                    closing_entry = DMBookEntry(account=account.gname, type=Type.CREDIT, amount=amount)
-                    closing_entries.append(closing_entry)
-                    opening_entry = DMBookEntry(account=account.gname, type=Type.DEBIT, amount=amount)
-                    opening_entries.append(opening_entry)
-                    
-        claims_accounts = collect_codes(self.balance_repo['claims'])
-        with db_session() as db:
-            for code in claims_accounts:
-                account = db.query(Account).filter_by(code=code).one()
-                amount = account.balance(year)
-                if amount > 0:
-                    closing_entry = DMBookEntry(account=account.gname, type=Type.DEBIT, amount=amount)
-                    closing_entries.append(closing_entry)
-                    opening_entry = DMBookEntry(account=account.gname, type=Type.CREDIT, amount=amount)
-                    opening_entries.append(opening_entry)
-                    
-        ### create closing seat for running year
-        date = datetime.strptime(f'31-12-{year}', '%d-%m-%Y').date()
-        description = f"Balance closing seat for year {year}"
-        _data = [DMTransaction(id=0, date=date, description=description, entries=closing_entries),]
-        _filename = os.path.join(self.datafiles_dir, f'{year}_app_balance_closing_seat.json')
-        with open(_filename, 'w') as _file:
-            json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
-
-        ### create opening seat for next year
-        with db_session() as db:
-            wealth_acc = db.query(Account).filter_by(code=10).one() # Wealth account
-            outcome_acc = db.query(Account).filter_by(code=11).one() # Outcome account
-            earnings = outcome_acc.balance(year)
-            outcome_type = Type.DEBIT if earnings > 0 else Type.CREDIT
-            wealth_type = Type.CREDIT if outcome_type == Type.DEBIT else Type.CREDIT
-            opening_entries.append(DMBookEntry(account=outcome_acc.gname, type=outcome_type, amount=abs(earnings)))
-            opening_entries.append(DMBookEntry(account=wealth_acc.gname,  type=wealth_type,  amount=abs(earnings)))
-        
-        year = year + 1
-        date = datetime.strptime(f'1-1-{year}', '%d-%m-%Y').date()
-        description = f"Balance opening seat for year {year}"
-        _data = [DMTransaction(id=0, date=date, description=description, entries=opening_entries),]
-        _filename = os.path.join(self.datafiles_dir, f'{year}_app_opening_seat.json')
-        with open(_filename, 'w') as _file:
-            json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)        
-        messagebox.showwarning( message=f"{year-1} Balance closing seat file and \n{year} Opening seat file  have been created ", parent = self )
-        
+        outcome = create_app_balance_closing_seat(year, self.user_dir)
+        c_filename = os.path.join(self.datafiles_dir, outcome['closing'])
+        o_filename = os.path.join(self.datafiles_dir, outcome['opening'])
+        try: n = db_record_file(c_filename)
+        except Exception as e:
+            print(e)
+            return
+        try: n = db_record_file(o_filename)
+        except Exception as e:
+            print(e)
+            return
+        messagebox.showwarning(parent=self,
+                message=f"{year} Balance closing seat file and\n{year+1} Balance opening seat file \nhave been created\nBesides, {year + 1} Balance opening file has been applied")
+        self.refresh(year+1)
+            
     def refresh(self, year):
         min_year,max_year = db_get_yearRange()
         self.year_combo['values'] = values =[*range(max_year, min_year-1, -1)]

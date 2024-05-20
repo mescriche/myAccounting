@@ -4,15 +4,9 @@ import os, json,locale, re
 from datetime import datetime
 from dbase import db_session, Transaction, Account
 
-def db_get_profile(accounts_file) -> str:
-    with open(accounts_file) as _file:
-        config_data = json.load(_file)
-    return config_data['profile']
-
 
 def db_currency(data:float) -> str:
     return locale.currency(data, symbol=False, grouping=True)
-
 
 def db_get_account_code(gname:str) -> str:
     ptrn = re.compile(r'\[((C|D)(R|N))-(?P<code>\d+)\]\s[-\/\s\w]+')

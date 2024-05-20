@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from dbase import Transaction, db_session, Account, Type
 from controller.utility import db_currency, db_get_yearRange
+from controller.app_seats import create_app_income_closing_seat, create_app_year_seats, db_record_file
 from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
 from .report import ConceptTree
 from datetime import datetime
@@ -13,6 +14,7 @@ class IncomeView(ttk.Frame):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
+        self.user_dir = user_dir
         self.configfiles_dir = os.path.join(user_dir, 'configfiles')
         self.datafiles_dir = os.path.join(user_dir, 'datafiles')
         self.eyear = IntVar()
@@ -31,7 +33,9 @@ class IncomeView(ttk.Frame):
         self.year_combo.current(0)
 
         ttk.Label(title_frame, text = '').pack(side='left', expand=True, fill='x')
-        ttk.Button(title_frame, text='Closing Seat', command=self.create_income_closing_seat).pack(side='left')
+        button = ttk.Button(title_frame, text='Closing Seat',
+                   command=self.create_income_closing_seat)
+        button.pack(side='left')
         
         self.text = Text(self)
         self.text.pack(fill='both', expand=True)
@@ -46,12 +50,10 @@ class IncomeView(ttk.Frame):
         report_file = 'income.json'
         with open(os.path.join(self.configfiles_dir, report_file)) as _file:
             self.income_repo = json.load(_file)
-        self.income_repo.pop('purpose')
-        self.income_repo.pop('profile')
         
-        inframe = ttk.Labelframe(pw, text='Inflows', labelanchor='n')
+        inframe = ttk.Labelframe(pw, text='Revenue', labelanchor='n')
         pw.add(inframe, weight=1)
-        self.inflow = ConceptTree(inframe, self.income_repo['inflows'],
+        self.inflow = ConceptTree(inframe, self.income_repo['revenue'],
                                   height=20, selectmode='browse', show='headings')
         self.inflow.pack()
         self.inflow.column('topic', width=250, anchor='w')
@@ -66,9 +68,9 @@ class IncomeView(ttk.Frame):
         self.inflow.bind('<<TreeviewSelect>>', self.display_concept_items)
 
           
-        outframe = ttk.Labelframe(pw, text='Outflows', labelanchor='n')
+        outframe = ttk.Labelframe(pw, text='Outgoing', labelanchor='n')
         pw.add(outframe, weight=1)
-        self.outflow = ConceptTree(outframe, self.income_repo['outflows'],
+        self.outflow = ConceptTree(outframe, self.income_repo['outgoing'],
                                    height=20, selectmode='browse', show='headings')
         self.outflow.pack()
         self.outflow.column('topic', width=250, anchor='w')
@@ -112,75 +114,22 @@ class IncomeView(ttk.Frame):
         self.summary.set(f'NET INCOME  = {net_income:>10}')
         self.text['state'] = 'disabled'
 
-        
     def create_income_closing_seat(self):
-        def collect_codes(data:dict) -> list:
-            codes = list()
-            for k in data:
-                if isinstance(data[k], dict):
-                    codes.extend(collect_codes(data[k]))
-                elif isinstance(data[k], list):
-                    codes.extend(data[k])
-            else: return codes
-            
         year = self.eyear.get()
-        entries = list()
-        in_accounts = collect_codes(self.income_repo['inflows'])
-        with db_session() as db:
-            total = 0
-            for code in in_accounts:
-                account = db.query(Account).filter_by(code=code).one()
-                amount = account.credit(year)
-                if amount > 0:
-                    total += amount
-                    entry = DMBookEntry(account=account.gname, type=Type.DEBIT, amount=amount)
-                    entries.append(entry)
-            else:
-                ### Outcome (code=11)
-                outcome_code = 11
-                account = db.query(Account).filter_by(code=outcome_code).one()
-                entry = DMBookEntry(account=account.gname, type=Type.CREDIT, amount=total)
-                entries.append(entry)
-                    
-        out_accounts = collect_codes(self.income_repo['outflows'])
-        with db_session() as db:
-            total = 0
-            for code in out_accounts:
-                account = db.query(Account).filter_by(code=code).one()
-                amount = account.debit(year)
-                if amount > 0:
-                    total += amount
-                    entry = DMBookEntry(account=account.gname, type=Type.CREDIT, amount=amount)
-                    entries.append(entry)
-            else:
-                outcome_code = 11
-                account = db.query(Account).filter_by(code=outcome_code).one()
-                entry = DMBookEntry(account=account.gname, type=Type.DEBIT, amount=total)
-                entries.append(entry)
-                    
-        date = datetime.strptime(f'31-12-{year}', '%d-%m-%Y').date()
-        description = f"Income closing seat for year {self.eyear.get()}"
-        _data = [DMTransaction(id=0, date=date, description=description, entries=entries),]
-
-        _filename = os.path.join(self.datafiles_dir, f'{year}_app_income_closing_seat.json')
-        with open(_filename, 'w') as _file:
-            json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
-
-        with db_session() as db:
-            min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
-            max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
-            query = db.query(Transaction).filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)
-            if items := [item for item in query]:
-                _data = [DMTransaction.from_DBTransaction(item) for item in items]
-                _data = _data[1:]
-                for n,item in enumerate(_data, start=1): item.id = n
-                filename = f'{year}_app_seats.json'
-                _filename = os.path.join(self.datafiles_dir, filename )
-                with open(_filename, 'w') as _file:
-                    json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
-            
-        messagebox.showwarning( message=f"{year} Income closing seat file and \n{year} seats file have been created ", parent = self )
-
+        filename = create_app_income_closing_seat(year, self.user_dir)
+        self.parent.master.log.print(f'{filename} created')
+        filename = os.path.join(self.datafiles_dir, filename)
+        try: n = db_record_file(filename)
+        except Exception as e:
+            print(e)
+            return
+        else:
+            output = create_app_year_seats(year, self.user_dir)
+            self.parent.master.log.print(f"{output['filename']} has been created with {output['n_records']} records")
+            messagebox.showwarning(parent=self,
+                message=f"{year} Income closing seat file and\n{year} year seats file\nhave been created\nAdditionally Income closing file has been applied")
+            self.refresh(year)
+            return
             
     def display_concept_items(self, event):
         year = self.eyear.get()

@@ -4,7 +4,8 @@ import argparse, os, re, sys, json, textwrap
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 
-from controller.closing_seats import record_file, create_app_income_closing_seat, create_app_balance_closing_seat
+from controller.app_seats import create_app_income_closing_seat, create_app_balance_closing_seat
+from controller.app_seats import db_record_file
 from dbase import db_init, db_setup, db_session
 
 
@@ -27,8 +28,8 @@ parser.add_argument('user', help='username used to find data')
 parser.add_argument('-o','--owner', action='store_true', help='take owner files as source, normally takes app files')
 args = parser.parse_args()
 print(args)
-
-user_dir = os.path.join(root_dir, 'users', args.user)
+users_dir = os.path.join(root_dir, 'users')
+user_dir = os.path.join(users_dir, args.user)
 datafiles_dir = os.path.join(user_dir, 'datafiles')
 config_dir = os.path.join(user_dir, 'configfiles')
 dbase_dir = os.path.join(user_dir, 'dbase')
@@ -78,51 +79,58 @@ if os.path.isfile(db_file):
     os.rename(db_file , backup_file)
     print(f'... backing up database into file: {os.path.basename(backup_file)}')
 
-print(f'... creating data base into {os.path.relpath(db_file, start=user_dir)}')
+print(f'... creating data base into {os.path.relpath(db_file, start=users_dir)}')
 
 print('... init data base ...')
 db_init(db_config)
 
 accounts_file = os.path.join(config_dir, 'accounts.json')
-print(f'... setup data base from user accounts file: {os.path.relpath(accounts_file, start=user_dir)}')
+print(f'... setup data base from user accounts file: {os.path.relpath(accounts_file, start=users_dir)}')
 db_setup(accounts_file)
 
 for year in years:
-    print(year)
+    print(f'>>> year : {year}')
     filename = f'{year}_{args.user}_opening_seat.json' if year == starting_year else f'{year}_app_opening_seat.json'
-    print(f'...recording {filename}')
+    print(f'...recording {filename:<35}', end='')
     filename = os.path.join(datafiles_dir, filename)
-    try: record_file(filename)
+    try: n = db_record_file(filename)
     except Exception as e:
         print(e)
         break
+    else:
+        print(f": {n:>4} seats recorded")
 
     filename = f'{year}_{file_tag}_seats.json'
-    print(f'...recording {filename}')
+    print(f'...recording {filename:<35}', end='')
     filename = os.path.join(datafiles_dir, filename)
-    try: record_file(filename)
+    try: n = db_record_file(filename)
     except Exception as e:
         print(e)
         break
+    else:
+        print(f": {n:>4} seats recorded")
 
     if year == years[-1]: break
     
-    filename = create_app_income_closing_seat(year, config_dir, datafiles_dir)
-    print(f'...recording {filename}')
+    filename = create_app_income_closing_seat(year, user_dir)
+    print(f"...recording {filename:<35}", end='')
     filename = os.path.join(datafiles_dir, filename)
-    try: record_file(filename)
+    try: n = db_record_file(filename)
     except Exception as e:
         print(e)
         break
-
-    filename = create_app_balance_closing_seat(year, config_dir, datafiles_dir)
-    print(f'...recording {filename}')
-    filename = os.path.join(datafiles_dir, filename)
-    try: record_file(filename)
-    except Exception as e:
-        print(e)
-        break
+    else:
+        print(f": {n:>4} seats recorded")
     
+    outcome = create_app_balance_closing_seat(year, user_dir)
+    print(f"...recording {outcome['closing']:<35}", end='')
+    filename = os.path.join(datafiles_dir, outcome['closing'])
+    try: n = db_record_file(filename)
+    except Exception as e:
+        print(e)
+        break
+    else:
+        print(f": {n:>4} seats recorded")  
     
 
     

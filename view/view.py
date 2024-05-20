@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from tkinter import filedialog
 from datamodel.transaction import DMTransaction, DMTransactionEncoder
+from controller.app_seats import create_app_year_seats
 #from .excel import ExcelView
 from .input import InputView
 from .journal import JournalView
@@ -12,7 +13,6 @@ from .balance import BalanceView
 from .log import LogView
 from .save import askSaveDBToFileDialog
 from .map import MapView
-from dbase import db_session, Transaction
 from datetime import datetime
 from locale import currency
 import os, json
@@ -176,44 +176,16 @@ class View(ttk.Frame):
     def save_db_to_file(self):
         answer, years = askSaveDBToFileDialog(self)
         if answer:
-            datafile_dir = os.path.join(self.user_dir, 'datafiles')
-            with db_session() as db:
-                for year in years:
-                    min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
-                    max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
-                    query = db.query(Transaction).filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)
-                    _opening_statement = "Balance Opening Statement"
-                    _balance_opening_seat = f"Balance opening seat for year {year}"
-                    _income_closing_seat =  f"Income closing seat for year {year}"
-                    _balance_closing_seat = f"Balance closing seat for year {year}"
-                    _exclude_seats = (_opening_statement, _balance_opening_seat, _income_closing_seat, _balance_closing_seat)
-
-                    if items := [item for item in query]:
-                        _data = map(lambda x: DMTransaction.from_DBTransaction(x), items)
-                        
-                        _data = list(filter(lambda x:x.description.splitlines()[0].strip() not in _exclude_seats, _data))
-                        
-                        _data = sorted(_data, key=lambda x:x.date)
-                        for n,item in enumerate(_data, start=1):
-                            item.id = n
-                            #print(n, item.date, item.description)
-                        
-                        filename = f'{year}_app_seats.json'
-                        _filename = os.path.join(datafile_dir, filename )
-                        with open(_filename, 'w') as _file:
-                            json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
-                        _msg = f"{filename} saved, {n} records"
-                        self.log.print(_msg)
-                else:
-                    title = "Save DB seats to file"
-                    msg = f'{len(years)} files saved'
-                    messagebox.showinfo(title=title, message=msg, parent=self)
-
-                    
-                
+            for year in years:
+                outcome = create_app_year_seats(year, self.user_dir)
+                _msg = f"{outcome['filename']} saved, {outcome['n_records']} records"
+                self.log.print(_msg)
+            else:
+                title = "Save DB seats to file"
+                msg = f'{len(years)} files saved'
+                messagebox.showinfo(title=title, message=msg, parent=self)
 
     def exit_app(self):
-
         self.parent.destroy()
         
         
