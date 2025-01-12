@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox
 #from tkinter.simpledialog import Dialog
 #from .dialog import Dialog
 from dbase import db_session, Type, Account
-from controller.utility import db_get_accounts_gname, db_get_profile, db_currency
+from controller.utility import db_get_accounts_gname, db_currency
 from controller.excel_reader import create_excel_reader
 from dataclasses import asdict
 from .transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
