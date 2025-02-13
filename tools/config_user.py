@@ -146,14 +146,14 @@ class ConfigTool:
                 revenue_codes = sorted(collect_codes(data['income']['revenue']))
                 if revenue_codes != acc_nom_credit_codes:
                     print("Account codes in income inflows don't correspond with NOMINAL CREDIT account codes")
-                    print(f'Income inflows codes = {inflows_codes}')
+                    print(f'Income inflows codes = {revenue_codes}')
                     print(f'Nominal credit account codes = {acc_nom_credit_codes}')
                     exit()
             
                 outgoing_codes = sorted(collect_codes(data['income']['outgoing']))
                 if outgoing_codes != acc_nom_debit_codes:
                     print("Account codes in income outflows don't correspond with NOMINAL DEBIT account codes")
-                    print(f'Income outflows codes = {outflows_codes}')
+                    print(f'Income outflows codes = {outgoing_codes}')
                     print(f'Nominal debit account codes = {acc_nom_debit_codes}')
                     exit()
                     

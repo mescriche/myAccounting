@@ -1,9 +1,11 @@
 __author__ = 'Manuel Escriche'
 
-import argparse, os, sys, json, textwrap
+import argparse, os, re, sys, json, textwrap, shutil
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 import dbase
+from controller.app_seats import create_year_seats
+from controller.utility import  db_get_yearRange
 
 class DBaseTool:
     def __init__(self, root_dir):
@@ -11,7 +13,7 @@ class DBaseTool:
             formatter_class = argparse.RawDescriptionHelpFormatter,
             description = textwrap.dedent('''\
             Tool to manage the user database file.
-            -> It uses the dbase model to init the user database
+            -> It uses the dbase model to init the user database file
             -> It uses the config file for accounts located at the user folder to setup the user database.
             '''),
             epilog = textwrap.dedent('''\
@@ -21,22 +23,32 @@ class DBaseTool:
         )
 
         parser.add_argument('user', help='username whose database file is targeted for operation')
-        subparsers = parser.add_subparsers(required=True, help='commands available for database user file')
+        subparsers = parser.add_subparsers(required=True, help='commands available for database user file', dest='command')
 
-        parser_create = subparsers.add_parser('create', help='create database file')
+        parser_create = subparsers.add_parser('create', help='creates the database file')
         parser_create.set_defaults(func=self.db_create)
 
-        parser_init = subparsers.add_parser('init', help='init database')
+        parser_init = subparsers.add_parser('init',
+                                            help='init database file based on its definition: create engine, table, etc, and a session ')
         parser_init.set_defaults(func=self.db_init)
 
-        parser_setup = subparsers.add_parser('setup', help='setup database')
+        parser_setup = subparsers.add_parser('setup', help='setup database. It adds records for new accounts.')
         parser_setup.add_argument('-c', "--check",
                                   help='check consistency between Accounts table in data base, and accounts.json file',
                                   action='store_true')
         parser_setup.set_defaults(func=self.db_setup)
 
-        parser_query = subparsers.add_parser('query', help='simple database query for accounts created with setup')
+        parser_query = subparsers.add_parser('query',
+                                             help='simple database query for accounts created with setup')
         parser_query.set_defaults(func=self.db_query)
+
+        parser_save = subparsers.add_parser('save', help='saves database content into seats files')
+        parser_save.add_argument('-t','--tag', nargs='?', default='app', const='user', help='tag to be used in filenames:<year>_<tag>_seats.json; default tag=app, -t =<user>')
+        parser_save.set_defaults(func=self.db_save_to_file)
+
+        parser_backup = subparsers.add_parser('backup',
+                                              help='creates a database file backup')
+        parser_backup.set_defaults(func=self.db_backup)
         
         parser_remove = subparsers.add_parser('remove', help='remove database file')
         parser_remove.set_defaults(func=self.db_remove)
@@ -45,6 +57,7 @@ class DBaseTool:
         #print(args)
         
         self.user_dir = os.path.join(root_dir, 'users', args.user)
+        self.datafiles_dir = os.path.join(self.user_dir, 'datafiles')
         dbase_file = f'{args.user}_accounting.db'
         self.dbase_dir = os.path.join(self.user_dir, 'dbase')
         self.dbase_file = os.path.join(self.dbase_dir, dbase_file)
@@ -76,27 +89,26 @@ class DBaseTool:
         print('setup', args)
         dbase.db_open(self.db_config)
         accounts_file = os.path.join(self.user_dir,'configfiles','accounts.json')
+        print(accounts_file)
         if not args.check:
             dbase.db_setup(accounts_file)
         else:
             with open(accounts_file) as acc_file, dbase.db_session() as db:
                 data = json.load(acc_file)
-                for record in data['accounts']:
-                    print(record)
+                for record in data:
                     try: account = db.query(dbase.Account).filter_by(name=record['name']).one()
                     except NoResultFound:
                         print('-> account missing in data base')
                     else:
                         print(account)
-            
 
     def db_query(self, args):
-        print('test', args.user)
+        print('query', args.user)
         dbase.db_open(self.db_config)
         with dbase.db_session() as db:
             for account in db.query(dbase.Account):
                 print(account)
-
+                
     def db_remove(self, args):
         print('remove', args.user)
         backup_file = self.dbase_file + '.bk'
@@ -106,5 +118,28 @@ class DBaseTool:
         else:
             print(f"... it doesn't exist database file: {os.path.basename(self.dbase_file)}")
 
+    def db_backup(self, args):
+        print('backup', args.user)
+        backup_file = self.dbase_file + '.bk'
+        if os.path.isfile(self.dbase_file):
+            shutil.copyfile(self.dbase_file, backup_file)
+            print(f"... file {os.path.basename(backup_file)} created ")
+        else:
+            print(f"... it doesn't exist database file: {os.path.basename(self.dbase_file)}")            
+    def db_save_to_file(self, args):
+        print('save_to_file', args)
+        dbase.db_open(self.db_config)
+
+        if args.tag == 'user': args.tag = args.user
+        min_year, max_year = db_get_yearRange()
+        years =  [*range(min_year, max_year+1)]
+        print(years)
+
+        for year in years:
+            print(year)
+            outcome = create_year_seats(year, self.user_dir, args.tag)
+            _msg = f"{outcome['filename']} saved, {outcome['n_records']} records"
+            print(_msg)
+        
 if __name__ == '__main__':
     app = DBaseTool(root_dir)

@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from tkinter import filedialog
 from datamodel.transaction import DMTransaction, DMTransactionEncoder
-from controller.app_seats import create_app_year_seats
+from controller.app_seats import create_year_seats
 #from .excel import ExcelView
 from .input import InputView
 from .journal import JournalView
@@ -177,7 +177,7 @@ class View(ttk.Frame):
         answer, years = askSaveDBToFileDialog(self)
         if answer:
             for year in years:
-                outcome = create_app_year_seats(year, self.user_dir)
+                outcome = create_year_seats(year, self.user_dir)
                 _msg = f"{outcome['filename']} saved, {outcome['n_records']} records"
                 self.log.print(_msg)
             else:

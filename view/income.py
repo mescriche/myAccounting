@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from dbase import Transaction, db_session, Account, Type
 from controller.utility import db_currency, db_get_yearRange
-from controller.app_seats import create_app_income_closing_seat, create_app_year_seats, db_record_file
+from controller.app_seats import create_income_closing_seat, create_year_seats, db_record_file
 from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
 from .report import ConceptTree
 from datetime import datetime

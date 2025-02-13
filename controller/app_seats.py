@@ -42,7 +42,7 @@ def db_record_file(filename) -> int:
             else:
                 return len(_data)
 
-def create_app_income_closing_seat(year, user_dir) -> str:
+def create_income_closing_seat(year, user_dir, tag='app') -> str:
     datafiles_dir = os.path.join(user_dir, 'datafiles')
     entries = list()
     with db_session() as db:
@@ -74,13 +74,13 @@ def create_app_income_closing_seat(year, user_dir) -> str:
     date = datetime.strptime(f'31-12-{year}', '%d-%m-%Y').date()
     description = f"Income closing seat for year {year}"
     _data = [DMTransaction(id=0, date=date, description=description, entries=entries),]
-    filename = f'{year}_app_income_closing_seat.json'
+    filename = f'{year}_{tag}_income_closing_seat.json'
     _filename = os.path.join(datafiles_dir, filename)
     with open(_filename, 'w') as _file:
         json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)        
     return filename
 
-def create_app_balance_closing_seat(year, user_dir) -> dict:
+def create_balance_closing_seat(year, user_dir, tag='app') -> dict:
     datafiles_dir = os.path.join(user_dir, 'datafiles')
     closing_entries = list()
     opening_entries = list()
@@ -118,7 +118,7 @@ def create_app_balance_closing_seat(year, user_dir) -> dict:
     date = datetime.strptime(f'31-12-{year}', '%d-%m-%Y').date()
     description = f"Balance closing seat for year {year}"
     _data = [DMTransaction(id=0, date=date, description=description, entries=closing_entries),]
-    closing_filename =  f'{year}_app_balance_closing_seat.json'
+    closing_filename =  f'{year}_{tag}_balance_closing_seat.json'
     _filename = os.path.join(datafiles_dir, closing_filename)
     with open(_filename, 'w') as _file:
         json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
@@ -128,13 +128,13 @@ def create_app_balance_closing_seat(year, user_dir) -> dict:
     date = datetime.strptime(f'1-1-{year}', '%d-%m-%Y').date()
     description = f"Balance opening seat for year {year}"
     _data = [DMTransaction(id=0, date=date, description=description, entries=opening_entries),]
-    opening_filename = f'{year}_app_opening_seat.json'
+    opening_filename = f'{year}_{tag}_opening_seat.json'
     _filename = os.path.join(datafiles_dir, opening_filename )
     with open(_filename, 'w') as _file:
         json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
     return  {'closing': closing_filename, 'opening': opening_filename}
 
-def create_app_year_seats(year, user_dir) -> dict:
+def create_year_seats(year, user_dir, tag='app') -> dict:
     datafiles_dir = os.path.join(user_dir, 'datafiles')
     _opening_statement = "Balance Opening Statement"
     _balance_opening_seat = f"Balance opening seat for year {year}"
@@ -151,7 +151,7 @@ def create_app_year_seats(year, user_dir) -> dict:
             _data = sorted(_data, key=lambda x:x.date)
             for n,item in enumerate(_data, start=1): item.id = n
                  #print(n, item.date, item.description)       
-            filename = f'{year}_app_seats.json'
+            filename = f'{year}_{tag}_seats.json'
             _filename = os.path.join(datafiles_dir, filename )
             with open(_filename, 'w') as _file:
                 json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)

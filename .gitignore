@@ -163,3 +163,7 @@ importApp.py
 configfiles/senior_mev.json
 Pipfile.lock
 users
+*.aux
+*.gz
+*.out
+*.toc

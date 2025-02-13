@@ -4,7 +4,7 @@ import argparse, os, re, sys, json, textwrap
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 
-from controller.app_seats import create_app_income_closing_seat, create_app_balance_closing_seat
+from controller.app_seats import create_income_closing_seat, create_balance_closing_seat
 from controller.app_seats import db_record_file
 from dbase import db_init, db_setup, db_session
 
@@ -12,22 +12,39 @@ from dbase import db_init, db_setup, db_session
 parser = argparse.ArgumentParser(
     formatter_class = argparse.RawDescriptionHelpFormatter,
     description=textwrap.dedent('''\
-    Process data over the years to work out three app files:  
-    -> year income closing seat, 
-    -> year balance closing seat, 
-    -> and next year opening seat. 
-    The user data base is built according to files content '''),
+    It creates a new data base, and the closing and opening seats files over the years.
+    
+    It takes as data source:
+    -> balance opening: <YEAR>_<user/tag>_opening_seat.json
+    -> seats files: <YEAR>_<tag>_seats.json
+    
+    From that, it creates new consistent:
+    -> year income closing seat: <YEAR>_<tag>_income_closing_seat.json
+    -> year balance closing seat: <YEAR>_<tag>_balance_closing_seat.json
+    -> next year balance opening seat: <YEAR+1>_<tag>_opening_seat.json
+    which, are loaded into the data base, and ... repeats the process over the years.
+    
+    The final outcome are new consistent data base and seat files.
+    '''),
     epilog=textwrap.dedent('''\
-    This tool is meant to be used to amend the first opening seat, remake the database
-    and subsequent yearly closing and opening seats. 
+    This tool is meant to be used when having to modify or update the first opening seat
+    or when having to modify the user profile <user>_profile.json; 
+    Consequently the database and the mandatory seat files have to be rebuilt over the years.
     Use this tool carefully!!
     Good bye! Good luck!
     ''')
 )
-parser.add_argument('user', help='username used to find data')
-parser.add_argument('-o','--owner', action='store_true', help='take owner files as source, normally takes app files')
+parser.add_argument('user', help='username; used to find data ')
+parser.add_argument('-t','--tag', nargs='?', default='app', const='user',
+                    help=' take data files with pattern YEAR_<tag>_seats.json:\
+                    missing -t => tag = app;\
+                    -t => tag = <user>;\
+                    -t tag => tag = tag')
 args = parser.parse_args()
 print(args)
+
+if args.tag == 'user': args.tag = args.user
+
 users_dir = os.path.join(root_dir, 'users')
 user_dir = os.path.join(users_dir, args.user)
 datafiles_dir = os.path.join(user_dir, 'datafiles')
@@ -36,19 +53,19 @@ dbase_dir = os.path.join(user_dir, 'dbase')
 
 files_list = sorted(os.listdir(datafiles_dir))
 
-pattern = re.compile(r'\d{4}_' + args.user + '_opening_seat' + r'\.json')
+pattern = re.compile(r'\d{4}_' + args.user + '_opening_seat.json')
 for filename in files_list:
     if pattern.match(filename):
         break
 else:
-    print(f'Not starting file available' )    
+    print(f'Not starting file with pattern YEAR_{args.user}_opening_seat.json available' )    
     sys.exit()
 
 print(f'>>> starting opening data file:\n0 : {filename}')
 starting_year = int(filename[:4])
 
-file_tag = args.user if args.owner else 'app'
-pattern = re.compile(r'\d{4}_'+ file_tag + '_seats.json')
+
+pattern = re.compile(r'\d{4}_'+ args.tag + '_seats.json')
 files = sorted(filter(lambda x: pattern.match(x), files_list))
 
 if not len(files):
@@ -90,7 +107,8 @@ db_setup(accounts_file)
 
 for year in years:
     print(f'>>> year : {year}')
-    filename = f'{year}_{args.user}_opening_seat.json' if year == starting_year else f'{year}_app_opening_seat.json'
+    filename = f'{year}_{args.user}_opening_seat.json' \
+        if year == starting_year else f'{year}_{args.tag}_opening_seat.json'
     print(f'...recording {filename:<35}', end='')
     filename = os.path.join(datafiles_dir, filename)
     try: n = db_record_file(filename)
@@ -100,7 +118,7 @@ for year in years:
     else:
         print(f": {n:>4} seats recorded")
 
-    filename = f'{year}_{file_tag}_seats.json'
+    filename = f'{year}_{args.tag}_seats.json'
     print(f'...recording {filename:<35}', end='')
     filename = os.path.join(datafiles_dir, filename)
     try: n = db_record_file(filename)
@@ -112,7 +130,7 @@ for year in years:
 
     if year == years[-1]: break
     
-    filename = create_app_income_closing_seat(year, user_dir)
+    filename = create_income_closing_seat(year, user_dir, args.tag)
     print(f"...recording {filename:<35}", end='')
     filename = os.path.join(datafiles_dir, filename)
     try: n = db_record_file(filename)
@@ -122,7 +140,7 @@ for year in years:
     else:
         print(f": {n:>4} seats recorded")
     
-    outcome = create_app_balance_closing_seat(year, user_dir)
+    outcome = create_balance_closing_seat(year, user_dir, args.tag)
     print(f"...recording {outcome['closing']:<35}", end='')
     filename = os.path.join(datafiles_dir, outcome['closing'])
     try: n = db_record_file(filename)
