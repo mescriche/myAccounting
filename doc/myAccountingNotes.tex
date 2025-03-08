@@ -1,0 +1,65 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\graphicspath{{./images/}}
+\usepackage{tikz}
+\usetikzlibrary{babel, positioning, calc}
+\usepackage{subfiles}
+\title{Mis Apuntes de Contabilidad}
+\author{Manuel Escriche Vicente}
+\begin{document}
+\maketitle
+\begin{abstract}
+El número de eventos con aspecto económico es vertiginoso; día a día se suceden, aquellos motivados por compras con la tarjeta aparecen en el teléfono móvil o en el reloj; pero hay otros, como los recibos de la electricidad, el agua, o los impuestos, que están silenciosamente registrados en la cuenta corriente. 
+ 
+Mantenerse orientado por el saldo de la cuenta corriente, da cierto grado de control, pero sin perspectiva global. No tienes visión de los flujos entrantes y salientes de dinero, y tampoco tienes perspectiva del capital acumulado.
+
+Emprender algún proyecto económico requiere entender mejor nuestras finanzas personales, nuestra estructura de gastos, nuestra capacidad de ahorro, nuestro flujo de ingresos, nuestro capital acumulado. 
+
+Objetivo: Conseguir una perspectiva global de mis finanzas para establecer objetivos, y realizar proyectos.
+\end{abstract}
+\tableofcontents
+\newpage
+
+\section{Conceptos básicos}
+La contabilidad intenta obtener una representación fiable, real de eventos económicos, que se materializan mediante transacciones, que quedan reflejadas en asientos contables.
+\par
+Los asientos contables son un elemento clave de la actividad contable, y tienen el siguiente aspecto:
+\begin{figure}[h]
+\centering
+ \begin{tikzpicture}
+ \draw[help lines] (0,0) grid (10,3);
+ \coordinate (a) at (0,2);
+ \coordinate (a1) at ($(a) + (1.5, 1)$);
+ \coordinate (b)  at ($(a) + (10,0)$);
+ \coordinate (b1) at ($(b) + (-1.5, 1)$);
+ %\fill[red] (b) circle (2pt);
+ %\path[draw, thick] ($(a) + (0,1)$) node[above right] {Transaction \#id} -- ($(b) + (0,1)$) node[above left] {Date};
+ \path[draw, ultra thick] (a) node [above right] {Debit}  -- (b) node[above left] {Credit} node[midway,above=2pt]{Accounts};
+ \path[draw, ultra thick] (a1) -- +(0,-3) ; 
+ \path[draw, ultra thick] (b1) -- +(0,-3);
+ \end{tikzpicture}
+\end{figure}
+%
+\paragraph{Account} se refiere a las cuentas que agregan entradas definidas en  el asiento. Estas cuentas pueden ser: por un lado, débito o crédito, y por otro, reales o nominales. Esto configura cuatro tipo de cuentas: real-débito, real-crédito, nominal-débito, nominal-crédito.
+\paragraph{Las cuentas reales} son variables de estado, representan el valor de un bien, para las cuentas de débito, y los derechos sobre bienes, para las cuentas de crédito. 
+\paragraph{Las cuentas nominales} son variables de flujo, representan o etiquetan la entrada o salida de valor en una cuenta.
+\paragraph{''debitar'' y ''acreditar''} las cuentas tienen un significado distinto dependiendo de que la cuenta sea de débito o crédito. De tal forma que:
+\begin{itemize}
+\item \emph{debitar} una cuenta de débito es \textbf{incrementarla}, en cambio, una cuenta de crédito es \textbf{reducirla}
+\item \emph{acreditar} una cuenta de crédito es también \textbf{incrementarla}, en cambio, una cuenta de débito es \textbf{reducirla}
+\end{itemize}
+
+\section{Joven Graduado}
+\subfile{myAccountingNotes-Graduado.tex}
+
+\clearpage
+
+\section{PYME}
+\subfile{myAccountingNotes-PYME.tex}
+
+\end{document}

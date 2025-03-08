@@ -1,20 +1,20 @@
 __author__ = 'Manuel Escriche'
 import locale
 locale.setlocale(locale.LC_ALL, '')
-
 import argparse, sys, os
 
 parser = argparse.ArgumentParser(description='program for creating json transactions from excell files')
-parser.add_argument('user', help='username used')
+parser.add_argument('username', help='username used')
 args = parser.parse_args()
 #print(args)
 
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
+from datamodel import UserData
 
-user_dir = os.path.join(root_dir, 'users', args.user)
+user = UserData(root_dir, args.username)
         
-if not os.path.isdir(user_dir):
+if not os.path.isdir(user.user_dir):
     print(f"user {args.user} hasn't been configured yet: use configApp tool for configuration")
     exit()
     
@@ -25,12 +25,14 @@ from view.excel_editor import ExcelView
 from view.text_editor import TextEditor
 from view.ledger import LedgerView
 from view.journal import JournalView
+from view.log import LogView
 
 class Blackboard(ttk.Frame):
-    def __init__(self, parent, user_dir, **kwargs):
+    def __init__(self, parent, user, **kwargs):
         super().__init__(parent, **kwargs)
         self.pack(fill='both', expand=True)
-        self.dirname = os.path.join(user_dir, 'datafiles')
+        self.dirname = user.datafiles_dir
+        
         tools_bar = ttk.Frame(self, height=15)
         tools_bar.pack(expand=False, fill='x', padx=1, pady=1)
         file_bar = ttk.Labelframe(tools_bar, text='File')
@@ -56,9 +58,9 @@ class Blackboard(ttk.Frame):
         self.filename.set('_'.join((youngest_date.strftime('%Y%m%d'), items[0], items[1])) + '.json')
         
 class ExcelTool(Tk):
-    def __init__(self, username):
+    def __init__(self, user):
         super().__init__()
-        self.title(f'Personal Accounting - Tool: Excel Reader - User: {username.upper()}')
+        self.title(f'Personal Accounting - Tool: Excel Reader - User: {user.name.upper()}')
         window_size = 1100, 600
         screen_size = self.winfo_screenwidth(), self.winfo_screenheight()
         center =  int((screen_size[0] - window_size[0]) / 2) , int((screen_size[1] - window_size[1]) / 2)
@@ -73,20 +75,13 @@ class ExcelTool(Tk):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.createcommand('tk::mac::Quit', self.destroy)
 
-        dbase_dir = os.path.join(user_dir, 'dbase')
-        dbase_file = os.path.join(dbase_dir, f'{username}_accounting.db')
-        db_config = {'sqlalchemy.url':f'sqlite+pysqlite:///{dbase_file}',
-                     'sqlalchemy.echo':False}
-        db_init(db_config)
-        
-        config_dir = os.path.join(user_dir, 'configfiles')        
-        db_file = os.path.join(config_dir, 'accounts.json')
-        db_setup(db_file)
+        db_init(user.db_config)        
+        db_setup(user.accounts_file)
             
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
         
-        self.input = ExcelView(self.notebook, user_dir)
+        self.input = ExcelView(self.notebook, user)
         self.notebook.add(self.input, text='Excel')
 
         self.ledger = LedgerView(self.notebook)
@@ -95,9 +90,12 @@ class ExcelTool(Tk):
         self.journal = JournalView(self.notebook)
         self.notebook.add(self.journal, text='Journal')
 
-        self.output = Blackboard(self.notebook, user_dir)
+        self.output = Blackboard(self.notebook, user)
         self.notebook.add(self.output, text='Blackboard')
+
+        self.log = LogView(self.notebook)
+        self.notebook.add(self.log, text='Log')
         
 if __name__ == '__main__':
-    app = ExcelTool(args.user)
+    app = ExcelTool(user)
     app.mainloop()

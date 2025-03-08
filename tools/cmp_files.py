@@ -2,6 +2,7 @@ __author__ = 'Manuel Escriche'
 import argparse, os, sys, json, textwrap
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
+from datamodel import UserData
 from datamodel.transaction import DMTransaction
 
 parser = argparse.ArgumentParser(
@@ -17,14 +18,13 @@ parser.add_argument('-p', "--print" , metavar='Tid', type=int, nargs='+', action
                     help='print transactions from tag file first, and app file second. examples: -p 1; -p 2 3; -p 0 23')
 args=parser.parse_args()
 print(args)
-                    
-user_dir = os.path.join(root_dir, 'users', args.user)
-datafiles_dir = os.path.join(user_dir, 'datafiles')
+
+user = UserData(root_dir, args.user)
 
 if not args.tag: args.tag = args.user 
 
-tag_file = os.path.join(datafiles_dir, f'{args.year}_{args.tag}_seats.json')
-app_file = os.path.join(datafiles_dir, f'{args.year}_app_seats.json')
+tag_file = os.path.join(user.datafiles_dir, f'{args.year}_{args.tag}_seats.json')
+app_file = os.path.join(user.datafiles_dir, f'{args.year}_app_seats.json')
 
 tag_data = list()
 if os.path.exists(tag_file):

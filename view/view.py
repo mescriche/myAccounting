@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox
 from tkinter import filedialog
 from datamodel.transaction import DMTransaction, DMTransactionEncoder
 from controller.app_seats import create_year_seats
-#from .excel import ExcelView
+from dbase import db_session, Transaction
 from .input import InputView
 from .journal import JournalView
 from .ledger import LedgerView
@@ -27,12 +27,12 @@ class View(ttk.Frame):
         'Olive Green': '#D1E7E0.#5B8340',
         'Night Mode': '#FFFFFF.#000000',
     }
-    def __init__(self, parent, user_dir,  **kwargs):
+    def __init__(self, parent, user,  **kwargs):
         super().__init__(parent, **kwargs)
         self.pack(fill='both', expand=True)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
-        self.user_dir = user_dir
+        self.user= user
         self.create_menu()
         self.create_gui()
         self.change_text_color()
@@ -53,13 +53,9 @@ class View(ttk.Frame):
         #top = self.winfo_toplevel()
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
-        ## --- Excel
-        #self.excel = ExcelView(self.notebook, self.user_dir)
-        #self.notebook.add(self.excel, text='Excel')
-        #self.notebook.hide(self.excel)
         
         ## --- Input
-        self.input = InputView(self.notebook, self.user_dir)
+        self.input = InputView(self.notebook, self.user)
         self.notebook.add(self.input, text='Input')
         #self.notebook.hide(self.input)
         
@@ -76,12 +72,13 @@ class View(ttk.Frame):
         self.notebook.add(self.checking_map, text='Checking Map')
         
         ## ---- Income
-        self.income = IncomeView(self.notebook, self.user_dir)
+        self.income = IncomeView(self.notebook, self.user)
         self.notebook.add(self.income, text='Income')
         
         ## ---- Balance
-        self.balance = BalanceView(self.notebook, self.user_dir)
+        self.balance = BalanceView(self.notebook, self.user)
         self.notebook.add(self.balance, text='Balance')
+        
         self.notebook.bind("<<DataBaseContentChanged>>", self.refresh_tabs)
 
         ## ---- Log
@@ -146,7 +143,8 @@ class View(ttk.Frame):
         view_menu = Menu(menu_bar)
         self.input_tab_sem = BooleanVar()
         view_menu.add_checkbutton(label='Show/Hide Input Tab',
-                                  onvalue=1, offvalue=0, variable=self.input_tab_sem,
+                                  onvalue=1, offvalue=0,
+                                  variable=self.input_tab_sem,
                                   command=self.toggle_input_tab)
 
         
@@ -157,7 +155,9 @@ class View(ttk.Frame):
         text_menu = Menu(menu_bar)
         view_menu.add_cascade(label='Text Colors', menu=text_menu)
         for k in sorted(self.color_schemes):
-            text_menu.add_radiobutton(label=k, variable=self.text_color_choice, command=self.change_text_color)
+            text_menu.add_radiobutton(label=k,
+                                      variable=self.text_color_choice,
+                                      command=self.change_text_color)
 
          
         theme_menu = Menu(menu_bar)
@@ -177,7 +177,7 @@ class View(ttk.Frame):
         answer, years = askSaveDBToFileDialog(self)
         if answer:
             for year in years:
-                outcome = create_year_seats(year, self.user_dir)
+                outcome = create_year_seats(year, self.user.user_dir)
                 _msg = f"{outcome['filename']} saved, {outcome['n_records']} records"
                 self.log.print(_msg)
             else:

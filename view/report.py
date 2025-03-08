@@ -72,12 +72,6 @@ class ConceptTree(ttk.Treeview):
              else: self.set(c_iid, column='percent', value=f'{value:.1f}')
              percentage(c_iid)
         
-    #def credit_render(self, year):
-    #    self.render(year, lambda account:account.credit(year) - account.debit(year))
-
-    #def debit_render(self, year):
-    #    self.render(year, lambda account:account.debit(year) - account.credit(year))
-        
     def balance_render(self, year):
         self.render(year, lambda account:account.balance(year))
 

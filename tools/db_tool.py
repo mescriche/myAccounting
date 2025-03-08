@@ -4,8 +4,10 @@ import argparse, os, re, sys, json, textwrap, shutil
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 import dbase
+from datamodel import UserData
 from controller.app_seats import create_year_seats
 from controller.utility import  db_get_yearRange
+from sqlalchemy.orm.exc import NoResultFound
 
 class DBaseTool:
     def __init__(self, root_dir):
@@ -55,14 +57,8 @@ class DBaseTool:
 
         args = parser.parse_args()
         #print(args)
-        
-        self.user_dir = os.path.join(root_dir, 'users', args.user)
-        self.datafiles_dir = os.path.join(self.user_dir, 'datafiles')
-        dbase_file = f'{args.user}_accounting.db'
-        self.dbase_dir = os.path.join(self.user_dir, 'dbase')
-        self.dbase_file = os.path.join(self.dbase_dir, dbase_file)
-        self.db_config = {'sqlalchemy.url'  : f'sqlite+pysqlite:///{self.dbase_file}',
-                          'sqlalchemy.echo' : False}
+
+        self.user = UserData(root_dir, args.user)
         
         # call method
         args.func(args)        
@@ -70,41 +66,41 @@ class DBaseTool:
     def db_create(self, args):
         print('create', args.user)
         try:
-            os.makedirs(self.dbase_dir)
+            os.makedirs(self.user.dbase_dir)
         except FileExistsError:
             pass
         
-        if not os.path.isfile(self.dbase_file):
-            open(self.dbase_file, 'w', encoding='utf-8').close()
-            print(f'... created database file: {os.path.basename(self.dbase_file)} ...')
+        if not os.path.isfile(self.user.dbase_file):
+            open(self.user.dbase_file, 'w', encoding='utf-8').close()
+            print(f'... created database file: {os.path.relpath(self.user.dbase_file, start=user.users_dir)} ...')
         else:
-            print(f'... it already exists database file: {os.path.basename(self.dbase_file)}  ...')
+            print(f'... it already exists database file: {os.path.relpath(self.user.dbase_file, start=user.users_dir)}  ...')
             print(f'... please, remove it before executing this command again ....')
 
     def db_init(self, args):
         print('init', args.user)
-        dbase.db_init(self.db_config)
+        dbase.db_init(self.user.db_config)
         
     def db_setup(self, args):
         print('setup', args)
-        dbase.db_open(self.db_config)
-        accounts_file = os.path.join(self.user_dir,'configfiles','accounts.json')
-        print(accounts_file)
+        dbase.db_open(self.user.db_config)
+        #accounts_file = os.path.join(self.user_dir,'configfiles','accounts.json')
+        #print(os.path.basename(accounts_file))
         if not args.check:
-            dbase.db_setup(accounts_file)
+            dbase.db_setup(self.user.accounts_file, verbose=True)
         else:
-            with open(accounts_file) as acc_file, dbase.db_session() as db:
+            with open(self.user.accounts_file) as acc_file, dbase.db_session() as db:
                 data = json.load(acc_file)
                 for record in data:
                     try: account = db.query(dbase.Account).filter_by(name=record['name']).one()
                     except NoResultFound:
-                        print('-> account missing in data base')
+                        print(f'-> missing in data base account:\n\t{record}')
                     else:
-                        print(account)
+                        print(f'ok {account}')
 
     def db_query(self, args):
         print('query', args.user)
-        dbase.db_open(self.db_config)
+        dbase.db_open(self.user.db_config)
         with dbase.db_session() as db:
             for account in db.query(dbase.Account):
                 print(account)
@@ -112,23 +108,23 @@ class DBaseTool:
     def db_remove(self, args):
         print('remove', args.user)
         backup_file = self.dbase_file + '.bk'
-        if os.path.isfile(self.dbase_file):
-            os.rename(self.dbase_file, backup_file)
-            print(f'... renamed database file as {os.path.basename(backup_file)} ...')
+        if os.path.isfile(self.user.dbase_file):
+            os.rename(self.user.dbase_file, backup_file)
+            print(f'... renamed database file as {os.path.relpath(backup_file, start=user.users_dir)} ...')
         else:
-            print(f"... it doesn't exist database file: {os.path.basename(self.dbase_file)}")
+            print(f"... it doesn't exist database file: {os.path.relpath(self.user.dbase_file, start=user.users_dir)}")
 
     def db_backup(self, args):
         print('backup', args.user)
-        backup_file = self.dbase_file + '.bk'
-        if os.path.isfile(self.dbase_file):
-            shutil.copyfile(self.dbase_file, backup_file)
-            print(f"... file {os.path.basename(backup_file)} created ")
+        backup_file = self.user.dbase_file + '.bk'
+        if os.path.isfile(self.user.dbase_file):
+            shutil.copyfile(self.user.dbase_file, backup_file)
+            print(f"... file {os.path.relpath(backup_file, start=user.users_dir)} created ")
         else:
-            print(f"... it doesn't exist database file: {os.path.basename(self.dbase_file)}")            
+            print(f"... it doesn't exist database file: {os.path.relpath(self.user.dbase_file, start=user.users_dir)}")            
     def db_save_to_file(self, args):
         print('save_to_file', args)
-        dbase.db_open(self.db_config)
+        dbase.db_open(self.user.db_config)
 
         if args.tag == 'user': args.tag = args.user
         min_year, max_year = db_get_yearRange()
@@ -137,7 +133,7 @@ class DBaseTool:
 
         for year in years:
             print(year)
-            outcome = create_year_seats(year, self.user_dir, args.tag)
+            outcome = create_year_seats(year, self.user.user_dir, args.tag)
             _msg = f"{outcome['filename']} saved, {outcome['n_records']} records"
             print(_msg)
         

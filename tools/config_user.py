@@ -3,6 +3,7 @@ import argparse, os, sys, json, textwrap, shutil
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 
+from datamodel import UserData
 
 class ConfigTool:
     def __init__(self, root_dir):    
@@ -43,39 +44,32 @@ class ConfigTool:
         parser_refresh.set_defaults(func=self.cnf_refresh)
 
         args = parser.parse_args()
-        self.user_dir = os.path.join(root_dir, 'users', args.user)
+        self.user = UserData(root_dir, args.user)
+        
         args.func(args)
 
     def cnf_create(self, args):
-        config_dir = 'configfiles'
-        source = os.path.join(root_dir, config_dir, f"{args.profile}.json")
+        source = os.path.join(self.user.configfiles_dir, f"{args.profile}.json")
         print(f'... searching file {os.path.relpath(source, start=root_dir)}')
 
         if not os.path.isfile(source):
             print(f"configuration {source} file is not available")
             sys.exit()        
     
-        config_dir = 'configfiles'
-        config_dir = os.path.join(self.user_dir, config_dir)
-        if not os.path.isdir(config_dir):
-            print(f"... creating {config_dir}")
+        if not os.path.isdir(self.user.configfiles_dir):
+            print(f"... creating {self.user.configfiles_dir}")
             os.makedirs(config_dir)
 
-        datafiles_dir = 'datafiles'
-        datafiles_dir = os.path.join(self.user_dir, datafiles_dir)
-        if not os.path.isdir(datafiles_dir):
-            print(f"... creating {datafiles_dir}")
-            os.makedirs(datafiles_dir)
+        if not os.path.isdir(self.user.datafiles_dir):
+            print(f"... creating {self.user.datafiles_dir}")
+            os.makedirs(self.user.datafiles_dir)
 
-        excelfiles_dir = 'excelfiles'
-        excelfiles_dir = os.path.join(self.user_dir, excelfiles_dir)
-        if not os.path.isdir(excelfiles_dir):
-            print(f"... creating {excelfiles_dir}")
-            os.makedirs(excelfiles_dir)
+        if not os.path.isdir(self.user.excelfiles_dir):
+            print(f"... creating {self.user.excelfiles_dir}")
+            os.makedirs(self.user.excelfiles_dir)
 
         # copy profile file
-        user_profile_filename =  f"{args.user}_profile.json"
-        target = os.path.join(self.user_dir, config_dir, user_profile_filename)
+        target = self.user.profile_file
         print(f"... copying {os.path.relpath(source, start=root_dir)} into {os.path.relpath(target, start=root_dir)}")
         try:
             shutil.copyfile(source, target)
@@ -87,9 +81,7 @@ class ConfigTool:
             
              
     def cnf_refresh(self, args):
-        config_dir = 'configfiles'
-        user_profile_filename =  f"{args.user}_profile.json"
-        source = os.path.join(self.user_dir, config_dir, user_profile_filename)
+        source = self.user.profile_file
         self._generate_files(source)
                              
 
@@ -104,14 +96,6 @@ class ConfigTool:
                     codes.extend(data[k])
             else: return codes
             
-        config_dir = 'configfiles'
-        balance_file = 'balance.json'
-        balance_file = os.path.join(self.user_dir, config_dir, balance_file)
-        income_file = 'income.json'
-        income_file = os.path.join(self.user_dir, config_dir, income_file) 
-        accounts_file = 'accounts.json'
-        accounts_file = os.path.join(self.user_dir, config_dir, accounts_file)
-        
         with open(source) as _file:
             try: 
                 data = json.load(_file)
@@ -157,17 +141,17 @@ class ConfigTool:
                     print(f'Nominal debit account codes = {acc_nom_debit_codes}')
                     exit()
                     
-                target = os.path.join(self.user_dir, config_dir, accounts_file)
+                target = self.user.accounts_file
                 with open(target, 'w', encoding='utf-8') as _file:
                     json.dump(data['accounts'], _file, ensure_ascii=False, indent=4)
                     print(f"... generated accounts file {os.path.basename(target)} ")
 
-                target = os.path.join(self.user_dir, config_dir, income_file)
+                target = self.user.income_file
                 with open(target, 'w', encoding='utf-8') as _file:
                     json.dump(data['income'], _file, ensure_ascii=False, indent=4)
                 print(f"... generated income file {os.path.basename(target)}")
         
-                target = os.path.join(self.user_dir, config_dir, balance_file)
+                target = self.user.balance_file
                 with open(target, 'w', encoding='utf-8') as _file:
                     json.dump(data['balance'], _file, ensure_ascii=False, indent=4)
                 print(f"... generated balance file {os.path.basename(target)}")

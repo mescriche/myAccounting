@@ -10,13 +10,11 @@ from datetime import datetime
 import os, json
 
 class IncomeView(ttk.Frame):
-    def __init__(self, parent, user_dir, **kwargs):
+    def __init__(self, parent, user, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
-        self.user_dir = user_dir
-        self.configfiles_dir = os.path.join(user_dir, 'configfiles')
-        self.datafiles_dir = os.path.join(user_dir, 'datafiles')
+        self.user = user
         self.eyear = IntVar()
         title_frame = ttk.Frame(self)
         title_frame.pack(expand=False, fill='x', pady=5, padx=5)
@@ -48,7 +46,7 @@ class IncomeView(ttk.Frame):
         self.text.window_create('end', window=pw)
         
         report_file = 'income.json'
-        with open(os.path.join(self.configfiles_dir, report_file)) as _file:
+        with open(os.path.join(self.user.configfiles_dir, report_file)) as _file:
             self.income_repo = json.load(_file)
         
         inframe = ttk.Labelframe(pw, text='Revenue', labelanchor='n')
@@ -60,10 +58,10 @@ class IncomeView(ttk.Frame):
         self.inflow.column('amount', width=100, anchor='e')
         self.inflow.column('percent', width=50, anchor='e')
         self.inflow['displaycolumns'] = ['topic','amount', 'percent']
-        self.inflow.tag_configure('revenues', background='lightblue')
-        self.inflow.tag_configure('taxes', background='darksalmon')        
-        self.inflow.tag_configure('insurance', background='coral')
-        self.inflow.tag_configure('expenses', background='lightsalmon')
+        #self.inflow.tag_configure('revenues', background='lightblue')
+        #self.inflow.tag_configure('taxes', background='darksalmon')        
+        #self.inflow.tag_configure('insurance', background='coral')
+        #self.inflow.tag_configure('expenses', background='lightsalmon')
         self.inflow.tag_configure('total', background='lightgray')
         self.inflow.bind('<<TreeviewSelect>>', self.display_concept_items)
 
@@ -77,10 +75,10 @@ class IncomeView(ttk.Frame):
         self.outflow.column('amount', width=100, anchor='e')
         self.outflow.column('percent', width=50, anchor='e')
         self.outflow['displaycolumns'] = ['topic','amount', 'percent']
-        self.outflow.tag_configure('revenues', background='lightblue')
-        self.outflow.tag_configure('taxes', background='darksalmon')        
-        self.outflow.tag_configure('insurance', background='coral')
-        self.outflow.tag_configure('expenses', background='lightsalmon')
+        #self.outflow.tag_configure('revenues', background='lightblue')
+        #self.outflow.tag_configure('taxes', background='darksalmon')        
+        #self.outflow.tag_configure('insurance', background='coral')
+        #self.outflow.tag_configure('expenses', background='lightsalmon')
         self.outflow.tag_configure('total', background='lightgray')
         self.outflow.bind('<<TreeviewSelect>>', self.display_concept_items)
 
@@ -116,15 +114,15 @@ class IncomeView(ttk.Frame):
 
     def create_income_closing_seat(self):
         year = self.eyear.get()
-        filename = create_app_income_closing_seat(year, self.user_dir)
+        filename = create_income_closing_seat(year, self.user.user_dir)
         self.parent.master.log.print(f'{filename} created')
-        filename = os.path.join(self.datafiles_dir, filename)
+        filename = os.path.join(self.user.datafiles_dir, filename)
         try: n = db_record_file(filename)
         except Exception as e:
             print(e)
             return
         else:
-            output = create_app_year_seats(year, self.user_dir)
+            output = create_year_seats(year, self.user.user_dir)
             self.parent.master.log.print(f"{output['filename']} has been created with {output['n_records']} records")
             messagebox.showwarning(parent=self,
                 message=f"{year} Income closing seat file and\n{year} year seats file\nhave been created\nAdditionally Income closing file has been applied")

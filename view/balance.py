@@ -11,13 +11,11 @@ from datetime import datetime
 import os, json
 
 class BalanceView(ttk.Frame):
-    def __init__(self, parent, user_dir, **kwargs):
+    def __init__(self, parent, user, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
-        self.user_dir = user_dir
-        self.configfiles_dir = os.path.join(user_dir, 'configfiles')
-        self.datafiles_dir = os.path.join(user_dir, 'datafiles')
+        self.user = user
         self.eyear = IntVar()
         title_frame = ttk.Frame(self)
         title_frame.pack(expand=False, fill='x', pady=5, padx=5)
@@ -46,7 +44,7 @@ class BalanceView(ttk.Frame):
         self.text.window_create('end', window=pw)
 
         report_file = 'balance.json'
-        with open(os.path.join(self.configfiles_dir, report_file)) as _file:
+        with open(os.path.join(self.user.configfiles_dir, report_file)) as _file:
             self.balance_repo = json.load(_file)
         
         dbit_frame = ttk.Labelframe(pw, text='Assets', labelanchor='n')
@@ -84,9 +82,9 @@ class BalanceView(ttk.Frame):
         
     def create_closing_opening_seat(self):
         year = self.eyear.get()
-        outcome = create_app_balance_closing_seat(year, self.user_dir)
-        c_filename = os.path.join(self.datafiles_dir, outcome['closing'])
-        o_filename = os.path.join(self.datafiles_dir, outcome['opening'])
+        outcome = create_balance_closing_seat(year, self.user.user_dir)
+        c_filename = os.path.join(self.user.datafiles_dir, outcome['closing'])
+        o_filename = os.path.join(self.user.datafiles_dir, outcome['opening'])
         try: n = db_record_file(c_filename)
         except Exception as e:
             print(e)

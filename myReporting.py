@@ -5,7 +5,8 @@ locale.setlocale(locale.LC_ALL, '')
 import argparse, sys, os
 from datamodel import UserData
 
-parser = argparse.ArgumentParser(description='program for your personal finances',
+
+parser = argparse.ArgumentParser(description='program to display reports from accounting database',
                                  epilog='')
 parser.add_argument('user',help="username used")
 args = parser.parse_args()
@@ -20,7 +21,7 @@ if not os.path.isdir(user.user_dir):
 
 from tkinter import *
 from tkinter import ttk
-from view import View
+from view.view_repo import RepoView
 from dbase import db_open
 
 class App(Tk):
@@ -45,13 +46,8 @@ class App(Tk):
 
         db_open(user.db_config)
 
-        #controller = Controller()        
-        view = View(self, user)
-        
-        
+        view = RepoView(self, user)
+
 if __name__ == '__main__':
     app = App(user)
     app.mainloop()
-
-
-    

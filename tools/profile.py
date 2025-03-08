@@ -3,6 +3,7 @@ import locale, json
 locale.setlocale(locale.LC_ALL, '')
 
 import argparse, sys, os
+from datamodel import UserData
 
 parser = argparse.ArgumentParser(description='tool to create user profile for accounting')
 parser.add_argument('user', help='username used')
@@ -12,9 +13,9 @@ print(args)
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 
-user_dir = os.path.join(root_dir, 'users', args.user)
+user = UserData(root_dir, args.user)
         
-if not os.path.isdir(user_dir):
+if not os.path.isdir(user.user_dir):
     print(f"user {args.user} hasn't been configured yet: use configApp tool for configuration")
     exit()
 
@@ -201,9 +202,9 @@ class BalanceView(ttk.Frame):
         print(iid)
         
 class ProfileTool(Tk):
-    def __init__(self, username):
+    def __init__(self, user):
         super().__init__()
-        self.title(f'Personal Accounting - Tool: Profile definition - User: {username.upper()}')
+        self.title(f'Personal Accounting - Tool: Profile definition - User: {user.username.upper()}')
         window_size = 1100, 600
         screen_size = self.winfo_screenwidth(), self.winfo_screenheight()
         center =  int((screen_size[0] - window_size[0]) / 2) , int((screen_size[1] - window_size[1]) / 2)
@@ -217,17 +218,7 @@ class ProfileTool(Tk):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.createcommand('tk::mac::Quit', self.destroy)
     
-        #dbase_dir = os.path.join(user_dir, 'dbase')
-        #dbase_file = os.path.join(dbase_dir, f'{username}_accounting.db')
-        #db_config = {'sqlalchemy.url':f'sqlite+pysqlite:///{dbase_file}',
-        #             'sqlalchemy.echo':False}
-        #db_init(db_config)
-        
-        config_dir = os.path.join(user_dir, 'configfiles')        
-        #db_file = os.path.join(config_dir, 'accounts.json')
-        #db_setup(db_file)
-
-        filename = os.path.join(config_dir, f'{username}_profile.json')
+        filename = user.profile_file
         if not os.path.isfile(filename):
             print(f'{username}_profile.json file is not available')
                   
@@ -266,5 +257,5 @@ class ProfileTool(Tk):
         
         
 if __name__ == '__main__':
-    app = ProfileTool(args.user)
+    app = ProfileTool(user)
     app.mainloop()

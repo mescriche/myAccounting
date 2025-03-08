@@ -13,12 +13,12 @@ from datetime import datetime
 
 
 class ExcelView(ttk.Frame):
-    def __init__(self, parent, user_dir, **kwargs):
+    def __init__(self, parent, user, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
         
-        self.dirname = os.path.join(user_dir, 'excelfiles')
+        self.dirname = user.excelfiles_dir 
         self.filename = StringVar()
         
         file_bar = ttk.Labelframe(self, text='File')
@@ -299,6 +299,7 @@ class ExcelEditor(ttk.Frame):
             messagebox.showwarning(message=f'Sheet status saved on file', parent=self)
             
     def verify(self):
+        log = self.master.master.master.log
         #check entries with account column assigned, others are ignored
         for n,iid in enumerate(self.all_iids):
             self.table.item(iid, tags = ('ok'))
@@ -306,29 +307,36 @@ class ExcelEditor(ttk.Frame):
             account = self.table.set(iid, column='account')
             if not account:
                 self.table.item(iid, tag='error')
+                log.print('account missing ')
                 continue
             if account not in db_get_accounts_gname():
                 self.table.item(iid, tag='error')
+                log.print(f'{account} not in db_get_accounts_gname ')
                 continue
             date = self.table.set(iid, column='date')
             if not date:
                 self.table.item(iid, tag='error')
+                log.print('date missing ')
                 continue
             try: date = datetime.strptime(date, "%d-%m-%Y").date()
             except ValueError:
                 self.table.item(iid, tag='error')
+                log.print(f'{date} wrong format ')
                 continue
             amount = self.table.set(iid, column='amount')
             if not amount:
                 self.table.item(iid, tag='error')
+                log.print(f'amount missing ')
                 continue
             try: float(amount)
             except ValueError:
                 self.table.item(iid, tag='error')
+                log.print(f'{amount} wrong format')                
                 continue
             description = self.table.set(iid, column='description')
             if not description:
                 self.table.item(iid, tag='error')
+                log.print(f'description missing ')
                 continue
     def to_blackboard(self):
         self.verify()

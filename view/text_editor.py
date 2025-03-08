@@ -13,9 +13,8 @@ class TextEditor(ttk.Frame):
         self.pack(fill='both', expand=True)
         self.text = Text(self, **kwargs)
         self.text.pack(expand=True, fill='both')
-        scroll_bar = Scrollbar(self.text)
+        scroll_bar = Scrollbar(self.text, command=self.text.yview)
         self.text.configure(yscrollcommand=scroll_bar.set)
-        scroll_bar.config(command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
         self._data = list()
         

@@ -14,11 +14,11 @@ from view.transaction import TransactionEditor, askTransactionRecordDialog
 from .text_editor import TextEditor
 
 class InputView(ttk.Frame):
-    def __init__(self, parent, user_dir, **kwargs):
+    def __init__(self, parent, user, **kwargs):
         super().__init__(parent, **kwargs)
         self.pack(fill='both', expand=True)
-        
-        self.dirname = os.path.join(user_dir, 'datafiles')
+        self.user = user
+        self.dirname = self.user.datafiles_dir
         self.filename = StringVar()
         
         tools_bar = ttk.Frame(self, height=15)

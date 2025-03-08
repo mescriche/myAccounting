@@ -1,0 +1,84 @@
+__author__ = 'Manuel Escriche'
+from collections import namedtuple
+
+Seed = namedtuple('Seed', ['code','name'])
+
+#class Seeds(dict):
+#    def __setitem__(self, key, value):
+#        super().__setitem__(key, value)
+#
+#    def __getitem__(self, key):
+#        if key not in self:
+#            return f"Key '{key}' not found!"
+#        return super().__getitem__(key)
+
+seed = dict(
+    wealth = Seed('10', 'Wealth'),
+    earn = Seed('11', 'Earnings'),
+    credit_card = Seed('12', 'Credit Card'),
+    house = Seed('20', 'House'),
+    land = Seed('21', 'Land'),
+    vehicle = Seed('22', 'Vehicle'),
+    tools = Seed('23', 'Tools'),
+    furn = Seed('24', 'Furniture'),
+    dev = Seed('25', 'Devices'),
+    pplan = Seed('26', 'Pension Plan'),
+    wallet = Seed('50', 'Wallet'),
+    bank_acc = Seed('51', 'Banks'),
+    inv_fund = Seed('53', 'Invest Funds'),
+    shares = Seed('54', 'Stock'),
+    fixed = Seed(('20','21','22','23','24','25'), 'Fixed'),
+    current = Seed(('50','51','53','54','26'), 'Current'),
+    debt = Seed(('12',), 'Debt'),
+    out = Seed('6','Outgoing'),
+    exp = Seed(('60','61','62','63','64','65'),'Expense'),
+    exp_per = Seed('61','Persons'),
+    expp_feed = Seed('610','Feeding'),
+    expp_clot = Seed('611','Clothing'),
+    expp_heal = Seed('612','Health'),
+    expp_info = Seed('613','Information'),
+    expp_conn = Seed('614','Connectivity'),
+    expp_acco = Seed('615','Accomodation'),
+    expp_rest = Seed('616','Restaurants'),
+    expp_trans = Seed('617','Transport'),
+    expp_ent = Seed('618','Entertainment'),
+    expp_lot = Seed('619','Lotery'),
+    exp_hou = Seed('62','House'),
+    exph_wws = Seed('621','WaterWasteSwg'),
+    exph_ele = Seed('622','Electricity'),
+    exph_fuel = Seed('623','Fuel'),
+    exph_con = Seed('624','Connectivity'),
+    exph_main = Seed('625', 'Maintenance'),
+    exp_veh = Seed('63','Vehicle'),
+    expv_fuel = Seed('631','Fuel'),
+    expv_park = Seed('632','Parking'),
+    expv_main = Seed('633','Maintenance'),
+    expv_toll = Seed('634','Toll'),
+    exp_ser = Seed('64','Services'),
+    exps_not = Seed('641', 'Notary'),
+    exps_reg = Seed('642', 'Property Reg'),
+    exps_law = Seed('643', 'Lawyer'),
+    exps_arch = Seed('644', 'Architect'),
+    exps_comp = Seed('645', 'Computers'),
+    exps_bank = Seed('646', 'Banks'),
+    exps_trans = Seed('647', 'Transport'),
+    exps_form = Seed('648', 'Formation'),
+    exps_adv = Seed('649', 'Advice'),
+    exp_lnd = Seed('65','Land'),
+    tax = Seed('66','Tax'),
+    tax_irpf = Seed('661','IRPF'),
+    tax_veh = Seed('662','Vehicles'),
+    tax_house = Seed('663','Houses'),
+    tax_other = Seed(('66','664'),'Others'),
+    ins = Seed('67','Insurance'),
+    ins_soc = Seed('670','Social'),
+    ins_veh = Seed('671','Vehicles'),
+    ins_other = Seed('67','Other'),
+    rev = Seed('7','Revenue'),
+    rev_pay = Seed('71','Payroll'),
+    rev_div = Seed('72','Dividends'),
+    rev_int = Seed('73','Interests'),
+    rev_dis = Seed('74','Discounts'),
+    rev_reg = Seed('75','Regulatizations'),
+    rev_oth = Seed('70','Others')
+)

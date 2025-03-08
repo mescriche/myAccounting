@@ -219,12 +219,9 @@ file/.style= {rectangle, rounded corners= 2mm, align=center, thick, draw=black, 
 python
 >>> import os, dbase
 >>> root_dir = os.getcwd()
->>> username =  '<user>'
->>> user_dir = os.path.join(root_dir, 'users', username)
->>> dbase_file = os.path.join(user_dir, 'dbase', f'{username}_accounting.db')
->>> db_config =  {'sqlalchemy.url':f'sqlite+pysqlite:///{dbase_file}', 
-	'sqlalchemy.echo':False}
->>> dbase.db_open(db_config)
+>>> from datamodel import UserData
+>>> user = UserData(root_dir, '<user>')
+>>> dbase.db_open(user.db_config)
 >>> db = dbase.Session()
 \end{verbatim}
 
@@ -341,7 +338,7 @@ Transaction(1 | 2015-11-15 | #entries=5 | Balance Opening Statement)
  \end{enumerate}
  
 
-\subsection{How to modify an account code}  
+\subsection{How to modify its code in a nominal account}  \label{NOMINAL_CODE}
 Let's take an example: on the profile we have the following entry:\\
 \verb!{"type":"DEBIT","content":"NOMINAL","code":"621","name":"ExpH-Water"}!
 where we want to transform the code \verb!621! to become \verb!6211!
@@ -377,5 +374,10 @@ Account(33 | Type.DEBIT | Content.NOMINAL | 621 | ExpH-Water | None )
 \item Run \verb!>> python tools/config_user.py <user> refresh! to regenerate the application files: \verb!accounts.json!, \verb!balance.json! and \verb!income.json! 
 \item Run \verb!>> python tools/remake.py <user>! to remake the data base
 \end{enumerate}
- 
+ \subsection{How to modify its code in a real account}  
+ The process described in section \ref{NOMINAL_CODE} is valid with some differences:
+ \begin{enumerate}
+ \item If the account code to be modified is used in any of the seats declared in the user opening file: \verb!<user>_opening_seat.json!, it's needed to modify this seat  before running \verb!>> python tools/remake.py <user>!
+ \item When modifying the \verb!<user>_profile.json! file,  in addition to changing the account code in its declaration line, there's need to update this code in the \textbf{balance} section.
+ \end{enumerate}
 \end{document}
