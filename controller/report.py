@@ -210,7 +210,7 @@ def get_balance_data(label, year) -> dict:
             
     if label == 'assets':            
         return dict(fixed=fixed, current=current)
-    elif label == 'liabilities':
+    elif label == 'claims':
         return dict(wealth=wealth, earn=earn, debt=debt)
     elif label == 'fixed':
         return dict(house=house, land=land, vehicle=vehicle,
@@ -224,7 +224,7 @@ def get_balance_data(label, year) -> dict:
 
 def get_data(title:str, year:int) ->dict:
     _title = title.lower()
-    if _title in ('assets', 'liabilities', 'fixed', 'current'):
+    if _title in ('assets', 'claims', 'fixed', 'current'):
         return get_balance_data(_title, year)
     elif _title in ('input', 'output', 'revenue', 'outgoing',
                     'expense','persons','house', 'vehicle',
@@ -237,7 +237,7 @@ def get__data(title:str, years:tuple) ->list:
     _title = title.lower()
     data = dict()
     for year in years:
-        if _title in ('assets', 'liabilities', 'fixed', 'current'):
+        if _title in ('assets', 'claims', 'fixed', 'current'):
             data[year] = get_balance_data(_title, year)
         elif _title in ('input', 'output', 'revenue', 'outgoing',
                         'expense','persons','house', 'vehicle',

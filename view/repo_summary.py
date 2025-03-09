@@ -85,7 +85,13 @@ class SummaryRepoView(ttk.Frame):
             table.custom_format[f"{p_year}"] = lambda f,v: f"{v:,.0f}"
             table.custom_format[delta] = lambda f,v: f"{v:,.0f}"
         return table
-        
+    
+    def title(self,name):
+        return f"\n+{'-':-^58}+\n|{name: ^58}|\n"
+    
+    def section(self, name):
+        return f"\n+{'=':=^58}+\n|{name: ^58}|\n+{'=':=^58}+\n"
+    
     def display_table(self, *args):
         year = self.eyear.get()
         self.text['state'] = 'normal'
@@ -95,60 +101,66 @@ class SummaryRepoView(ttk.Frame):
         years = p_year, year
 
         #########
-        self.text.insert('end', '\tBALANCE\n')
-        titles = ('Assets', 'Liabilities')
+        self.text.insert('end' ,self.section('BALANCE SUMMARY'))
+        titles = ('Assets', 'Claims')
         table = self.create_table(titles, years)
         self.text.insert('end',table)
-        self.text.insert('end','\n\n') 
+        self.text.insert('end','\n') 
         ##########
-        self.text.insert('end', '\tASSETS\n')
+        self.text.insert('end', self.title('ASSETS') )
         titles = ('Current','Fixed')
         table = self.create_table(titles, years)
         self.text.insert('end',table)
-        self.text.insert('end','\n\n')
+        self.text.insert('end','\n')
         ##########
-        self.text.insert('end', '\tINCOME\n')
+        self.text.insert('end', self.title('CLAIMS') )
+        #titles = ('debt','earnings', 'wealth')
+        titles = ('claims', )
+        table = self.create_table(titles, years)
+        self.text.insert('end',table)
+        self.text.insert('end','\n')
+        ##########
+        self.text.insert('end', self.section('INCOME SUMMARY'))
         titles = ('Input', 'Output')
         table = self.create_table(titles, years)
         self.text.insert('end',table)
-        self.text.insert('end','\n\n')
+        self.text.insert('end','\n')
         ##########
-        self.text.insert('end', '\tREVENUE\n')
+        self.text.insert('end', self.title('REVENUE'))
         titles = ('Revenue', )
         table = self.create_table(titles, years)
         self.text.insert('end',table)
-        self.text.insert('end','\n\n')
+        self.text.insert('end','\n')
         ##########
-        self.text.insert('end', '\tOUTGOING\n')
+        self.text.insert('end', self.title('OUTGOING'))
         titles = ('Outgoing', )
         table = self.create_table(titles, years)
         self.text.insert('end',table)
-        self.text.insert('end','\n\n')
+        self.text.insert('end','\n')
         ##########
-        self.text.insert('end', '\tTAX\n')
+        self.text.insert('end', self.title('TAX'))
         titles = ('Tax', )
         table = self.create_table(titles, years)
         self.text.insert('end',table)
         self.text.insert('end','\n\n')
         ##########
-        self.text.insert('end', '\tINSURANCE\n')
+        self.text.insert('end',self.title('INSURANCE'))
         titles = ('Insurance', )
         table = self.create_table(titles, years)
         self.text.insert('end',table)
-        self.text.insert('end','\n\n')
+        self.text.insert('end','\n')
         ##########
-        self.text.insert('end', '\tEXPENSE\n')
+        self.text.insert('end',self.title('EXPENSE'))
         titles = ('Expense', )
         table = self.create_table(titles, years)
         self.text.insert('end',table)
         self.text.insert('end','\n\n')
         ##########
-        self.text.insert('end', '\tEXPENSE - Detailed\n')
+        self.text.insert('end',self.title('EXPENSE - Detailed'))
         titles = ('Persons','House','Vehicle','Services' )
         table = self.create_table(titles, years)
         self.text.insert('end',table)
-        self.text.insert('end','\n\n') 
+        self.text.insert('end','\n') 
         
-        
-        self.text.insert('end', "\n\n")
+        self.text.insert('end', "\n")
         self.text['state'] = 'disabled'

@@ -53,7 +53,7 @@ class BalanceRepoView(ttk.Frame):
     
     def _create_balance_summary(self, year):
         adata = get_data('assets', year)
-        ldata = get_data('liabilities', year)
+        ldata = get_data('claims', year)
         Data = namedtuple('Data', ['values', 'color'])
         gdata = {
             "Fixed": Data(np.array([adata['fixed'],0]), 'tab:blue'),
@@ -63,7 +63,7 @@ class BalanceRepoView(ttk.Frame):
             "Debt": Data(np.array([0, ldata['debt']]), 'tab:red'),
         }
             
-        categories = 'Assets', 'Liabilities'
+        categories = 'Assets', 'Claims'
         total = adata['fixed'] + adata['current']
         
         bottom = np.zeros(2)
@@ -104,7 +104,7 @@ class BalanceRepoView(ttk.Frame):
         self.text.insert('end', "\n\n")
         
         if year-1 >= first_year:
-            table = create_joint_table(('Assets','Liabilities'),(year-1,year))
+            table = create_joint_table(('Assets','Claims'),(year-1,year))
             self.text.insert('end', table)
             self.text.insert('end', "\n\n")
             

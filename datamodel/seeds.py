@@ -3,15 +3,6 @@ from collections import namedtuple
 
 Seed = namedtuple('Seed', ['code','name'])
 
-#class Seeds(dict):
-#    def __setitem__(self, key, value):
-#        super().__setitem__(key, value)
-#
-#    def __getitem__(self, key):
-#        if key not in self:
-#            return f"Key '{key}' not found!"
-#        return super().__getitem__(key)
-
 seed = dict(
     wealth = Seed('10', 'Wealth'),
     earn = Seed('11', 'Earnings'),
