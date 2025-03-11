@@ -3,7 +3,7 @@ import argparse, os, re, sys, json, textwrap
 
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
-from datamodel import UserData
+from datamodel.user import UserData
 from controller.app_seats import create_income_closing_seat, create_balance_closing_seat
 from controller.app_seats import db_record_file
 from dbase import db_init, db_setup, db_session
@@ -89,14 +89,13 @@ if os.path.isfile(user.dbase_file):
     os.rename(user.dbase_file , backup_file)
     print(f'... backing up database into file: {os.path.basename(backup_file)}')
 
-print(f'... creating data base into {os.path.relpath(user.dbase_file, start=user.users_dir)}')
+print(f'... creating data base into {os.path.relpath(user.dbase_file, start=user.root_dir)}')
 
 print('... init data base ...')
 db_init(user.db_config)
 
-#accounts_file = os.path.join(config_dir, 'accounts.json')
-print(f'... setup data base from user accounts file: {os.path.relpath(user.accounts_file, start=user.users_dir)}')
-db_setup(user.accounts_file)
+print(f'... setup data base from user accounts file: {os.path.relpath(user.accounts_file, start=user.root_dir)}')
+db_setup(user.accounts_file, user.rules_file)
 
 for year in years:
     print(f'>>> year : {year}')

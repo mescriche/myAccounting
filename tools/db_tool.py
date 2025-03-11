@@ -4,7 +4,7 @@ import argparse, os, re, sys, json, textwrap, shutil
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 import dbase
-from datamodel import UserData
+from datamodel.user import UserData
 from controller.app_seats import create_year_seats
 from controller.utility import  db_get_yearRange
 from sqlalchemy.orm.exc import NoResultFound
@@ -72,9 +72,9 @@ class DBaseTool:
         
         if not os.path.isfile(self.user.dbase_file):
             open(self.user.dbase_file, 'w', encoding='utf-8').close()
-            print(f'... created database file: {os.path.relpath(self.user.dbase_file, start=user.users_dir)} ...')
+            print(f'... created database file: {os.path.relpath(self.user.dbase_file, start=self.user.root_dir)} ...')
         else:
-            print(f'... it already exists database file: {os.path.relpath(self.user.dbase_file, start=user.users_dir)}  ...')
+            print(f'... it already exists database file: {os.path.relpath(self.user.dbase_file, start=self.user.root_dir)}  ...')
             print(f'... please, remove it before executing this command again ....')
 
     def db_init(self, args):
@@ -84,10 +84,8 @@ class DBaseTool:
     def db_setup(self, args):
         print('setup', args)
         dbase.db_open(self.user.db_config)
-        #accounts_file = os.path.join(self.user_dir,'configfiles','accounts.json')
-        #print(os.path.basename(accounts_file))
         if not args.check:
-            dbase.db_setup(self.user.accounts_file, verbose=True)
+            dbase.db_setup(self.user.accounts_file, self.user.rules_file, verbose=True)
         else:
             with open(self.user.accounts_file) as acc_file, dbase.db_session() as db:
                 data = json.load(acc_file)
@@ -107,21 +105,21 @@ class DBaseTool:
                 
     def db_remove(self, args):
         print('remove', args.user)
-        backup_file = self.dbase_file + '.bk'
+        backup_file = self.user.dbase_file + '.bk'
         if os.path.isfile(self.user.dbase_file):
             os.rename(self.user.dbase_file, backup_file)
-            print(f'... renamed database file as {os.path.relpath(backup_file, start=user.users_dir)} ...')
+            print(f'... renamed database file as {os.path.relpath(backup_file, start=self.user.root_dir)} ...')
         else:
-            print(f"... it doesn't exist database file: {os.path.relpath(self.user.dbase_file, start=user.users_dir)}")
+            print(f"... it doesn't exist database file: {os.path.relpath(self.user.dbase_file, start=self.user.root_dir)}")
 
     def db_backup(self, args):
         print('backup', args.user)
         backup_file = self.user.dbase_file + '.bk'
         if os.path.isfile(self.user.dbase_file):
             shutil.copyfile(self.user.dbase_file, backup_file)
-            print(f"... file {os.path.relpath(backup_file, start=user.users_dir)} created ")
+            print(f"... file {os.path.relpath(backup_file, start=self.user.root_dir)} created ")
         else:
-            print(f"... it doesn't exist database file: {os.path.relpath(self.user.dbase_file, start=user.users_dir)}")            
+            print(f"... it doesn't exist database file: {os.path.relpath(self.user.dbase_file, start=self.user.root_dir)}")            
     def db_save_to_file(self, args):
         print('save_to_file', args)
         dbase.db_open(self.user.db_config)

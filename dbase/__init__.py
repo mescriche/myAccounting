@@ -6,7 +6,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from .model import Base, Account, Transaction, BookEntry, Type, Content
-
+from .groups import find_groups
 
 Session = sessionmaker()
 
@@ -32,14 +32,19 @@ def db_open(config):
     engine = engine_from_config(config)
     Session.configure(bind=engine)    
             
-def db_setup(accounts_file, verbose=False):
-    with open(accounts_file) as acc_file, db_session() as db:
+def db_setup(accounts_file, groups_file, verbose=False):
+    with open(groups_file) as groups_dict:
+        grp_dict = json.load(groups_dict)
+                  
+    with open(accounts_file) as acc_file,  db_session() as db:
         data = json.load(acc_file)
         for record in data:
-            print(record)
             try:
                 account = db.query(Account).filter_by(code=record['code']).one()
-                if verbose: print(f'... existing {account}')
             except NoResultFound:
+                groups= find_groups(record['code'], grp_dict)
+                record['groups'] = json.dumps(groups)
                 db.add(Account(**record))
-                print("Created account: type:{type} content:{content} code:{code} name:{name}".format(**record))
+                print("Created account: type:{type} content:{content} code:{code} name:{name} groups:{groups} ".format(**record))
+            else:
+                if verbose: print(f'... existing {account}')

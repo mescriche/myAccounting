@@ -3,7 +3,7 @@ import locale
 locale.setlocale(locale.LC_ALL, '')
 
 import argparse, sys, os
-from datamodel import UserData
+from datamodel.user import UserData
 
 parser = argparse.ArgumentParser(description='program for your personal finances',
                                  epilog='')
