@@ -8,9 +8,11 @@ from .transaction import TransactionViewer, TransactionEditor
 from datetime import datetime
 
 class JournalView(ttk.Frame):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, user, acc_tree, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
+        self.user = user
+        self.acc_tree = acc_tree
         self.pack(fill='both', expand=True)
         
         self.filter = ttk.LabelFrame(self, text='Filter')

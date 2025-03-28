@@ -9,11 +9,11 @@ class UserData:
         self.datafiles_dir = os.path.join(self.user_dir, 'datafiles')
         self.excelfiles_dir = os.path.join(self.user_dir, 'excelfiles')
         self.configfiles_dir = os.path.join(self.user_dir, 'configfiles')
-        self.profile_file = f'{username}_profile.json'
+        self.profile_file = os.path.join(self.configfiles_dir, f'{username}_profile.json')
         self.accounts_file = os.path.join(self.configfiles_dir, 'accounts.json')
-        self.income_file = os.path.join(self.configfiles_dir, 'income.json')
-        self.balance_file = os.path.join(self.configfiles_dir, 'balance.json')
-        self.rules_file = os.path.join(self.configfiles_dir, 'groups_rules.json')
+        #self.income_file = os.path.join(self.configfiles_dir, 'income.json')
+        #self.balance_file = os.path.join(self.configfiles_dir, 'balance.json')
+        #self.rules_file = os.path.join(self.configfiles_dir, 'groups_rules.json')
         
         self.dbase_dir = os.path.join(self.user_dir, 'dbase')
         self.dbase_file = os.path.join(self.dbase_dir,  f'{username}_accounting.db')

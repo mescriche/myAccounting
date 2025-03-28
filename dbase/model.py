@@ -21,8 +21,8 @@ class Account(Base):
     type: Mapped[Type] = mapped_column()
     content: Mapped[Content] = mapped_column()
     code: Mapped[str] = mapped_column(String(6),  unique=True)
-    groups: Mapped[list] = mapped_column(JSON, nullable=True)
-    name: Mapped[str] = mapped_column(String(50), unique=True)
+    path: Mapped[str] = mapped_column(String(50), nullable=True)
+    name: Mapped[str] = mapped_column(String(20), unique=True)
     parameters: Mapped[dict] = mapped_column(JSON, nullable=True)
     entries: Mapped[list['BookEntry']] = relationship(back_populates='account')  # many-to-one
 
@@ -76,7 +76,7 @@ class Account(Base):
     
 
     def __repr__(self):
-        return "Account({0.id} | {0.type} | {0.content} | {0.code} | {0.groups} |{0.name} | {0.parameters} )".format(self)
+        return "Account({0.id} | {0.type} | {0.content} | {0.code} | {0.path} |{0.name} | {0.parameters} )".format(self)
 
     @property
     def gname(self) -> str:
@@ -108,12 +108,17 @@ class Account(Base):
             elif self.type == Type.CREDIT:
                 return self.credit() - self.debit()
             else: raise Exception('Unknown Account type')
-            
-    @validates('groups')
-    def validate_groups(self, key, value):
+
+    @property
+    def lname(self)->str:
+        return self.path + '/'+ self.name
+    
+    @validates('path')
+    def validate_path(self, key, value):
+        #return value
         #setattr(self, key, value)
-        if self.isAsset and 'asset' not in value or \
-           self.isClaim and 'claim' not in value or \
+        if self.isAsset and 'assets' not in value or \
+           self.isClaim and 'claims' not in value or \
            self.isInput and 'input' not in value or \
            self.isOutput and 'output' not in value:
             raise ValueError('Inconsistent account declaration with code hierarchy')
@@ -130,7 +135,6 @@ class BookEntry(Base):
     transaction: Mapped['Transaction'] = relationship( back_populates='entries')
     type: Mapped[Type]  = mapped_column()
     amount: Mapped[float] = mapped_column(Float, CheckConstraint('amount >= 0.0'), default=0)
-#    __table_args__ = ( CheckConstraint('amount >= 0.0'),)
         
     @property
     def value(self) -> float:

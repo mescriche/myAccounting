@@ -14,10 +14,11 @@ from view.transaction import TransactionEditor, askTransactionRecordDialog
 from .text_editor import TextEditor
 
 class InputView(ttk.Frame):
-    def __init__(self, parent, user, **kwargs):
+    def __init__(self, parent, user, acc_tree, **kwargs):
         super().__init__(parent, **kwargs)
         self.pack(fill='both', expand=True)
         self.user = user
+        self.acc_tree = acc_tree
         self.dirname = self.user.datafiles_dir
         self.filename = StringVar()
         

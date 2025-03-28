@@ -3,7 +3,7 @@ import locale
 locale.setlocale(locale.LC_ALL, '')
 
 import argparse, sys, os
-from datamodel.user import UserData
+from datamodel import UserData, AccountsTree
 
 
 parser = argparse.ArgumentParser(description='program to display reports from accounting database',
@@ -27,7 +27,7 @@ from dbase import db_open
 class App(Tk):
     def __init__(self, user):
         super().__init__()
-        self.title(f'Personal Accounting - User : {user.name.upper()}')
+        self.title(f'Personal Account Reporting  - User : {user.name.upper()}')
         window_size = 1100,600
         screen_size = self.winfo_screenwidth(), self.winfo_screenheight()
         center =  int((screen_size[0] - window_size[0]) / 2) , int((screen_size[1] - window_size[1]) / 2)
@@ -41,13 +41,17 @@ class App(Tk):
         self.option_add('*tearOff', False)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.protocol("WM_DELETE_WINDOW", self.destroy)
-        self.createcommand('tk::mac::Quit', self.destroy)
+        self.protocol("WM_DELETE_WINDOW", self.close_app)
+        self.createcommand('tk::mac::Quit', self.close_app)
 
         db_open(user.db_config)
+        acc_tree = AccountsTree.from_db()
 
-        view = RepoView(self, user)
-
+        view = RepoView(self, user, acc_tree)
+        
+    def close_app(self, *args):
+        self.update()
+        self.destroy()
 if __name__ == '__main__':
     app = App(user)
     app.mainloop()

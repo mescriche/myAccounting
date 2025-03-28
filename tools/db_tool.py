@@ -4,7 +4,7 @@ import argparse, os, re, sys, json, textwrap, shutil
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 import dbase
-from datamodel.user import UserData
+from datamodel import UserData
 from controller.app_seats import create_year_seats
 from controller.utility import  db_get_yearRange
 from sqlalchemy.orm.exc import NoResultFound

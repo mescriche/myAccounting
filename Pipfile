@@ -10,6 +10,9 @@ xlrd = "*"
 pandas = "*"
 lxml = "*"
 matplotlib = "*"
+jinja2 = "*"
+pandastable = "*"
+numexpr = "*"
 
 [dev-packages]
 

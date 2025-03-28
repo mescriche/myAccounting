@@ -2,21 +2,23 @@ __author__ = 'Manuel Escriche'
 from collections import namedtuple
 import re
 from dbase import db_session, Transaction
-from controller.report import create_graph, create_table, create_joint_table, get_data
+from controller.report import create_graph, create_table
 from tkinter import *
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
+from datamodel import ReportDataSource
 
 Data = namedtuple('Data', ['value', 'label'])
 cm = 1/2.54
 class IncomeRepoView(ttk.Frame):
-    def __init__(self, parent, user, **kwargs):
+    def __init__(self, parent, user, acc_tree,  **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
         self.user = user
+        self.acc_tree = acc_tree
         self.eyear = IntVar()
         title_frame = ttk.Frame(self)
         title_frame.pack(expand=False, fill='x', pady=5, padx=5)
@@ -33,6 +35,8 @@ class IncomeRepoView(ttk.Frame):
             self.year_combo.current(0)
         except:
             pass
+
+        self.data_source = ReportDataSource(self.acc_tree)
         
         self.text = Text(self)
         scroll_bar = Scrollbar(self.text, command=self.text.yview)
@@ -46,20 +50,22 @@ class IncomeRepoView(ttk.Frame):
             years = [t.date.year for t in db.query(Transaction).\
                 filter(Transaction.description.contains(_desc))]
         min_year,max_year = min(years), max(years)
-        self.year_combo['values'] = values = [*range(max_year, min_year-1, -1)]
+        self.year_combo['values'] = values = [*range(max_year, min_year, -1)]
                           
     def _create_income_summary(self, year):
-        idata = get_data('input', year)
-        odata = get_data('output', year)
-        fig, ax = plt.subplots(figsize=(10*cm, 10*cm))
+        df = self.data_source.get_data('income', year)
+        fig, ax = plt.subplots(figsize=(10*cm, 8*cm))
         Data = namedtuple('Data', ['values', 'color'])
+        
+        earnings = df.loc['Input',year]-df.loc['Output',year]
         gdata = {
-            'Revenue': Data(np.array([idata['rev'], 0]), 'tab:blue'),
-            'Outgoing': Data(np.array([0, odata['out']]), 'tab:red'),
-            'Earnings':Data(np.array([0, odata['earn']]), 'tab:green')
+            'Revenue': Data(np.append(df.loc['Input'].to_numpy(), [0]), 'tab:blue'),
+            'Outgoing': Data(np.append([0], df.loc['Output'].to_numpy()), 'tab:red'),
+            'Earnings':Data(np.array([0, earnings]), 'tab:green')
         }
+        
         categories = 'Input', 'Output'
-        total = idata['rev']
+        total = df.loc['Input',year]
         
         bottom = np.zeros(2)
         for key, item in gdata.items():
@@ -73,11 +79,14 @@ class IncomeRepoView(ttk.Frame):
                             bottom[index]+height/2,
                             f'{label}\n{height:,.0f}€\n({height*100/total:.0f}%)',
                             ha='center', va='center')
-                font_size = t.get_size()
+                #font_size = t.get_size()
             bottom +=item[0]
-        ax.get_yaxis().set_visible(False)
-        ax.set_ylim(0, total*1.05)
+            
         fig.suptitle(f'Year {year} - Income Summary')
+        ax.get_yaxis().set_visible(False)
+        ax.set_title(f'Total = {total:,.0f}€', fontsize=10)
+        ax.set_ylim(0, total*1.1)
+        plt.subplots_adjust(top=0.85)
         return fig
 
     def display_graph(self, *args):
@@ -85,48 +94,38 @@ class IncomeRepoView(ttk.Frame):
         year = self.eyear.get()
         self.text['state'] = 'normal'
         self.text.delete(1.0, 'end')
-        first_year = int(self.year_combo['values'][-1])
+        years = year-1, year
         ########
-        if year-1 >= first_year:
-            fig = self._create_income_summary(year-1)
-            canvas = FigureCanvasTkAgg(fig, master=self.text)
-            self.text.window_create('end', window=canvas.get_tk_widget())
-        fig = self._create_income_summary(year)
-        canvas = FigureCanvasTkAgg(fig, master=self.text)
-        self.text.window_create('end', window=canvas.get_tk_widget())
-        self.text.insert('end', "\n\n")
-        if year-1 >= first_year:
-            table = create_joint_table(('Input','Output'),(year-1,year))
-            self.text.insert('end', table)
-            self.text.insert('end', "\n\n")
-        ###########
-        if year-1 >=  first_year:
-            fig = create_graph('Revenue', year-1, 'tab:blue')
-            canvas = FigureCanvasTkAgg(fig, master=self.text)
-            self.text.window_create('end', window=canvas.get_tk_widget())
-        fig = create_graph('Revenue', year, 'tab:blue')
-        canvas = FigureCanvasTkAgg(fig, master=self.text)
-        self.text.window_create('end', window=canvas.get_tk_widget())
-        self.text.insert('end', "\n\n")
 
-        if year-1 >= first_year:
-            table =  create_table('Revenue', (year-1, year))
-            self.text.insert('end', table)
-            self.text.insert('end', "\n\n")
+        titles = ('Income',)
+        df = [self.data_source.get_data(title, *years, delta=True, total=False) for title in titles]    
+        table = create_table(*df)
+        self.text.insert('end', table)
+        self.text.insert('end', "\n\n")
         
-        ###########
-        if year-1 >=  first_year:
-            fig = create_graph('Outgoing', year-1, ('sienna', 'salmon', 'red'))
+        for year in years:
+            fig = self._create_income_summary(year)
             canvas = FigureCanvasTkAgg(fig, master=self.text)
             self.text.window_create('end', window=canvas.get_tk_widget())
-        fig = create_graph('Outgoing', year, ('sienna', 'salmon', 'red'))
-        canvas = FigureCanvasTkAgg(fig, master=self.text)
-        self.text.window_create('end', window=canvas.get_tk_widget())
-        self.text.insert('end', "\n\n")
-        
-        if year-1 >= first_year:
-            table = create_table('Outgoing', (year-1, year))
+        else:
+            self.text.insert('end', "\n\n")
+
+        ###########
+        titles=('Revenue','tab:blue'),('Output', ('sienna', 'salmon', 'red'))
+
+        for title,color in titles:
+            df = self.data_source.get_data(title, *years, delta=True, verbose=False)
+            table =  create_table(df)
             self.text.insert('end', table)
-        self.text.insert('end', "\n\n")
+            self.text.insert('end', "\n\n")
+
+            for year in years:
+                df = self.data_source.get_data(title, year)
+                fig = create_graph(df, title=title, color=color)
+                canvas = FigureCanvasTkAgg(fig, master=self.text)
+                self.text.window_create('end', window=canvas.get_tk_widget())
+            else:
+                self.text.insert('end', "\n\n")
+
         self.text['state'] = 'disabled'
 

@@ -1,117 +1,145 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
+from datamodel.accounts_tree import AccountsTree
 from dbase import Transaction, db_session, Account, Type
 from controller.utility import db_currency, db_get_yearRange
 from controller.app_seats import create_income_closing_seat, create_year_seats, db_record_file
 from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
-from .report import ConceptTree
 from datetime import datetime
 import os, json
 
 class IncomeView(ttk.Frame):
-    def __init__(self, parent, user, **kwargs):
+    def __init__(self, parent, user, acc_tree, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
         self.user = user
+        self.acc_tree = acc_tree
+        
         self.eyear = IntVar()
+        min_year,max_year = db_get_yearRange()
+        self.eyear.set(max_year)
+        
         title_frame = ttk.Frame(self)
         title_frame.pack(expand=False, fill='x', pady=5, padx=5)
         title = f'INCOME STATEMENT'
+        ttk.Button(title_frame, text='Refresh', command=self.render).pack(side='left')
         ttk.Label(title_frame, text = '').pack(side='left', expand=True, fill='x')
-        ttk.Label(title_frame, text = f"{title}").pack(side='left')
-        year_frame = ttk.Frame(title_frame)
-        year_frame.pack(side='left')
-        ttk.Label(year_frame, text = f"{'YEAR: ':>10}").pack(side='left', ipadx=0, ipady=0)
-        self.year_combo = ttk.Combobox(year_frame, state='readonly', width=5, textvariable=self.eyear, postcommand=self._get_year)
-        self.year_combo.pack(side='left', ipadx=0, ipady=0)
-        self.year_combo.bind('<<ComboboxSelected>>', self.render)
-        self._get_year()
-        self.year_combo.current(0)
-
+        ttk.Label(title_frame, text = f"{title}{'YEAR: ':>10}{max_year}").pack(side='left')
         ttk.Label(title_frame, text = '').pack(side='left', expand=True, fill='x')
-        button = ttk.Button(title_frame, text='Closing Seat',
-                   command=self.create_income_closing_seat)
-        button.pack(side='left')
+        ttk.Button(title_frame, text='Closing Seat', command=self.create_income_closing_seat).pack(side='left')
         
-        self.text = Text(self)
-        self.text.pack(fill='both', expand=True)
-        scroll_bar = Scrollbar(self.text)
-        self.text.configure(yscrollcommand=scroll_bar.set)
-        scroll_bar.config(command=self.text.yview)
-        scroll_bar.pack(side='right', fill='y')
-
-        pw = ttk.Panedwindow(self.text, orient=VERTICAL, width=425)
-        self.text.window_create('end', window=pw)
+        pw = ttk.Panedwindow(self, orient=HORIZONTAL)
+        pw.pack(fill='both', expand=True)
         
-        report_file = 'income.json'
-        with open(os.path.join(self.user.configfiles_dir, report_file)) as _file:
-            self.income_repo = json.load(_file)
-        
-        inframe = ttk.Labelframe(pw, text='Revenue', labelanchor='n')
+        inframe = ttk.Labelframe(pw, text='Input', labelanchor='n')
         pw.add(inframe, weight=1)
-        self.inflow = ConceptTree(inframe, self.income_repo['revenue'],
-                                  height=20, selectmode='browse', show='headings')
-        self.inflow.pack()
-        self.inflow.column('topic', width=250, anchor='w')
-        self.inflow.column('amount', width=100, anchor='e')
-        self.inflow.column('percent', width=50, anchor='e')
-        self.inflow['displaycolumns'] = ['topic','amount', 'percent']
-        #self.inflow.tag_configure('revenues', background='lightblue')
-        #self.inflow.tag_configure('taxes', background='darksalmon')        
-        #self.inflow.tag_configure('insurance', background='coral')
-        #self.inflow.tag_configure('expenses', background='lightsalmon')
-        self.inflow.tag_configure('total', background='lightgray')
-        self.inflow.bind('<<TreeviewSelect>>', self.display_concept_items)
 
-          
-        outframe = ttk.Labelframe(pw, text='Outgoing', labelanchor='n')
-        pw.add(outframe, weight=1)
-        self.outflow = ConceptTree(outframe, self.income_repo['outgoing'],
-                                   height=20, selectmode='browse', show='headings')
-        self.outflow.pack()
-        self.outflow.column('topic', width=250, anchor='w')
-        self.outflow.column('amount', width=100, anchor='e')
-        self.outflow.column('percent', width=50, anchor='e')
-        self.outflow['displaycolumns'] = ['topic','amount', 'percent']
-        #self.outflow.tag_configure('revenues', background='lightblue')
-        #self.outflow.tag_configure('taxes', background='darksalmon')        
-        #self.outflow.tag_configure('insurance', background='coral')
-        #self.outflow.tag_configure('expenses', background='lightsalmon')
-        self.outflow.tag_configure('total', background='lightgray')
-        self.outflow.bind('<<TreeviewSelect>>', self.display_concept_items)
-
-        self.summary = StringVar()
-        labelframe = ttk.Frame(pw)
-        pw.add(labelframe, weight=1)
-        ttk.Label(labelframe, textvariable=self.summary, anchor='c').pack()
-        self.render()
-
-    def _get_year(self):
-        min_year,max_year = db_get_yearRange()
-        self.year_combo['values'] = values = [*range(max_year, min_year-1, -1)]
+        self.inputs = ttk.Treeview(inframe,selectmode='browse', show='tree headings')
+        self.inputs.pack(expand=True, fill='both')
+        self.inputs['columns'] = ('amount', 'percent')
+        self.inputs.heading('#0', text='Topic')
+        self.inputs.heading('amount', text='Amount(€)')
+        self.inputs.heading('percent', text='%')
+        self.inputs.column('amount', width=100, anchor='e')
+        self.inputs.column('percent', width=50, anchor='e')
+        self.inputs.tag_configure('head', background='lightgray')
+        self.inputs.tag_configure('total', background='lightblue')
+        self.inputs.bind('<<TreeviewSelect>>', self.expand_node)
+        self.inputs.bind('<Double-1>', self.display_on_ledger)
         
-    def refresh(self, year):
-        self.eyear.set(year)
+        outframe = ttk.Labelframe(pw, text='Output', labelanchor='n')
+        pw.add(outframe, weight=1)
+
+        self.outputs = ttk.Treeview(outframe,selectmode='browse', show='tree headings')
+        self.outputs.pack(expand=True, fill='both')
+        self.outputs['columns'] = ('amount', 'percent')
+        self.outputs.heading('#0', text='Topic')
+        self.outputs.heading('amount', text='Amount(€)')
+        self.outputs.heading('percent', text='%')
+        self.outputs.column('amount', width=100, anchor='e')
+        self.outputs.column('percent', width=50, anchor='e')
+        self.outputs.tag_configure('head', background='lightgray')
+        self.outputs.tag_configure('total', background='lightblue')
+        self.outputs.bind('<<TreeviewSelect>>', self.expand_node)
+        self.outputs.bind('<Double-1>', self.display_on_ledger)
+
+        self.income = StringVar()
+        bgcolor,fgcolor = 'lightblue','black'
+        summary_frame = Frame(self, bg=bgcolor)
+        summary_frame.pack(expand=False, fill='x', pady=5, padx=5)
+        Label(summary_frame, bg=bgcolor, text = '').pack(side='left', expand=True, fill='x')
+        Label(summary_frame, bg=bgcolor, fg=fgcolor, text = f"INCOME = ").pack(side='left')
+        Label(summary_frame, bg=bgcolor, fg=fgcolor, textvariable=self.income ).pack(side='left')
+        Label(summary_frame, bg=bgcolor, text = '').pack(side='left', expand=True, fill='x')
         self.render()
+
         
     def render(self, *args):
         year = self.eyear.get()
-        self.text['state'] = 'normal'
-        self.inflow.delete(*self.inflow.get_children())
-        self.inflow.balance_render(year)
-        self.outflow.delete(*self.outflow.get_children())
-        self.outflow.balance_render(year)
-        
-        t_iid = list(self.inflow.get_children())[-1]
-        in_total = float(self.inflow.set(t_iid, column='amount').replace('.','').replace(',','.'))
-        t_iid = list(self.outflow.get_children())[-1]
-        out_total = float(self.outflow.set(t_iid, column='amount').replace('.','').replace(',','.'))
-        net_income = db_currency(in_total - out_total)
-        self.summary.set(f'NET INCOME  = {net_income:>10}')
-        self.text['state'] = 'disabled'
+        self.inputs.delete(*self.inputs.get_children())
+        self.outputs.delete(*self.outputs.get_children())
 
+        with db_session() as db:
+            node = self.acc_tree.find_node('input')
+            codes = self.acc_tree.get_account_codes(node)
+            accounts = db.query(Account).filter(Account.code.in_(codes)).all()
+            in_total = sum(map(lambda account: account.balance(year), accounts))
+            values = db_currency(in_total), ''
+            p_iid = self.inputs.insert('','end', text=str(node), values=values, tag='head', open=True)
+            
+            for child in node.children:
+                codes = self.acc_tree.get_account_codes(child)
+                accounts = db.query(Account).filter(Account.code.in_(codes)).all()
+                amount = sum(map(lambda account: account.balance(year), accounts))
+                values = db_currency(amount), f'{amount/in_total:.0%}' if in_total != 0 else '-'
+                self.inputs.insert(p_iid, 'end', text=str(child), values=values, tag='entry', open=True)
+
+            ############
+            node = self.acc_tree.find_node('output')
+            codes = self.acc_tree.get_account_codes(node)
+            accounts = db.query(Account).filter(Account.code.in_(codes)).all()
+            out_total = sum(map(lambda account: account.balance(year), accounts))
+            values = db_currency(out_total), ''
+            p_iid=self.outputs.insert('','end', text=str(node), values=values, tag='head', open=True)
+            
+            for child in node.children:
+                codes = self.acc_tree.get_account_codes(child)
+                accounts = db.query(Account).filter(Account.code.in_(codes)).all()
+                amount = sum(map(lambda account: account.balance(year), accounts))
+                values = db_currency(amount), f'{amount/out_total:.0%}' if out_total != 0 else '-'
+                self.outputs.insert(p_iid, 'end', text=str(child), values=values, tag='entry', open=True)
+            
+            ###########
+        
+        total = in_total - out_total
+        self.income.set(f'{db_currency(total)}€')
+
+
+    def expand_node(self, event):
+        year = self.eyear.get()
+        table = event.widget
+        if iid := event.widget.focus():
+            if table.get_children(iid):
+                if table.item(iid, 'open'):
+                    table.item(iid, open=False)
+                else:
+                    table.item(iid, open=True)
+                return 'break'
+            #######
+            node_name = table.item(iid, 'text')
+            if node := self.acc_tree.find_node(node_name):
+                total = float(table.set(iid, 'amount').replace('.','').replace(',','.'))
+                with db_session() as db:
+                    for child in node.children:
+                        codes = self.acc_tree.get_account_codes(child)
+                        accounts = db.query(Account).filter(Account.code.in_(codes)).all()
+                        amount = sum(map(lambda account: account.balance(year), accounts))
+                        values = db_currency(amount), f'{amount/total:.0%}' if total != 0 else '-'
+                        table.insert(iid, 'end', text=str(child), values=values, tag='entry', open=True)
+        return 'break'
+                
     def create_income_closing_seat(self):
         year = self.eyear.get()
         filename = create_income_closing_seat(year, self.user.user_dir)
@@ -129,32 +157,16 @@ class IncomeView(ttk.Frame):
             self.refresh(year)
             return
             
-    def display_concept_items(self, event):
+    def display_on_ledger(self, event):
         year = self.eyear.get()
-        min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
-        max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
         table = event.widget
         if iid := event.widget.focus():
-            concept = table.set(iid, column='topic').replace('\t','')
-            if codes:= table.set(iid, column='accounts'):
-                codes = eval(codes)
-                with db_session() as db:
-                    accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)
-                    entries = (entry for account in accounts for entry in account.entries)
-                    entries = filter(lambda x: x.transaction.date >= min_date and x.transaction.date <= max_date, entries)
-                    entries = sorted(entries, key=lambda x:x.transaction.date)
-                    entries = [entry.id for entry in entries]
-            else:
-                codes = map(lambda x: eval(table.set(x, column='accounts')), self.table.get_children(iid))
-                codes = [item for code in codes for item in code]
-                with db_session() as db:
-                    accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)
-                    entries = (entry for account in accounts for entry in account.entries)
-                    entries = filter(lambda x: x.transaction.date >= min_date and x.transaction.date <= max_date, entries)
-                    entries = sorted(entries, key=lambda x:x.transaction.date)
-                    entries = [entry.id for entry in entries]
-            concept = 'Income: ' + concept
-            self.parent.master.ledger.render_entries(concept, entries)
-            self.parent.master.notebook.select(2)                        
-        return 'break'    
+            node_name = table.item(iid, 'text')
+            if node := self.acc_tree.find_node(node_name):
+                self.parent.master.ledger.clear_filter()
+                self.parent.master.ledger.account.set(node.ext_name)
+                self.parent.master.ledger.etrans_year.set(year)
+                self.parent.master.ledger.render_filter()
+                self.parent.master.notebook.select(2)
+                return 'break'
 

@@ -6,10 +6,9 @@ from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from .model import Base, Account, Transaction, BookEntry, Type, Content
-from .groups import find_groups
+from .paths import find_path
 
 Session = sessionmaker()
-
 
 @contextmanager
 def db_session():
@@ -42,9 +41,8 @@ def db_setup(accounts_file, groups_file, verbose=False):
             try:
                 account = db.query(Account).filter_by(code=record['code']).one()
             except NoResultFound:
-                groups= find_groups(record['code'], grp_dict)
-                record['groups'] = json.dumps(groups)
+                record['path'] =  find_path(record['code'])
                 db.add(Account(**record))
-                print("Created account: type:{type} content:{content} code:{code} name:{name} groups:{groups} ".format(**record))
+                print("Created account: type:{type} content:{content} code:{code} name:{name} path:{path} ".format(**record))
             else:
                 if verbose: print(f'... existing {account}')

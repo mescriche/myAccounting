@@ -16,6 +16,14 @@ def db_get_account_code(gname:str) -> str:
     else:
         raise Exception(f'Wrong account pattern:"{gname}"')
 
+def db_get_account_name(gname:str) -> str:
+    ptrn = re.compile(r'\[((C|D)(R|N))-(\d+)\]\s(?P<name>[-\/\s\w]+)')
+    if match := ptrn.fullmatch(gname):
+        name = match.group('name')
+        return name
+    else:
+        raise Exception(f'Wrong account pattern:"{gname}"')
+
 def db_get_accounts_gname(all=True) -> list:
     with db_session() as db:
         accounts = db.query(Account).all() if all else filter(lambda x: not x.isEmpty, db.query(Account).all())
@@ -33,3 +41,11 @@ def db_get_yearRange() -> tuple:
         else: _max = today.year
     return _min,_max
 
+def flatten(lst):
+    flat_list = list()
+    for item in lst:
+        if isinstance(item, list):
+            flat_list.extend(flatten(item))
+        else:
+            flat_list.append(item)
+    return flat_list

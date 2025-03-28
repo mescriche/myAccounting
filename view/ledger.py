@@ -1,18 +1,21 @@
 __author__ = 'Manuel Escriche'
+import re
 from tkinter import *
 from tkinter import ttk
 from datetime import datetime
 from dbase import db_session
-from controller.utility import db_currency, db_get_account_code, db_get_accounts_gname, db_get_yearRange
+from controller.utility import db_currency, db_get_account_code, db_get_account_name, db_get_yearRange
 from dbase import Account, Transaction, BookEntry
 import locale
 
 class LedgerView(ttk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, acc_tree):
         super().__init__(parent)
         self.parent = parent
         self.pack(fill='both', expand=True)
 
+        self.acc_tree = acc_tree
+        
         self.filter = ttk.LabelFrame(self, text='Filter')
         self.filter.pack(fill='x', expand=False)
         
@@ -66,17 +69,19 @@ class LedgerView(ttk.Frame):
         label.pack(fill='x', expand=False)
 
         
-        columns = ('eid', 'tid', 'date', 'amount', 'description')
+        columns = ('eid', 'tid', 'account', 'date', 'amount', 'description')
         
         self.table = ttk.Treeview(vframe, columns=columns, selectmode='browse', show='headings')
         self.table.pack(fill='both', expand=True)
         self.table.heading('eid', text='Eid', command=lambda:self._sort_column('eid'))
         self.table.heading('tid', text='Tid', command=lambda:self._sort_column('tid'))
+        self.table.heading('account', text='Account', command=lambda:self._sort_column('account'))
         self.table.heading('date', text='Date', command=lambda:self._sort_column('date'))
         self.table.heading('amount', text='Amount', command=lambda:self._sort_column('amount'))
         self.table.heading('description', text='Description', command=lambda:self._sort_column('description'))
         self.table.column('eid', width=40, anchor='c')
         self.table.column('tid', width=40, anchor='c')
+        self.table.column('account', width=180, anchor='w')
         self.table.column('date', width=100, anchor='c')
         self.table.column('amount', width=80, anchor='e')
         self.table.column('description', width=800, anchor='w')        
@@ -85,8 +90,7 @@ class LedgerView(ttk.Frame):
         self.render_filter()
         
     def _sort_column(self, col, reverse=False):
-        #print('hola', self.table.column(col, option='id'))
-        if col == 'description': key = lambda x: str(x[0])
+        if col in ('description','account'): key = lambda x: str(x[0])
         elif col in ( 'eid', 'tid') : key = lambda x: int(x[0])
         elif col == 'date':   key = lambda x: datetime.strptime(x[0], "%d-%m-%Y").date()
         elif col == 'amount': key = lambda x: locale.atof(x[0].replace('.','').replace(',','.'))
@@ -100,7 +104,7 @@ class LedgerView(ttk.Frame):
             self.table.heading(col, command=lambda: self._sort_column(col, not reverse))
             
     def _get_accounts(self):
-        self.acc_combo['values'] = db_get_accounts_gname(False)
+        self.acc_combo['values'] = self.acc_tree.get_nodes()
         
     def _get_years(self):
         min_year,max_year = db_get_yearRange()
@@ -108,11 +112,9 @@ class LedgerView(ttk.Frame):
         
     def refresh(self, date):
         self.etrans_year.set(date.year)
-        #self.etrans_date.set(date.strftime('%d-%m-%Y'))
         #self.render_filter()
         
     def display_transaction(self, event):
-        #print(event.widget)
         if iid := event.widget.focus():
             trans_id = self.table.set(iid, column='tid')
             self.parent.master.journal.render([trans_id])
@@ -122,15 +124,16 @@ class LedgerView(ttk.Frame):
     def clear_filter(self, *args):
         self.etrans_description.set('')
         self.etrans_date.set('')
-        #self.etrans_year.set('')
 
     def render_filter(self, *args):
-        if gname := self.account.get():
-            try: code = db_get_account_code(gname)
-            except: raise 
+        if acc_value := self.account.get():
+            node = self.acc_tree.find_node(acc_value)
+            node_proxy = node.proxy()
+            codes = self.acc_tree.get_account_codes(node_proxy)            
             with db_session() as db:
-                account = db.query(Account).filter_by(code=code).one()
-                entries = account.entries
+                accounts = db.query(Account).filter(Account.code.in_(codes)).all()
+                #accounts = map(lambda code: db.query(Account).filter_by(code=code).one(), codes)
+                entries = [entry for account in accounts for entry in account.entries]
                 if self.etrans_description.get():
                     description = self.etrans_description.get()
                     entries = filter(lambda x: description in x.transaction.description, entries)
@@ -144,9 +147,11 @@ class LedgerView(ttk.Frame):
                     date = datetime.strptime(_date, "%d-%m-%Y").date()
                     entries = filter(lambda x:x.transaction.date == date, entries)
                 if items := [item.id for item in entries]:
-                    self.render_entries(gname, items)
+                    self.render_entries(acc_value, items)
                 else:
+                    self.account_label.set(f'{acc_value}')
                     self.table.delete(*self.table.get_children())
+                    
 
     def render_entries(self, title:str, items:list):
         self.account_label.set(f'{title}')
@@ -159,7 +164,7 @@ class LedgerView(ttk.Frame):
                     print(e)
                 else:
                     total += entry.value
-                    values = entry.id, entry.transaction.id, entry.transaction.date.strftime("%d-%m-%Y"),\
+                    values = entry.id, entry.transaction.id, entry.account.gname, entry.transaction.date.strftime("%d-%m-%Y"),\
                         db_currency(entry.value), entry.transaction.description
                     self.table.insert('','end', values=values)
             else:

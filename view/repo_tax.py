@@ -7,15 +7,17 @@ from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
+from datamodel import ReportDataSource
 
 Data = namedtuple('Data', ['value', 'label'])
 cm = 1/2.54
 class TaxRepoView(ttk.Frame):
-    def __init__(self, parent, user, **kwargs):
+    def __init__(self, parent, user, acc_tree, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
         self.user = user
+        self.acc_tree = acc_tree
         self.eyear = IntVar()
         title_frame = ttk.Frame(self)
         title_frame.pack(expand=False, fill='x', pady=5, padx=5)
@@ -32,6 +34,7 @@ class TaxRepoView(ttk.Frame):
             self.year_combo.current(0)
         except:
             pass
+        self.data_source = ReportDataSource(self.acc_tree)
         
         self.text = Text(self)
         scroll_bar = Scrollbar(self.text, command=self.text.yview)
@@ -45,28 +48,28 @@ class TaxRepoView(ttk.Frame):
             years = [t.date.year for t in db.query(Transaction).\
                 filter(Transaction.description.contains(_desc))]
         min_year,max_year = min(years), max(years)
-        self.year_combo['values'] = values = [*range(max_year, min_year-1, -1)]
+        self.year_combo['values'] = values = [*range(max_year, min_year, -1)]
     
     def display_graph(self, *args):
         plt.close('all')
         year = self.eyear.get()
         self.text['state'] = 'normal'
         self.text.delete(1.0, 'end')
-        first_year = int(self.year_combo['values'][-1])
+        years = year-1, year
+        title = 'Tax'
+        
+        df = self.data_source.get_data(title, *years, delta=True)
+        table =  create_table(df)
+        self.text.insert('end', table)
+        self.text.insert('end', "\n\n")
 
-        if year-1 >=  first_year:
-            fig = create_graph('Tax', year-1, 'sienna')
+        for year in years:
+            df = self.data_source.get_data(title, year)
+            fig = create_graph(df, title=title, color='sienna')
             canvas = FigureCanvasTkAgg(fig, master=self.text)
-            self.text.window_create('end', window=canvas.get_tk_widget())
-        fig = create_graph('Tax', year, 'sienna')
-        canvas = FigureCanvasTkAgg(fig, master=self.text)
-        self.text.window_create('end', window=canvas.get_tk_widget())
-        self.text.insert('end', "\n\n")
+            self.text.window_create('end', window=canvas.get_tk_widget())    
+        else:
+            self.text.insert('end', "\n\n")
 
-        if year-1 >= first_year:
-            table =  create_table('Tax', (year-1, year))
-            self.text.insert('end', table)
-
-        self.text.insert('end', "\n\n")
         self.text['state'] = 'disabled'
 

@@ -3,7 +3,7 @@ import locale
 locale.setlocale(locale.LC_ALL, '')
 
 import argparse, sys, os
-from datamodel.user import UserData
+from datamodel import UserData, AccountsTree
 
 parser = argparse.ArgumentParser(description='program for your personal finances',
                                  epilog='')
@@ -40,14 +40,18 @@ class App(Tk):
         self.option_add('*tearOff', False)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.protocol("WM_DELETE_WINDOW", self.destroy)
-        self.createcommand('tk::mac::Quit', self.destroy)
+        self.protocol("WM_DELETE_WINDOW", self.close_app)
+        self.createcommand('tk::mac::Quit', self.close_app)
 
         db_open(user.db_config)
-
+        acc_tree = AccountsTree.from_db()
         #controller = Controller()        
-        view = View(self, user)
+        view = View(self, user, acc_tree)
         
+    def close_app(self, *args):
+        self.update()
+        self.destroy()
+    
         
 if __name__ == '__main__':
     app = App(user)

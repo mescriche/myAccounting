@@ -27,12 +27,13 @@ class View(ttk.Frame):
         'Olive Green': '#D1E7E0.#5B8340',
         'Night Mode': '#FFFFFF.#000000',
     }
-    def __init__(self, parent, user,  **kwargs):
+    def __init__(self, parent, user, acc_tree,  **kwargs):
         super().__init__(parent, **kwargs)
         self.pack(fill='both', expand=True)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
         self.user= user
+        self.acc_tree = acc_tree
         self.create_menu()
         self.create_gui()
         self.change_text_color()
@@ -55,28 +56,28 @@ class View(ttk.Frame):
         self.notebook.pack(fill='both', expand=True)
         
         ## --- Input
-        self.input = InputView(self.notebook, self.user)
+        self.input = InputView(self.notebook, self.user, self.acc_tree)
         self.notebook.add(self.input, text='Input')
         #self.notebook.hide(self.input)
         
         ## ---- Journal
-        self.journal = JournalView(self.notebook)
+        self.journal = JournalView(self.notebook, self.user, self.acc_tree)
         self.notebook.add(self.journal, text='Journal')
         
         ## ---- Ledger
-        self.ledger = LedgerView(self.notebook)
+        self.ledger = LedgerView(self.notebook, self.acc_tree)
         self.notebook.add(self.ledger, text='Ledger')
 
         ## --- Map
-        self.checking_map = MapView(self.notebook)
+        self.checking_map = MapView(self.notebook, self.acc_tree)
         self.notebook.add(self.checking_map, text='Checking Map')
         
         ## ---- Income
-        self.income = IncomeView(self.notebook, self.user)
+        self.income = IncomeView(self.notebook, self.user, self.acc_tree)
         self.notebook.add(self.income, text='Income')
         
         ## ---- Balance
-        self.balance = BalanceView(self.notebook, self.user)
+        self.balance = BalanceView(self.notebook, self.user, self.acc_tree)
         self.notebook.add(self.balance, text='Balance')
         
         self.notebook.bind("<<DataBaseContentChanged>>", self.refresh_tabs)
@@ -92,8 +93,8 @@ class View(ttk.Frame):
             self.journal.refresh(trans.date)
             self.ledger.refresh(trans.date)
             self.checking_map.refresh(trans.date.year)
-            self.income.refresh(trans.date.year)
-            self.balance.refresh(trans.date.year)
+            self.income.render()
+            self.balance.render()
 
     def toggle_input_tab(self):
         if not self.input_tab_sem.get():

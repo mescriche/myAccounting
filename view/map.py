@@ -6,8 +6,9 @@ from dbase import db_session, Account, Content, Type
 from controller.utility import db_get_yearRange, db_currency, db_get_account_code
 
 class MapView(ttk.Frame):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, acc_tree, **kwargs):
         super().__init__(master, **kwargs)
+        self.acc_tree = acc_tree
         self.pack(fill='both', expand=True)
         columns = 'account', 'debit', 'credit', 'debtor', 'creditor'
         self.table = ttk.Treeview(self, columns=columns, selectmode='browse', show='headings')

@@ -1,22 +1,24 @@
 __author__ = 'Manuel Escriche'
 from collections import namedtuple
 from dbase import db_session, Transaction
-from controller.report import create_graph, create_table, create_joint_table, get_data
+from controller.report import create_graph, create_table
 from tkinter import *
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
+from datamodel import ReportDataSource
 
 Data = namedtuple('Data', ['value', 'label'])
 cm = 1/2.54
 
 class BalanceRepoView(ttk.Frame):
-    def __init__(self, parent, user, **kwargs):
+    def __init__(self, parent, user, acc_tree, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(fill='both', expand=True)
         self.user = user
+        self.acc_tree = acc_tree
         self.eyear = IntVar()
         title_frame = ttk.Frame(self)
         title_frame.pack(expand=False, fill='x', pady=5, padx=5)
@@ -33,7 +35,9 @@ class BalanceRepoView(ttk.Frame):
             self.year_combo.current(0)
         except:
             pass
-        
+
+        self.data_source = ReportDataSource(self.acc_tree)
+         
         self.text = Text(self)
         scroll_bar = Scrollbar(self.text, command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
@@ -48,26 +52,25 @@ class BalanceRepoView(ttk.Frame):
             years = [t.date.year for t in db.query(Transaction).\
                 filter(Transaction.description.contains(_desc))]
         min_year,max_year = min(years), max(years)
-        self.year_combo['values'] = values = [*range(max_year, min_year-1, -1)]
+        self.year_combo['values'] = values = [*range(max_year, min_year, -1)]
 
     
     def _create_balance_summary(self, year):
-        adata = get_data('assets', year)
-        ldata = get_data('claims', year)
+        dfa = self.data_source.get_data('assets', year)
+        dfc = self.data_source.get_data('claims', year)
         Data = namedtuple('Data', ['values', 'color'])
         gdata = {
-            "Fixed": Data(np.array([adata['fixed'],0]), 'tab:blue'),
-            "Current": Data(np.array([adata['current'],0]), 'tab:cyan'),
-            "Wealth": Data(np.array([0, ldata['wealth']]), 'tab:purple'),
-            "Earnings": Data(np.array([0,ldata['earn']]), 'tab:olive'),
-            "Debt": Data(np.array([0, ldata['debt']]), 'tab:red'),
-        }
-            
+            'Fixed': Data(np.append(dfa.loc['Fixed'].to_numpy(), [0]), 'tab:blue'),
+            'Current': Data(np.append(dfa.loc['Current'].to_numpy(),[0]), 'tab:cyan'),
+            'Wealth': Data(np.append([0], dfc.loc['Wealth'].to_numpy()), 'tab:purple'),
+            'Earnings': Data(np.append([0], dfc.loc['Earnings'].to_numpy()), 'tab:olive'),
+            'Debt': Data(np.append([0], dfc.loc['Debt'].to_numpy()), 'tab:red')
+            }
         categories = 'Assets', 'Claims'
-        total = adata['fixed'] + adata['current']
+        total = dfa.loc['Total', year]
         
         bottom = np.zeros(2)
-        fig, ax = plt.subplots(figsize=(10*cm, 10*cm))
+        fig, ax = plt.subplots(figsize=(10*cm, 8*cm))
         for key, item in gdata.items():
             p = ax.bar(categories, item.values, label=key, width=0.8,
                        bottom = bottom, color=item.color)
@@ -79,12 +82,13 @@ class BalanceRepoView(ttk.Frame):
                             bottom[index]+height/2,
                             f'{label}\n{height:,.0f}€\n({height*100/total:.0f}%)',
                             ha='center', va='center')
-                font_size = t.get_size()
+                #font_size = t.get_size()
             bottom += item.values
+        fig.suptitle(f'Year {year} - Balance Summary')            
         ax.get_yaxis().set_visible(False)
-        ax.set_title(f'Total = {total:,.0f}€', fontsize=font_size)
-        ax.set_ylim(0, total*1.05)
-        fig.suptitle(f'Year {year} - Balance Summary')
+        ax.set_title(f'Total = {total:,.0f}€', fontsize=9)
+        ax.set_ylim(0, total*1.1)
+        plt.subplots_adjust(top=0.85)
         return fig
           
     def display_graph(self, *args):
@@ -92,49 +96,34 @@ class BalanceRepoView(ttk.Frame):
         year = self.eyear.get()
         self.text['state'] = 'normal'
         self.text.delete(1.0, 'end')
-        first_year = int(self.year_combo['values'][-1])
+        years = year-1, year
         #######
-        if year-1 >= first_year:
-            fig = self._create_balance_summary(year-1)
+        titles = ('Assets', 'Claims')
+        df = [self.data_source.get_data(title, *years, delta=True, total=True) for title in titles]    
+        table = create_table(*df)
+        self.text.insert('end', table)
+        self.text.insert('end', "\n\n")
+
+        for year in years:
+            fig = self._create_balance_summary(year)
             canvas = FigureCanvasTkAgg(fig, master=self.text)
             self.text.window_create('end', window=canvas.get_tk_widget())
-        fig = self._create_balance_summary(year)
-        canvas = FigureCanvasTkAgg(fig, master=self.text)
-        self.text.window_create('end', window=canvas.get_tk_widget())
-        self.text.insert('end', "\n\n")
-        
-        if year-1 >= first_year:
-            table = create_joint_table(('Assets','Claims'),(year-1,year))
-            self.text.insert('end', table)
+        else:
             self.text.insert('end', "\n\n")
             
         ##########
-        if year-1 >= first_year:
-            fig = create_graph('Current', year-1, 'tab:cyan')
-            canvas = FigureCanvasTkAgg(fig, master=self.text)
-            self.text.window_create('end', window=canvas.get_tk_widget())
-        fig = create_graph('Current', year, 'tab:cyan')
-        canvas = FigureCanvasTkAgg(fig, master=self.text)
-        self.text.window_create('end', window=canvas.get_tk_widget())
-        self.text.insert('end', "\n\n")
-        
-        if year-1 >= first_year:
-            table =  create_table('Current', (year-1, year))
+        titles = ('Current','tab:cyan'),( 'Fixed','tab:blue' )
+        for title, color in titles:
+            df = self.data_source.get_data(title, *years, delta=True)
+            table =  create_table(df)
             self.text.insert('end', table)
             self.text.insert('end', "\n\n")
-            
-        #################
-        if year-1 >= first_year:
-            fig = create_graph('Fixed', year-1, 'tab:blue')
-            canvas = FigureCanvasTkAgg(fig, master=self.text)
-            self.text.window_create('end', window=canvas.get_tk_widget())
-        fig = create_graph('Fixed', year, 'tab:blue')
-        canvas = FigureCanvasTkAgg(fig, master=self.text)
-        self.text.window_create('end', window=canvas.get_tk_widget())
-        self.text.insert('end', "\n\n")
+            for year in years:
+                df = self.data_source.get_data(title, year)
+                fig = create_graph(df, title=title, color=color)
+                canvas = FigureCanvasTkAgg(fig, master=self.text)
+                self.text.window_create('end', window=canvas.get_tk_widget())
+            else:
+                self.text.insert('end', "\n\n")
         
-        if year-1 >= first_year:
-            table = create_table('Fixed', (year-1, year))
-            self.text.insert('end', table)
-            self.text.insert('end', "\n\n")
         self.text['state'] = 'disabled'
