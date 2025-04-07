@@ -115,18 +115,18 @@ class AccountsTree:
     
     def find_node(self, name):
         if match := re.fullmatch(r'(/\w+)+', name):
-            #name = name.split('/')[-1].lower()
             return self.root.find(lambda node: isinstance(node, Group) and node.path == name)
         elif match := re.fullmatch(r'\[((C|D)(R|N))-(\d+)\]\s(?P<name>[-\/\s\w]+)', name):
-            #name = match.group('name').lower()
             return self.root.find(lambda node: isinstance(node, Account) and node.gname == name)
         else:
-            return self.root.find(lambda node: node.name == name.lower())
+            return self.root.find(lambda node: isinstance(node, Group) and node.name == name.lower())
     
     def print(self, name='/'):
         if node := self.find_node(name):
             node.print_tree()
-            
+        else:
+            self.root.print_tree()
+        
     def _add_path(self, path):
         chunks = path.split('/')
         father = self.root

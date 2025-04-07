@@ -1,28 +1,49 @@
 __author__ = 'Manuel Escriche'
+import random
 from dbase import db_session, Transaction, Account, BookEntry
 from prettytable import PrettyTable
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 cm = 1/2.54
 
+colors= list(mcolors.TABLEAU_COLORS.keys())
+random.shuffle(colors)
+ncolors = len(colors)
+
 def create_evo_graph(serie, **kwargs):
-    title = kwargs.get('title').title()
-    color = kwargs.get('color', 'tab:blue')
+    title = kwargs.get('title')
+    color = kwargs.get('color', mcolors.TABLEAU_COLORS[colors[-1]])
     figsize = kwargs.get('figsize',  (20*cm, 5*cm))
     
-    amounts = serie.to_numpy()
-    if all(x==0 for x in amounts): return None
-    
+    if all(x==0 for x in serie): return None
     years = [str(ndx) if isinstance(ndx,int) else ndx for ndx in serie.index]
     
     fig, ax = plt.subplots(figsize=figsize, layout='constrained')
-    bar = ax.bar(years, amounts, color=color)
-    labels = [f'{x:,.0f}' for x in amounts]
+    bar = ax.bar(years, serie, color=color)
+    labels = [f'{x:,.0f}' for x in serie]
     ax.bar_label(bar, labels=labels)
-    ax.set_title(f"Concept:{title}")
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Amount(€)")
-    ax.set_ylim(0, max(amounts)*1.1)
+    ax.set_title(f"{title}")
+    #ax.set_xlabel("Year")
+    #ax.set_ylabel("Amount(€)")
+    ax.set_ylim(0, max(serie)*1.1)
+    return fig
+
+
+def create_mevo_graph(df, **kwargs):
+    title = kwargs.get('title').title()
+    concepts = df.index.tolist()
+    figsize = kwargs.get('figsize',  (20*cm, 5*len(concepts)*cm))
+    years = list(map(str,df.columns.tolist()))
+    
+    fig, ax = plt.subplots(nrows=len(concepts), sharex=True, figsize=figsize, layout='constrained')
+    for i, concept in enumerate(concepts):
+        color = mcolors.TABLEAU_COLORS[colors[i%ncolors]]
+        p = ax[i].bar(years, df.loc[concept], width=0.8, color=color)
+        ax[i].bar_label(p, label_type='edge', fmt='%.0f')
+        ax[i].set_title(f'{concept}')
+        
+    fig.suptitle(f'{title}')
     return fig
 
 def create_graph(df, **kwargs):
@@ -32,6 +53,7 @@ def create_graph(df, **kwargs):
         
     year = df.columns[0]
     total = df.loc['Total', year]
+    if not total: return None
     last_index = df.index[-1]
     df.drop(last_index, inplace=True)
     df = df.nlargest(4, year)
@@ -49,11 +71,29 @@ def create_graph(df, **kwargs):
     plt.xticks(rotation=45, ha='right')
     return fig
 
+def create_cmp_graph(df, **kwargs):
+    if len(df) <= 2: return None
+    title = kwargs.get('title')
+    color = kwargs.get('color', 'tab:blue')
+    df.drop(df.index[-1], inplace=True) #drop Total
 
-def create_table(*data) -> str:
+    years = df.columns.tolist()[:-1]
+    if len(df) > 5: df = df.iloc[-5:]
+    figsize =  kwargs.get('figsize',  ((3+3*len(df))*cm, 8*cm))
+    
+    fig, ax = plt.subplots(ncols=len(years), sharey=True, figsize=figsize, layout='constrained')
+    for i,year in enumerate(years):
+        p = ax[i].bar(df.index, df[year], width=0.8, color=color)
+        ax[i].bar_label(p, label_type='edge', fmt='%.0f')
+        ax[i].set_title(f'{year} - Total={df[year].sum():,.0f}')
+        ax[i].tick_params(axis='x', rotation=45 )
+    fig.suptitle(f'{title}')
+    return fig
+
+def create_table(*data, title=None) -> str:
     table = PrettyTable()
     table.min_table_width = 60
-    
+    if title: table.title = title
     for df in data:
         table.field_names = ['Concept'] + df.columns.tolist()
         total_rows = len(df)

@@ -1,7 +1,7 @@
 __author__ = 'Manuel Escriche'
 from collections import namedtuple
 from dbase import db_session, Transaction
-from controller.report import create_graph, create_table
+from controller import create_graph, create_table,  create_cmp_graph
 from tkinter import *
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -56,20 +56,17 @@ class InsRepoView(ttk.Frame):
         self.text['state'] = 'normal'
         self.text.delete(1.0, 'end')
         years = year-1, year
-        title = 'Insurance'
+        title = '/Output/Insurance'
         
         df = self.data_source.get_data(title, *years, delta=True)
-        table =  create_table(df)
+        table =  create_table(df, title=title)
         self.text.insert('end', table)
         self.text.insert('end', "\n\n")
 
-        for year in years:
-            df = self.data_source.get_data(title, year)
-            fig = create_graph(df, title=title, color='salmon')
+        if fig:= create_cmp_graph(df, title=title, color='salmon'):
             canvas = FigureCanvasTkAgg(fig, master=self.text)
             self.text.window_create('end', window=canvas.get_tk_widget())
-        else:
             self.text.insert('end', "\n\n")
-
+                
         self.text['state'] = 'disabled'
 

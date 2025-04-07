@@ -18,6 +18,14 @@ class ReportDataSource: #Report Data Source
         if node := self.acc_tree.find_node(title):
             if verbose: node.print_tree()
             root = node.path.split('/')[1]
+
+            if root  in ('Claims', 'Assets'):
+                doc = 'Balance'
+            elif root in ('Input', 'Output'):
+                doc = 'Income'
+            else:
+                raise Exception('Unknown master group')
+            
             node_proxy = node.proxy()
             if verbose:
                 print('\nnode:', node,' proxy:', node_proxy)
@@ -30,7 +38,7 @@ class ReportDataSource: #Report Data Source
             with db_session() as db:
                 data = list()
                 for year in years:
-                    desc = f'{root.title()} closing seat for year {year}'
+                    desc = f'{doc.title()} closing seat for year {year}'
                     if verbose: print(f'\n{desc}')
                     trans = db.query(Transaction).filter_by(description=desc).one()
                     for child in node_proxy.children:
@@ -73,6 +81,9 @@ class ReportDataSource: #Report Data Source
             if delta and len(years) >= 2:
                 columns = df.select_dtypes(include='number').columns
                 df[delta_char] = df[columns[-1]] - df[columns[0]]
+                df['Abs'] = df[delta_char].abs()
+                df.sort_values(by='Abs', ascending=True, inplace=True)
+                df.drop('Abs', axis=1, inplace=True)
             if total:
                 df.loc['Total'] = df.sum(numeric_only=True)
             return df

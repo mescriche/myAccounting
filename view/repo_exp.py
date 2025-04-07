@@ -1,11 +1,13 @@
 __author__ = 'Manuel Escriche'
+import random
 from collections import namedtuple
 from dbase import db_session, Transaction
-from controller.report import create_graph, create_table
+from controller import create_graph, create_table,  create_cmp_graph
 from tkinter import *
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 from datamodel.reports_data import ReportDataSource
 
@@ -58,22 +60,23 @@ class ExpRepoView(ttk.Frame):
         self.text.delete(1.0, 'end')
         years = year-1, year
         ################
-        titles = (('Expense','tab:red'), ('Exp-Person','tab:blue' ),
-                  ('Exp-House','tab:cyan'), ('Exp-Vehicle','tab:brown'))
-
-        for title,color in titles:
+        colors= list(mcolors.TABLEAU_COLORS.keys())
+        random.shuffle(colors)
+        ncolors = len(colors)
+        expense = '/Output/Expense'
+        titles = [expense] + sorted([child.ext_name for child in self.acc_tree.find_node(expense).children])
+        
+        for n,title in enumerate(titles):
+            color =  mcolors.TABLEAU_COLORS[colors[n%ncolors]]
             df = self.data_source.get_data(title, *years, delta=True)
-            table =  create_table(df)
+            table =  create_table(df, title=title)
             self.text.insert('end', table)
             self.text.insert('end', "\n\n")
-            
-            for year in years:
-                df = self.data_source.get_data(title, year)
-                fig = create_graph(df, title=title, color=color)
+
+            if fig := create_cmp_graph(df, title=title, color=color):
                 canvas = FigureCanvasTkAgg(fig, master=self.text)
                 self.text.window_create('end', window=canvas.get_tk_widget())
-            else:
                 self.text.insert('end', "\n\n")
-
+            
         self.text['state'] = 'disabled'
 

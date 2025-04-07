@@ -22,7 +22,7 @@ class Account(Base):
     content: Mapped[Content] = mapped_column()
     code: Mapped[str] = mapped_column(String(6),  unique=True)
     path: Mapped[str] = mapped_column(String(50), nullable=True)
-    name: Mapped[str] = mapped_column(String(20), unique=True)
+    name: Mapped[str] = mapped_column(String(20), unique=False)
     parameters: Mapped[dict] = mapped_column(JSON, nullable=True)
     entries: Mapped[list['BookEntry']] = relationship(back_populates='account')  # many-to-one
 

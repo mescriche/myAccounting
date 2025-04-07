@@ -77,7 +77,7 @@ class BalanceView(ttk.Frame):
         self.claims.delete(*self.claims.get_children())
         
         with db_session() as db:
-            node = self.acc_tree.find_node('assets')
+            node = self.acc_tree.find_node('/Assets')
             codes = self.acc_tree.get_account_codes(node)
             accounts = db.query(Account).filter(Account.code.in_(codes)).all()
             total = sum(map(lambda account: account.balance(year), accounts))
@@ -90,7 +90,7 @@ class BalanceView(ttk.Frame):
                 values = db_currency(amount), f'{amount/total:.0%}' if total != 0 else '-'
                 self.assets.insert(p_iid, 'end', text=str(child), values=values, tag='entry', open=True)
             ###########
-            node = self.acc_tree.find_node('claims')
+            node = self.acc_tree.find_node('/Claims')
             codes = self.acc_tree.get_account_codes(node)
             accounts = db.query(Account).filter(Account.code.in_(codes)).all()
             total = sum(map(lambda account: account.balance(year), accounts))

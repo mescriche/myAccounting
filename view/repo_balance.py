@@ -1,10 +1,12 @@
 __author__ = 'Manuel Escriche'
+import random
 from collections import namedtuple
 from dbase import db_session, Transaction
-from controller.report import create_graph, create_table
+from controller import create_graph, create_table, create_cmp_graph
 from tkinter import *
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 from datamodel import ReportDataSource
@@ -56,8 +58,8 @@ class BalanceRepoView(ttk.Frame):
 
     
     def _create_balance_summary(self, year):
-        dfa = self.data_source.get_data('assets', year)
-        dfc = self.data_source.get_data('claims', year)
+        dfa = self.data_source.get_data('/Assets', year)
+        dfc = self.data_source.get_data('/Claims', year)
         Data = namedtuple('Data', ['values', 'color'])
         gdata = {
             'Fixed': Data(np.append(dfa.loc['Fixed'].to_numpy(), [0]), 'tab:blue'),
@@ -98,9 +100,13 @@ class BalanceRepoView(ttk.Frame):
         self.text.delete(1.0, 'end')
         years = year-1, year
         #######
-        titles = ('Assets', 'Claims')
+        colors= list(mcolors.TABLEAU_COLORS.keys())
+        random.shuffle(colors)
+        ncolors = len(colors)
+        
+        titles = ('/Assets', '/Claims')
         df = [self.data_source.get_data(title, *years, delta=True, total=True) for title in titles]    
-        table = create_table(*df)
+        table = create_table(*df, title='BALANCE SUMMARY')
         self.text.insert('end', table)
         self.text.insert('end', "\n\n")
 
@@ -112,18 +118,17 @@ class BalanceRepoView(ttk.Frame):
             self.text.insert('end', "\n\n")
             
         ##########
-        titles = ('Current','tab:cyan'),( 'Fixed','tab:blue' )
-        for title, color in titles:
+        titles = ('/Assets/Current', '/Assets/Fixed', '/Claims' )
+        for n,title in enumerate(titles):
+            color =  mcolors.TABLEAU_COLORS[colors[n%ncolors]]
             df = self.data_source.get_data(title, *years, delta=True)
-            table =  create_table(df)
+            table =  create_table(df, title=title)
             self.text.insert('end', table)
             self.text.insert('end', "\n\n")
-            for year in years:
-                df = self.data_source.get_data(title, year)
-                fig = create_graph(df, title=title, color=color)
+            
+            if fig:= create_cmp_graph(df, title=title, color=color):
                 canvas = FigureCanvasTkAgg(fig, master=self.text)
                 self.text.window_create('end', window=canvas.get_tk_widget())
-            else:
                 self.text.insert('end', "\n\n")
-        
+            
         self.text['state'] = 'disabled'

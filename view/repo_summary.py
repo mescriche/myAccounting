@@ -48,12 +48,6 @@ class SummaryRepoView(ttk.Frame):
         min_year,max_year = min(years), max(years)
         self.year_combo['values'] = values = [*range(max_year, min_year-1, -1)]
 
-    def title(self,name):
-        return f"\n+{'-':-^58}+\n|{name: ^58}|\n"
-    
-    def section(self, name):
-        return f"\n+{'=':=^58}+\n|{name: ^58}|\n+{'=':=^58}+\n"
-    
     def display_table(self, *args):
         year = self.eyear.get()
         self.text['state'] = 'normal'
@@ -62,60 +56,51 @@ class SummaryRepoView(ttk.Frame):
         p_year = year-1
         years = p_year, year
         #########
-        self.text.insert('end' ,self.section('BALANCE: ASSETS / CLAIMS'))
-        titles = ('Assets', 'Claims')
+        titles = ('/Assets', '/Claims')
         df = [self.data_source.get_data(title, p_year, year, delta=True) for title in titles]    
-        table = create_table(*df)
+        table = create_table(*df, title='BALANCE: ASSETS / CLAIMS')
         self.text.insert('end', table)
         self.text.insert('end','\n')
         ##########
-        self.text.insert('end', self.title('ASSETS: CURRENT / FIXED ') )
-        titles = ('Current','Fixed')
+        titles = ('/Assets/Current','/Assets/Fixed')
         df = [self.data_source.get_data(title, *years, delta=True) for title in titles]    
-        table = create_table(*df)
+        table = create_table(*df, title='ASSETS: CURRENT / FIXED')
         self.text.insert('end', table)
         self.text.insert('end','\n')
         ##########
-        self.text.insert('end', self.title('CLAIMS') )
-        #titles = ('debt','earnings', 'wealth')
-        titles = ('claims', )
+        titles = ('/Claims', )
         df = [self.data_source.get_data(title, *years, delta=True) for title in titles]    
-        table = create_table(*df)
+        table = create_table(*df, title='CLAIMS')
         self.text.insert('end', table)
         self.text.insert('end','\n')
         ##########
-        self.text.insert('end', self.section('INCOME: INPUTS / OUTPUT'))
-        titles = ('Input', 'Output')
+        titles = ('/Input', '/Output')
         df = [self.data_source.get_data(title, *years, delta=True) for title in titles]    
-        table = create_table(*df)
+        table = create_table(*df, title='INCOME: INPUTS / OUTPUT')
         self.text.insert('end',table)
         self.text.insert('end','\n')
         ##########
-        self.text.insert('end', self.title('TAX'))
-        titles = ('Tax', )
+        titles = ('/Output/Tax', )
         df = [self.data_source.get_data(title, *years, delta=True) for title in titles]    
-        table = create_table(*df)
+        table = create_table(*df, title='TAX')
         self.text.insert('end',table)
         self.text.insert('end','\n')
         ##########
-        self.text.insert('end',self.title('INSURANCE'))
-        titles = ('Insurance', )
+        titles = ('/Output/Insurance', )
         df = [self.data_source.get_data(title, *years, delta=True) for title in titles]    
-        table = create_table(*df)
+        table = create_table(*df, title='INSURANCE')
         self.text.insert('end',table)
         self.text.insert('end','\n')
         ##########
-        self.text.insert('end',self.title('EXPENSE'))
-        titles = ('Expense', )
-        df = self.data_source.get_data('Expense', *years, delta=True)    
-        table = create_table(df)
+        titles = ('/Output/Expense', )
+        df = [self.data_source.get_data(title, *years, delta=True) for title in titles]
+        table = create_table(*df, title='EXPENSE')
         self.text.insert('end',table)
         self.text.insert('end','\n')
         ##########
-        self.text.insert('end',self.title('EXPENSE - Detailed'))
-        titles = ('Expense','Exp-Person','Exp-House','Exp-Vehicle','Exp-Services' )
+        titles = sorted([child.ext_name for child in self.acc_tree.find_node('/Output/Expense').children])
         df = [self.data_source.get_data(title, *years, delta=True) for title in titles]    
-        table = create_table(*df)
+        table = create_table(*df, title='EXPENSE - Detailed')
         self.text.insert('end',table)
         self.text.insert('end','\n') 
         

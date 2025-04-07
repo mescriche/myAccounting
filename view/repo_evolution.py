@@ -5,11 +5,10 @@ from controller.utility import db_get_accounts_gname,  db_get_account_code, db_g
 from tkinter import *
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 from datamodel import ReportDataSource
-from controller.report import create_table, create_evo_graph
+from controller.report import create_table, create_evo_graph, create_mevo_graph
 from controller.utility import db_get_account_name, db_get_account_code
 
 class EvoView(ttk.Frame):
@@ -49,12 +48,10 @@ class EvoView(ttk.Frame):
 
     def display_node(self, event):
         selected_value = event.widget.get()
-        node = self.data_source.acc_tree.find_node(selected_value)
-        total = False  if node.path in ('/Balance', '/Income') else True
-        self.display_graph(selected_value, total=total)
+        if node := self.data_source.acc_tree.find_node(selected_value):
+            self.display_graph(selected_value)
          
-    def display_graph(self, name, **kwargs):
-        total = kwargs.get('total',True)
+    def display_graph(self, name):
         plt.close('all')
         self.text['state'] = 'normal'
         self.text.delete(1.0, 'end')
@@ -63,30 +60,24 @@ class EvoView(ttk.Frame):
         min_year = max(min_year+1, max_year-10)
         years = [*range(min_year, max_year)]
 
-        df = self.data_source.get_data(name, *years, total=total, verbose=False)
-        table = create_table(df)
+        df = self.data_source.get_data(name, *years, total=True, verbose=False)
+        table = create_table(df, title=name)
         self.text.insert('end', table)
         self.text.insert('end', "\n\n")
-        if total:
-            df = df.drop(index='Total')
-        
-        colors= list(mcolors.TABLEAU_COLORS.keys())
-        random.shuffle(colors)
-        ncolors = len(colors)
 
-        concepts = df.index.get_level_values('Concept').unique()
-        
-        if len(concepts) > 1 and total:
-            df.loc['Total'] = df.sum(numeric_only=True)
-            concepts = df.index.get_level_values('Concept').unique()
+        if fig := create_evo_graph(df.loc['Total'], title=f'{name} - Total'):
+            canvas = FigureCanvasTkAgg(fig, master=self.text)
+            canvas_widget = canvas.get_tk_widget()
+            self.text.window_create('end', window=canvas_widget)
+            self.text.insert('end', "\n\n")
             
-        for i,concept in enumerate(concepts):
-            color = mcolors.TABLEAU_COLORS[colors[i%ncolors]]
-            if fig := create_evo_graph(df.loc[concept], title=concept, color=color):
-                canvas = FigureCanvasTkAgg(fig, master=self.text)
-                canvas_widget = canvas.get_tk_widget()
-                self.text.window_create('end', window=canvas_widget)
-                self.text.insert('end', "\n\n")
+        df = df.drop(index='Total')
+        if len(df) == 1: return
+        if fig := create_mevo_graph(df, title=f'{name} - Detailed'):
+            canvas = FigureCanvasTkAgg(fig, master=self.text)
+            canvas_widget = canvas.get_tk_widget()
+            self.text.window_create('end', window=canvas_widget)
+            self.text.insert('end', "\n\n")
 
         self.text['state'] = 'disabled'
-        
+

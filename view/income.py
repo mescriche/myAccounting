@@ -82,7 +82,7 @@ class IncomeView(ttk.Frame):
         self.outputs.delete(*self.outputs.get_children())
 
         with db_session() as db:
-            node = self.acc_tree.find_node('input')
+            node = self.acc_tree.find_node('/Input')
             codes = self.acc_tree.get_account_codes(node)
             accounts = db.query(Account).filter(Account.code.in_(codes)).all()
             in_total = sum(map(lambda account: account.balance(year), accounts))
@@ -97,7 +97,7 @@ class IncomeView(ttk.Frame):
                 self.inputs.insert(p_iid, 'end', text=str(child), values=values, tag='entry', open=True)
 
             ############
-            node = self.acc_tree.find_node('output')
+            node = self.acc_tree.find_node('/Output')
             codes = self.acc_tree.get_account_codes(node)
             accounts = db.query(Account).filter(Account.code.in_(codes)).all()
             out_total = sum(map(lambda account: account.balance(year), accounts))

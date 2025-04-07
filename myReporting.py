@@ -1,5 +1,6 @@
 __author__ = 'Manuel Escriche'
 import locale
+import matplotlib.pyplot as plt
 locale.setlocale(locale.LC_ALL, '')
 
 import argparse, sys, os
@@ -47,11 +48,14 @@ class App(Tk):
         db_open(user.db_config)
         acc_tree = AccountsTree.from_db()
 
-        view = RepoView(self, user, acc_tree)
+        self.view = RepoView(self, user, acc_tree)
         
     def close_app(self, *args):
+        plt.close('all')
         self.update()
         self.destroy()
+        
+        
 if __name__ == '__main__':
     app = App(user)
     app.mainloop()

@@ -2,7 +2,7 @@ __author__ = 'Manuel Escriche'
 from collections import namedtuple
 import re
 from dbase import db_session, Transaction
-from controller.report import create_graph, create_table
+from controller import create_graph, create_table,  create_cmp_graph
 from tkinter import *
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -53,19 +53,20 @@ class IncomeRepoView(ttk.Frame):
         self.year_combo['values'] = values = [*range(max_year, min_year, -1)]
                           
     def _create_income_summary(self, year):
-        df = self.data_source.get_data('income', year)
+        dfi = self.data_source.get_data('/Input', year)
+        dfo = self.data_source.get_data('/Output', year)
         fig, ax = plt.subplots(figsize=(10*cm, 8*cm))
         Data = namedtuple('Data', ['values', 'color'])
-        
-        earnings = df.loc['Input',year]-df.loc['Output',year]
+
+        earnings = dfi.loc['Total',year]-dfo.loc['Total',year]
         gdata = {
-            'Revenue': Data(np.append(df.loc['Input'].to_numpy(), [0]), 'tab:blue'),
-            'Outgoing': Data(np.append([0], df.loc['Output'].to_numpy()), 'tab:red'),
+            'Revenue': Data(np.append(dfi.loc['Total'].to_numpy(), [0]), 'tab:blue'),
+            'Outgoing': Data(np.append([0], dfo.loc['Total'].to_numpy()), 'tab:red'),
             'Earnings':Data(np.array([0, earnings]), 'tab:green')
         }
         
         categories = 'Input', 'Output'
-        total = df.loc['Input',year]
+        total = dfi.loc['Total',year]
         
         bottom = np.zeros(2)
         for key, item in gdata.items():
@@ -79,7 +80,6 @@ class IncomeRepoView(ttk.Frame):
                             bottom[index]+height/2,
                             f'{label}\n{height:,.0f}€\n({height*100/total:.0f}%)',
                             ha='center', va='center')
-                #font_size = t.get_size()
             bottom +=item[0]
             
         fig.suptitle(f'Year {year} - Income Summary')
@@ -97,9 +97,9 @@ class IncomeRepoView(ttk.Frame):
         years = year-1, year
         ########
 
-        titles = ('Income',)
-        df = [self.data_source.get_data(title, *years, delta=True, total=False) for title in titles]    
-        table = create_table(*df)
+        titles = ('/Input','/Output')
+        df = [self.data_source.get_data(title, *years, delta=True ) for title in titles]    
+        table = create_table(*df, title='INCOME SUMMARY')
         self.text.insert('end', table)
         self.text.insert('end', "\n\n")
         
@@ -111,21 +111,18 @@ class IncomeRepoView(ttk.Frame):
             self.text.insert('end', "\n\n")
 
         ###########
-        titles=('Revenue','tab:blue'),('Output', ('sienna', 'salmon', 'red'))
+        titles=('/Input/Revenue','tab:blue'),('/Output', ('sienna', 'salmon', 'red'))
 
         for title,color in titles:
             df = self.data_source.get_data(title, *years, delta=True, verbose=False)
-            table =  create_table(df)
+            table =  create_table(df, title = title)
             self.text.insert('end', table)
             self.text.insert('end', "\n\n")
-
-            for year in years:
-                df = self.data_source.get_data(title, year)
-                fig = create_graph(df, title=title, color=color)
+            
+            if fig:= create_cmp_graph(df, title=title, color=color):
                 canvas = FigureCanvasTkAgg(fig, master=self.text)
                 self.text.window_create('end', window=canvas.get_tk_widget())
-            else:
                 self.text.insert('end', "\n\n")
-
+            
         self.text['state'] = 'disabled'
 

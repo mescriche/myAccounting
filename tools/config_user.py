@@ -4,7 +4,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 
 from datamodel import UserData, AccountsTree
-from dbase import db_open
+from dbase import db_open, db_session
 
 class ConfigTool:
     def __init__(self, root_dir):    
@@ -37,33 +37,12 @@ class ConfigTool:
         ##########
         parser_refresh = subparsers.add_parser('refresh', help='refresh user config files from user profile')
         parser_refresh.set_defaults(func=self.cnf_refresh)
-        #########
-        parser_tree = subparsers.add_parser('tree', help="exploring the accounts' tree ")
-        parser_tree.add_argument('print', help='print tree')
-        parser_tree.set_defaults(func=self.cnf_tree)
         
         args = parser.parse_args()
         self.user = UserData(root_dir, args.user)
         
         args.func(args)
 
-    def cnf_tree(self, args):
-        print(args)
-        tree = AccountsTree.from_file(self.user.accounts_file)
-        tree.print()
-        
-        #db_open(self.user.db_config)
-        #tree = AccountsTree.from_db()
-        #tree.root.print_tree()
-
-        #nodes = tree.get_nodes()
-        #for name in nodes:
-        #    if node:=tree.find_node(name):
-        #        print(f'found name:{name}, node:{node}')
-        #    else:
-        #        print(f'NOT found {name}')
-        
-        
     def cnf_create(self, args):
         source = os.path.join(self.user.configfiles_dir, f"{args.profile}.json")
         print(f'... searching file {os.path.relpath(source, start=root_dir)}')
@@ -111,11 +90,6 @@ class ConfigTool:
                 print(f"{filename}:", error)
             else:
                 accounts = data['accounts']
-                #acc_real_debit_codes = sorted([acc['code'] for acc in accounts if acc['content'] == 'REAL' and acc['type'] == 'DEBIT'])
-                #acc_real_credit_codes = sorted([acc['code'] for acc in accounts if acc['content'] == 'REAL' and acc['type'] == 'CREDIT'])
-                #acc_nom_debit_codes = sorted([acc['code'] for acc in accounts if acc['content'] == 'NOMINAL' and acc['type'] == 'DEBIT'])
-                #acc_nom_credit_codes = sorted([acc['code'] for acc in accounts if acc['content'] == 'NOMINAL' and acc['type'] == 'CREDIT'])
-
                 target = self.user.accounts_file
                 with open(target, 'w', encoding='utf-8') as _file:
                     json.dump(data['accounts'], _file, ensure_ascii=False, indent=4)

@@ -54,18 +54,17 @@ class RepoView(ttk.Frame):
         ## -- Evolution
         self.evo = EvoView(self.notebook, self.user, self.acc_tree)
         self.notebook.add(self.evo, text='Evolution')
+        
         #self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_selected)
 
     def _on_tab_selected(self, event):
         selected_index = event.widget.index("current")
         tab_text = event.widget.tab(selected_index, 'text')
-        print("Selected tab:", tab_text)
+        #print("Selected tab:", tab_text)
         
     def create_menu(self): 
         menu_bar = Menu(self.master)
         file_menu = Menu(menu_bar)
         file_menu.add_separator()
-        file_menu.add_command(label='Quit', command=self.exit_app)
+        #file_menu.add_command(label='Quit', command=self.exit_app)
 
-    def exit_app(self):
-        self.parent.destroy()

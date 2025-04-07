@@ -34,7 +34,7 @@ class DBaseTool:
                                             help='init database file based on its definition: create engine, table, etc, and a session ')
         parser_init.set_defaults(func=self.db_init)
 
-        parser_setup = subparsers.add_parser('setup', help='setup database. It adds records for new accounts.')
+        parser_setup = subparsers.add_parser('setup', help='setup database. It adds records for new accounts and updates existing ones searched by code, which is unique')
         parser_setup.add_argument('-c', "--check",
                                   help='check consistency between Accounts table in data base, and accounts.json file',
                                   action='store_true')
@@ -85,16 +85,28 @@ class DBaseTool:
         print('setup', args)
         dbase.db_open(self.user.db_config)
         if not args.check:
-            dbase.db_setup(self.user.accounts_file, self.user.rules_file, verbose=True)
+            dbase.db_setup(self.user.accounts_file, verbose=True)
         else:
             with open(self.user.accounts_file) as acc_file, dbase.db_session() as db:
                 data = json.load(acc_file)
-                for record in data:
-                    try: account = db.query(dbase.Account).filter_by(name=record['name']).one()
+                for n,record in enumerate(data, start=1):
+                    try: account = db.query(dbase.Account).filter_by(code=record['code']).one()
                     except NoResultFound:
-                        print(f'-> missing in data base account:\n\t{record}')
+                        print(f'{n}-> missing account in data base:\n\t{record}')
                     else:
-                        print(f'ok {account}')
+                        record['path'] =  dbase.find_path(record['code'])
+                        if 'parameters' not in record: record['parameters'] = None
+                        v0 = ('type', 'content', 'path', 'name', 'parameters')
+                        v1 = (account.type.name, account.content.name, account.path, account.name, account.parameters)
+                        v2 = (record['type'], record['content'], record['path'], record['name'],record['parameters'])
+                        if any(a != b for a,b in zip(v1, v2)):
+                            print(f"{n}->{account}")
+                            print(f"{n}->found different values for account with code: {record['code']}")
+                            for key,a,b in zip(v0,v1,v2):
+                                if a != b:
+                                    print(f"{n}->key:{key} in file:{b} differs from db:{a}")
+                        else:
+                            print(f'ok {account}')
 
     def db_query(self, args):
         print('query', args.user)
