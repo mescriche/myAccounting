@@ -72,13 +72,14 @@ Set proper version in working folder.
  %\end{verbatim} 
  
  \section{Configuration and administration }
- There are four  tools available for users configuration and for fixing emerging issues in the application:
+ There are five  tools available for users configuration and for fixing emerging issues in the application:
  
  \begin{description}
  \item[config\_user.py] used to create the user's folder, and to copy the generic profile chosen into the specific \verb!<user>_profile.json!.
-   The user profile file declares what accounts are used in your accounting,  and  how to build your income and balance reports.  
- \item[db\_tool.py] used to create user's data base, and populate it with the accounts.json file, and other useful utilities.
-  \item[remake.py] used to rebuild the user data base and their year closing and opening seats consistently over the years.It is useful when having to modify the user first balance opening set, or when changes in the user profile file.
+   The user profile file declares what accounts are available for use in your accounting, and are moved into \verb!accounts.json! file to create the data base.
+ \item[showtree.py] is able to display accounts as a tree, both in the accounts.json file and the database, and to compare them as well.
+ \item[db\_tool.py] used to create user's data base, and populate it with those accounts declared in the \verb!accounts.json! file, and other useful utilities.
+  \item[remake.py] used to rebuild the user data base and their  related yearly closing and opening seats consistently over the years. 
  \item[cmp\_files.py] used to compare two seats files. It is helpful to verify changes in the seat files after having saved them with \verb!db_tool save!
  \end{description}
  
@@ -91,16 +92,12 @@ Set proper version in working folder.
 \begin{tikzpicture}[node distance = 3mm and 10mm,
 file/.style= {rectangle, rounded corners= 2mm, align=center, thick, draw=black, text width= 50mm, font=\ttfamily} ]
 \node (P) [file] {<user>\_profile.json};
-\node (I) [file, right = of P] {income.json};
-\node (A) [file, above =  of I] {accounts.json};
-\node (B) [file, below = of I] {balance.json};
-\path (P.east) edge[->] (I.west);
+\node (A) [file, right = of P] {accounts.json};
 \path (P.east) edge[->] (A.west);
-\path (P.east) edge[->] (B.west);
 \end{tikzpicture}
  \end{figure}
   
-Thereafter, any modification by hand in your \verb!<user>_profile.json! file, requires you  to run \verb!>> python tools/config_user.py <user> refresh! to regenerate consistently the application files; and depending on the changed content additional actions may be required. 
+Thereafter, any modification by hand in your \verb!<user>_profile.json! file, requires you  to run \verb!>> python tools/config_user.py <user> refresh! to regenerate consistently the \verb!accounts.json! file. 
  
  \paragraph{Commands}
  \begin{verbatim}
@@ -117,6 +114,8 @@ Thereafter, any modification by hand in your \verb!<user>_profile.json! file, re
  \item \verb!db_tool.py <user> setup!	 to populate user database with accounts
  \item \verb!db_tool.py <user> query! to verify accounts creation
  \item \verb!db_tool.py <user> save! to save yearly seats stored in the data base into files named with the tag \textsf{app} like \verb!YEAR_app_seats.json!. It's helpful when having to evolve the data base accounts, in companion of the \verb!remake! tool
+ \item \verb!db_tool.py <user> backup! to create a database file backup
+ \item \verb!db_tool.py <user> remove! to remove the database file
 \end{enumerate}
 \paragraph{Commands}
 \begin{verbatim}
@@ -124,7 +123,7 @@ Thereafter, any modification by hand in your \verb!<user>_profile.json! file, re
 >> python tools/db_tool.py <user> init
 >> python tools/db_tool.py <user> setup
 >> python tools/db_tool.py <user> query
->> python tools/db_tool.py <user> save -t new
+>> python tools/db_tool.py <user> save 
 >> python tools/db_tool.py <user> remove
 \end{verbatim}
 
@@ -145,15 +144,17 @@ Tool useful to compare json transactions files; especifically, \verb!year_<tag>_
 >> python tools/cmp_files.py <user> <year> -t new
 \end{verbatim}
 %%%%%%%%%%%%%%
-  \section{Edition}
+  \section{Edition and Report}
   \verb!myAccounting.py! is the main operating app for your personal accounting. 
   Seats are edited on its user interface, however since most of the seats are downloaded from the bank account in excel sheets, a specific tool has been made available.
  \paragraph{excel.py} tool used to take bank accounts excel files to export their transactions into json format so that main program can load them. 
+ \paragraph{myReporting.py} is available to display data compared to the previous year, and accounts evolution along the years. It's useful when to understand the year.
  
  \paragraph{Commands}
  \begin{verbatim}
 >> python tools/excel.py <user>
 >> python myAccounting.py <user>
+>> python myReporting.py <user>
 \end{verbatim}
 
  \subsection{Conceptual Model}
@@ -214,170 +215,152 @@ file/.style= {rectangle, rounded corners= 2mm, align=center, thick, draw=black, 
 
  %%%%%%%%%%%%%%%%%%%%%%%%
 \section{Administration use cases}
-\subsection{How to open the data base} \label{DB_open}
+In order to make operation easy, it's been created \verb!mev_session.py! file, which open the database and creates basic variables like db, user, accounts, tree, etc, which are useful when having to fix issues by hand.
+
+\subsection{How to import mev\_session} \label{MEV_session}
 \begin{verbatim}
-python
->>> import os, dbase
->>> root_dir = os.getcwd()
->>> from datamodel import UserData
->>> user = UserData(root_dir, '<user>')
->>> dbase.db_open(user.db_config)
->>> db = dbase.Session()
+>>> import mev_session as mev
+>>> dir(mev)
 \end{verbatim}
 
-\subsection{How to search an account  in the database} \label{DB_search_records}
-Open data base as in \ref{DB_open}, then follow:
+\subsection{How to search an account } \label{DB_search_account}
+Import session as in \ref{MEV_session} then follow one of the alternatives shown below:
 \begin{verbatim}
->>> from sqlalchemy import select
->>> from dbase import Account
-
->>> for item in db.query(Account): print(item)
+#1
+>>> acc = next(filter(lambda x: x.code == '64', mev.accounts))
+>>> len(acc.entries)
+>>> for entry in acc.entries: print(entry)
+#2
+>>> from dbase import  Account,Transaction, BookEntry	
+>>> for item in mev.db.query(Account): print(item)
 >>> print(db.query(Account).filter_by(code=645).one())
-
->>> stmt = select(Account)
->>> for item in db.scalars(stmt): print(item)
-
+#3
+>>> from sqlalchemy import select
 >>> stmt = select(Account).where(Account.code.in_([64,641]))
->>> for item in db.scalars(stmt): print(item)
-
->>> stmt = select(Account).where(Account.code == 64)
->>> item = db.scalars(stmt).one()
->>> print(item)
-\end{verbatim}
-
-\subsection{How to search transactions}
-Open the data base as in \ref{DB_open}, then follow:
-\begin{verbatim}
->>> from sqlalchemy import select
->>> from dbase import Transaction, BookEntry
-
->>> stmt = select(Transaction)
->>> for item in db.scalars(stmt):print(item)
-
->>> stmt = select(Transaction).where(Transaction.id == 3902)
->>> item = db.scalars(stmt).one()
->>> print(item)
->>> for entry in item.entries: print(entry)
-
->>> stmt = select(BookEntry).join(Transaction).where(Transaction.id==3902)
->>> for item in db.scalars(stmt): print(item)
-
->>> items = db.query(BookEntry).join(Transaction).filter_by(id=3902)
->>> for item in items : print(item)
-
-\end{verbatim}
-
-\subsection{How to search  book entries in the data base} \label{DB_book_entries}
-Open the data base as in \ref{DB_open}, then follow:
-\begin{verbatim}
->>> from sqlalchemy import select
->>> from dbase import Account, Transaction, BookEntry
-
->>> for item in db.scalars(select(BookEntry)):print(item)
->>> for item in db.query(BookEntry): print(item)
-
+>>> for item in mev.db.scalars(stmt): print(item)
+#4
 >>> stmt = select(BookEntry).join(Account).where(Account.code==622)
 >>> print(len(db.scalars(stmt).all()))
 >>> for item in db.scalars(stmt): print(item)
 
->>> stmt = select(BookEntry).join(Transaction).where(Transaction.id==3882)
->>> for item in db.scalars(stmt): print(item)
-
 \end{verbatim}
 
-\subsection{How to modify an account description in the data base} \label{DB_account_description}
-Open the data base as in \ref{DB_open}, then follow:
+\subsection{How to search transactions}\label{DB_search_transaction}
+Import session as in \ref{MEV_session} then follow one of the alternatives shown below:
 \begin{verbatim}
->>> from dbase import Account
->>> account = db.query(Account).filter_by(code = 613).one()
->>> account.name = "ExpP-Information/Formation"
->>> db.commit()
->>> item = db.get(dbase.Account, 23)
+#0
+>>> mev.transactions
+#1
+>>> trans = next(filter(lambda x:x.id == 3902, mev.transactions))
+>>> trans
+>>> trans.entries
+#2
+>>> from sqlalchemy import select
+>>> from dbase import Transaction, BookEntry
+>>> stmt = select(Transaction).where(Transaction.id == 3902)
+>>> item = db.scalars(stmt).one()
 >>> print(item)
->>> quit()
->> python tools/db_tool.py <user> save 
->> python tools/remake.py <user>
+>>> for entry in item.entries: print(entry)
+#3
+>>> stmt = select(BookEntry).join(Transaction).where(Transaction.id==3902)
+>>> for item in db.scalars(stmt): print(item)
+#4
+>>> items = db.query(BookEntry).join(Transaction).filter_by(id=3902)
+>>> for item in items : print(item)
 \end{verbatim}
 
-\subsection{How to modify a transaction description in the data base}
-Open the data base as in \ref{DB_open}, then follow:
+\subsection{How to search  book entries} \label{DB_search_entries}
+Import session as in \ref{MEV_session} then follow one of the alternatives below:
 \begin{verbatim}
->>> from dbase import Transaction
->>> item = db.get(Transaction,1)
->>> item
-Transaction(1 | 2015-11-15 | #entries=5 |  Opening statement)
->>> item.description
-' Opening statement'
->>> item.description = 'Balance Opening Statement'
->>> db.commit()
+#0
+>>> mev.entries
+#1
+>>> entry = next(filter(lambda x:x.id == 4460, mev.entries))
+>>> entry.account	
+>>> entry.transaction
+#2
+>>> from sqlalchemy import select
+>>> from dbase import BookEntry
+>>> for item in db.scalars(select(BookEntry)):print(item)
+>>> for item in db.query(BookEntry): print(item)
+\end{verbatim}
+
+\subsection{How to modify an account description}
+Edit the account description in file \verb!<user>_profile.json!, then follow
+\begin{verbatim}
+# update accounts.json
+>> python tools/config_user.py <user> refresh
+
+# update db with new info in accounts.json
+>> python tools/db_tools.py <user> setup
+\end{verbatim}
+
+\subsection{How to modify a transaction description}
+Import session as in \ref{MEV_session}, find the transaction as in \ref{DB_search_transaction} then follow:
+\begin{verbatim}
+#modify
+>>> trans.description = 'Balance Opening Statement'
+>>> mev.db.commit()
+#verify
 >>> item = db.get(Transaction,1)
 >>> item
 Transaction(1 | 2015-11-15 | #entries=5 | Balance Opening Statement)
+# save to files
+>> python tools/db_tool.py <user> save!
 \end{verbatim}
  
  
- \subsection{How to create a new account for House Tax}  
- When a new account is created, only a new entry is created in the Account table. 
- So this action hasn't got a major impact in the data base. 
- However, it's important to declare it properly in the profile file, since income and balance reports depend on how those accounts' codes are included in their corresponding sections of the profile file. 
- 
+ \subsection{How to create a new account}  
+ When a new account is created, a new entry is created in the Account table. 
  Follow these steps:
  \begin{enumerate}
  \item Edit the \verb!<user>_profile.json! file
  \begin{enumerate}
- \item Open the file, which is located in the folder \verb!configfiles! with a text editor like \textsf{emacs}
+ \item Open the file, which is located in the folder \verb!configfiles! with a text editor
  \item Add a new line, and  write the new entry in the \textbf{accounts} section\\ 
  	\verb!{"type":"DEBIT","content":"NOMINAL","code":"663","name":"Tax-House"}!
-\item Skip the \textbf{balance} section, since the new account is  nominal
-\item Search the \textbf{income} section, to add the new account's code under the \textbf{tax} concept:
-	\verb! "tax": ["66", "661", "662", "663"], ! 
 \item Save the file
 \end{enumerate}
-\item Run \verb!>> python tools/config_user.py <user> refresh! to regenerate the application files: \verb!accounts.json!, \verb!balance.json! and \verb!income.json! 
+\item Run \verb!>> python tools/config_user.py <user> refresh! to regenerate the application file: \verb!accounts.json!
 \item Run \verb!>> python tools/db_tool <user> setup! to  update data base account table with the records. 
  \end{enumerate}
  
 
-\subsection{How to modify its code in a nominal account}  \label{NOMINAL_CODE}
+\subsection{How to modify the code in a nominal account}  \label{NOMINAL_CODE}
 Let's take an example: on the profile we have the following entry:\\
 \verb!{"type":"DEBIT","content":"NOMINAL","code":"621","name":"ExpH-Water"}!
 where we want to transform the code \verb!621! to become \verb!6211!
 
 Follow these steps:
 \begin{enumerate}
-\item Let's search book entries for account \verb!621! in the data base; by following steps in  \ref{DB_book_entries}, we find a number of records:  106 on this example. 
 \item Let's make a backup of the data base before modifying it by running 
 \verb!>> python tools/db_tool <user> backup!, that makes a backup copy.
 \item Let's edit the \verb!<user>_profile.json! file
 \begin{enumerate}
- \item Open the file, which is located in the folder \verb!configfiles! with a text editor.
+ \item Open the file  located in the folder \verb!configfiles! with a text editor.
  \item Modify the account's code in the line where it was declared. \\
  \verb!{"type":"DEBIT","content":"NOMINAL","code":"6211","name":"ExpH-Water"}!
- \item Skip the \textbf{balance} section, since the account is nominal
- \item Update the \textbf{income} section by modifying the account's code wherever it exists.\\
- \verb!"house": ["62", "6211", "622", "623", "624", "625", "626", "627"]!
  \item Save the file.
 \end{enumerate}
 \item Let's modify account code by following these steps:
  
-Open the data base as in \ref{DB_open}, then follow:
+Import session as in \ref{MEV_session}, search the account with code=621 as in \ref{DB_search_account}, then follow:
 \begin{verbatim}
->>> from dbase import Account
->>> account = db.query(Account).filter_by(code = 621).one()
->>> print(account)
+>>> account
 Account(33 | Type.DEBIT | Content.NOMINAL | 621 | ExpH-Water | None )
 >>> account.code = 6211
->>> db.commit()
+>>> mev.db.commit()
 >>> quit()
+# save db to files
+>> python tools/db_tool.py <user> save!
+# refresh accounts.json
+>> python tools/config_user.py <user> refresh!
+# remake data base from files
+python tools/remake.py <user>
 \end{verbatim}
-\item Run \verb!>> python tools/db_tool.py <user> save! to save the database into files
-\item Run \verb!>> python tools/config_user.py <user> refresh! to regenerate the application files: \verb!accounts.json!, \verb!balance.json! and \verb!income.json! 
-\item Run \verb!>> python tools/remake.py <user>! to remake the data base
 \end{enumerate}
- \subsection{How to modify its code in a real account}  
- The process described in section \ref{NOMINAL_CODE} is valid with some differences:
- \begin{enumerate}
- \item If the account code to be modified is used in any of the seats declared in the user opening file: \verb!<user>_opening_seat.json!, it's needed to modify this seat  before running \verb!>> python tools/remake.py <user>!
- \item When modifying the \verb!<user>_profile.json! file,  in addition to changing the account code in its declaration line, there's need to update this code in the \textbf{balance} section.
- \end{enumerate}
+ \subsection{How to modify the code in a real account}  
+ The process described in section \ref{NOMINAL_CODE} is valid but taking into account a important difference.
+ If the account whose code is going to be modified is used in any of the seats declared in the user opening file: \verb!<user>_opening_seat.json!, there's  need to modify this seat  before running \verb!>> python tools/remake.py <user>!
+ 
 \end{document}
