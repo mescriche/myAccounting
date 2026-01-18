@@ -10,7 +10,7 @@ args = parser.parse_args()
 
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
-from datamodel import UserData
+from datamodel import UserData, AccountsTree
 
 user = UserData(root_dir, args.username)
         
@@ -20,7 +20,7 @@ if not os.path.isdir(user.user_dir):
     
 from tkinter import *
 from tkinter import ttk, messagebox
-from dbase import db_init, db_setup
+from dbase import db_init, db_setup, db_open
 from view.excel_editor import ExcelView
 from view.text_editor import TextEditor
 from view.ledger import LedgerView
@@ -75,8 +75,10 @@ class ExcelTool(Tk):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.createcommand('tk::mac::Quit', self.destroy)
 
-        db_init(user.db_config)        
-        db_setup(user.accounts_file)
+        #db_init(user.db_config)        
+        #db_setup(user.accounts_file)
+        db_open(user.db_config)
+        acc_tree = AccountsTree.from_db()
             
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
@@ -84,10 +86,10 @@ class ExcelTool(Tk):
         self.input = ExcelView(self.notebook, user)
         self.notebook.add(self.input, text='Excel')
 
-        self.ledger = LedgerView(self.notebook)
+        self.ledger = LedgerView(self.notebook, acc_tree)
         self.notebook.add(self.ledger, text='Ledger')
 
-        self.journal = JournalView(self.notebook)
+        self.journal = JournalView(self.notebook, user, acc_tree)
         self.notebook.add(self.journal, text='Journal')
 
         self.output = Blackboard(self.notebook, user)

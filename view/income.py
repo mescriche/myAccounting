@@ -154,7 +154,8 @@ class IncomeView(ttk.Frame):
             self.parent.master.log.print(f"{output['filename']} has been created with {output['n_records']} records")
             messagebox.showwarning(parent=self,
                 message=f"{year} Income closing seat file and\n{year} year seats file\nhave been created\nAdditionally Income closing file has been applied")
-            self.refresh(year)
+            #self.refresh(year)
+            self.render()
             return
             
     def display_on_ledger(self, event):

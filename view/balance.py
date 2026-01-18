@@ -1,6 +1,7 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
+
 from datamodel.accounts_tree import AccountsTree
 from dbase import db_session, Account, Type
 from controller.utility import db_currency, db_get_yearRange
@@ -8,7 +9,7 @@ from controller.app_seats import create_balance_closing_seat, db_record_file
 from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
 from locale import currency
 from datetime import datetime
-import re
+import os,re
 
 class BalanceView(ttk.Frame):
     def __init__(self, parent, user, acc_tree, **kwargs):
@@ -156,3 +157,4 @@ class BalanceView(ttk.Frame):
         messagebox.showwarning(parent=self,
                 message=f"{year} Balance closing seat file and\n{year+1} Balance opening seat file \nhave been created\nBesides, {year + 1} Balance opening file has been applied")
         #self.refresh(year+1)
+        self.render()
