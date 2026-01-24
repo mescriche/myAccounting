@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from .model import Base, Account, Transaction, BookEntry, Type, Content
+from .model import Base, Account, Seat, BookEntry, Type, Content
 from .paths import find_path
 
 Session = sessionmaker()

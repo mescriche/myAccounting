@@ -225,16 +225,146 @@ file/.style= {rectangle, rounded corners= 2mm, align=center, thick, draw=black, 
 
  %%%%%%%%%%%%%%%%%%%%%%%%
 \section{Administration use cases}
-In order to make operation easy, it's been created \verb!mev_session.py! file, which open the database and creates basic variables like db, user, accounts, tree, etc, which are useful when having to fix issues by hand.
+In order to make operation easy, it's been created \verb!admin_session.py! file, which open the database and creates basic variables like db, user, accounts, tree, etc, which are useful when having to fix issues by hand.
 
-\subsection{How to import mev\_session} \label{MEV_session}
+\subsection{How to import admin\_session} \label{admin_session}
 \begin{verbatim}
->>> import mev_session as mev
->>> dir(mev)
-\end{verbatim}
+>> pipenv shell
+>> python
+>>> import admin_session as admin  
+>>> admin.init('mev') #for mev user
+>>> dir(admin)
 
-\subsection{How to search an account } \label{DB_search_account}
-Import session as in \ref{MEV_session} then follow one of the alternatives shown below:
+# if modifying admin_session.py 
+>>> from importlib import reload
+
+# to reload admin_session.py modified file
+>>> reload(admin) 
+
+# to commit changes into the database
+>>> admin.db.commit()
+
+# to save the database into files
+>> python tools/db_tool.py <user> save
+\end{verbatim}
+%
+\subsection{Exploring an account}
+\begin{verbatim}
+# list all accounts available
+>>> list_accounts()
+
+# find a specific account description from its code
+>>> acc = get_account(code)
+
+# show entries in an account from its code
+>>> show_entries_in_account(code, n_items='all')
+\end{verbatim}
+%
+\subsection{Finding seats and entries}
+\begin{verbatim}
+# display seats
+>>> list_seats()
+
+# display and get any seat
+>>> seat = get_seat(id, prnt=False)
+
+# display and get any entry
+>>> entry = get_entry(id, prnt=False)
+
+# search across seats
+>>> search_seats_by_description(desc)
+\end{verbatim}
+%
+\subsection{Modify seats and entries}
+\begin{verbatim}
+>>> seat = get_seat(id)
+>>> seat.description = 'Balance Opening Statement'
+
+>>> entry = get_entry(id)
+>>> entry.account_id = 70  #moves entry to account 70
+# commit database?
+\end{verbatim}
+ %
+\subsection{Moving entries to another account}
+\begin{verbatim}
+# move just one entry to another account knowing its code
+>>> move_entry_to_account(entry_id, code)
+
+# move a list of entries to another account 
+>>> move_entries_to_account(ids:list, code)
+
+# commit database?
+ \end{verbatim}
+ %
+ \subsection{How to create a new account}  
+ When a new account is created, a new entry is created in the Account table. 
+ Follow these steps:
+ \begin{enumerate}
+ \item Edit the \verb!<user>_profile.json! file
+ \begin{enumerate}
+ \item Open the file, which is located in the folder \verb!configfiles! with a text editor
+ \item Add a new line, and  write the new entry in the \textbf{accounts} section\\ 
+ 	\verb!{"type":"DEBIT","content":"NOMINAL","code":"663","name":"Tax-House"}!
+\item Save the file
+\end{enumerate}
+\item Run \verb!>> python tools/config_user.py <user> refresh! to regenerate the application file: \verb!accounts.json!
+\item Run \verb!>> python tools/db_tool <user> setup! to  update data base account table with the records. 
+ \end{enumerate}
+ %
+\subsection{How to remove an account}
+To remove an account properly, follow these steps:
+\begin{enumerate}
+\item Clean up the account in the data base by moving its entries to another account, or by removing their seats. Entries belonging to "closing seats" can be left in the account.
+\item Save the database \verb!>> python tools/db_tool.py <user> save! into files
+\item Edit the \verb!<user>_profile.json! file to remove the target account.
+\item Remove the database \verb!>> python tools/db_tool.py <user> remove!
+\item Remake  it all \verb!>> python tools/remake.py <user>!
+\end{enumerate}
+%
+\subsection{How to modify the code in a nominal account}  \label{NOMINAL_CODE}
+Let's take an example: on the profile we have the following entry:\\
+\verb!{"type":"DEBIT","content":"NOMINAL","code":"621","name":"ExpH-Water"}!
+where we want to transform the code \verb!621! to become \verb!6211!
+
+Follow these steps:
+\begin{enumerate}
+\item Let's make a backup of the data base before modifying it by running 
+\verb!>> python tools/db_tool <user> backup!, that makes a backup copy.
+\item Let's edit the \verb!<user>_profile.json! file
+\begin{enumerate}
+ \item Open the file  located in the folder \verb!configfiles! with a text editor.
+ \item Modify the account's code in the line where it was declared. \\
+ \verb!{"type":"DEBIT","content":"NOMINAL","code":"6211","name":"ExpH-Water"}!
+ \item Save the file.
+\end{enumerate}
+\item Let's modify account code by following these steps:
+ 
+Import session as in \ref{admin_session}, search the account with code=621 as in \ref{DB_search_account}, then follow:
+\begin{verbatim}
+>>> account
+Account(33 | Type.DEBIT | Content.NOMINAL | 621 | ExpH-Water | None )
+>>> account.code = 6211
+>>> mev.db.commit()
+>>> quit()
+# save db to files
+>> python tools/db_tool.py <user> save
+# refresh accounts.json
+>> python tools/config_user.py <user> refresh
+# remake data base from files
+python tools/remake.py <user>
+\end{verbatim}
+\end{enumerate}
+ \subsection{How to modify the code in a real account}  
+ The process described in section \ref{NOMINAL_CODE} is valid but taking into account a important difference.
+ If the account whose code is going to be modified is used in any of the seats declared in the user opening file: \verb!<user>_opening_seat.json!, there's  need to modify this seat  before running \verb!>> python tools/remake.py <user>!
+ 
+ 
+ \subsection{How to remove an account entry}
+ 
+ \appendix
+ \section{Code Snippets}
+ \subsection{Exploring an account }
+Import session as in \ref{admin_session}, then follow one of the alternatives shown below:
 \begin{verbatim}
 #1
 >>> acc = next(filter(lambda x: x.code == '64', mev.accounts))
@@ -254,16 +384,17 @@ Import session as in \ref{MEV_session} then follow one of the alternatives shown
 >>> for item in db.scalars(stmt): print(item)
 
 \end{verbatim}
-
-\subsection{How to search transactions}\label{DB_search_transaction}
-Import session as in \ref{MEV_session} then follow one of the alternatives shown below:
+ 
+ 
+\subsection{How to search seats}
+Import session as in \ref{admin_session} then follow one of the alternatives shown below:
 \begin{verbatim}
 #0
->>> mev.transactions
+>>> admin.seats
 #1
->>> trans = next(filter(lambda x:x.id == 3902, mev.transactions))
->>> trans
->>> trans.entries
+>>> seat = next(filter(lambda x:x.id == 3902, admin.seats))
+>>> seat
+>>> seat.entries
 #2
 >>> from sqlalchemy import select
 >>> from dbase import Transaction, BookEntry
@@ -279,8 +410,8 @@ Import session as in \ref{MEV_session} then follow one of the alternatives shown
 >>> for item in items : print(item)
 \end{verbatim}
 
-\subsection{How to search  book entries} \label{DB_search_entries}
-Import session as in \ref{MEV_session} then follow one of the alternatives below:
+\subsection{How to search  book entries} 
+Import session as in \ref{admin_session} then follow one of the alternatives below:
 \begin{verbatim}
 #0
 >>> mev.entries
@@ -295,7 +426,7 @@ Import session as in \ref{MEV_session} then follow one of the alternatives below
 >>> for item in db.query(BookEntry): print(item)
 \end{verbatim}
 
-\subsection{How to modify an account description}
+\subsection{How to modify an account's description}
 Edit the account description in file \verb!<user>_profile.json!, then follow
 \begin{verbatim}
 # update accounts.json
@@ -304,73 +435,4 @@ Edit the account description in file \verb!<user>_profile.json!, then follow
 # update db with new info in accounts.json
 >> python tools/db_tools.py <user> setup
 \end{verbatim}
-
-\subsection{How to modify a transaction description}
-Import session as in \ref{MEV_session}, find the transaction as in \ref{DB_search_transaction} then follow:
-\begin{verbatim}
-#modify
->>> trans.description = 'Balance Opening Statement'
->>> mev.db.commit()
-#verify
->>> item = db.get(Transaction,1)
->>> item
-Transaction(1 | 2015-11-15 | #entries=5 | Balance Opening Statement)
-# save to files
->> python tools/db_tool.py <user> save!
-\end{verbatim}
- 
- 
- \subsection{How to create a new account}  
- When a new account is created, a new entry is created in the Account table. 
- Follow these steps:
- \begin{enumerate}
- \item Edit the \verb!<user>_profile.json! file
- \begin{enumerate}
- \item Open the file, which is located in the folder \verb!configfiles! with a text editor
- \item Add a new line, and  write the new entry in the \textbf{accounts} section\\ 
- 	\verb!{"type":"DEBIT","content":"NOMINAL","code":"663","name":"Tax-House"}!
-\item Save the file
-\end{enumerate}
-\item Run \verb!>> python tools/config_user.py <user> refresh! to regenerate the application file: \verb!accounts.json!
-\item Run \verb!>> python tools/db_tool <user> setup! to  update data base account table with the records. 
- \end{enumerate}
- 
-
-\subsection{How to modify the code in a nominal account}  \label{NOMINAL_CODE}
-Let's take an example: on the profile we have the following entry:\\
-\verb!{"type":"DEBIT","content":"NOMINAL","code":"621","name":"ExpH-Water"}!
-where we want to transform the code \verb!621! to become \verb!6211!
-
-Follow these steps:
-\begin{enumerate}
-\item Let's make a backup of the data base before modifying it by running 
-\verb!>> python tools/db_tool <user> backup!, that makes a backup copy.
-\item Let's edit the \verb!<user>_profile.json! file
-\begin{enumerate}
- \item Open the file  located in the folder \verb!configfiles! with a text editor.
- \item Modify the account's code in the line where it was declared. \\
- \verb!{"type":"DEBIT","content":"NOMINAL","code":"6211","name":"ExpH-Water"}!
- \item Save the file.
-\end{enumerate}
-\item Let's modify account code by following these steps:
- 
-Import session as in \ref{MEV_session}, search the account with code=621 as in \ref{DB_search_account}, then follow:
-\begin{verbatim}
->>> account
-Account(33 | Type.DEBIT | Content.NOMINAL | 621 | ExpH-Water | None )
->>> account.code = 6211
->>> mev.db.commit()
->>> quit()
-# save db to files
->> python tools/db_tool.py <user> save!
-# refresh accounts.json
->> python tools/config_user.py <user> refresh!
-# remake data base from files
-python tools/remake.py <user>
-\end{verbatim}
-\end{enumerate}
- \subsection{How to modify the code in a real account}  
- The process described in section \ref{NOMINAL_CODE} is valid but taking into account a important difference.
- If the account whose code is going to be modified is used in any of the seats declared in the user opening file: \verb!<user>_opening_seat.json!, there's  need to modify this seat  before running \verb!>> python tools/remake.py <user>!
- 
 \end{document}

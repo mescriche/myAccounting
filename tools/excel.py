@@ -3,7 +3,7 @@ import locale
 locale.setlocale(locale.LC_ALL, '')
 import argparse, sys, os
 
-parser = argparse.ArgumentParser(description='program for creating json transactions from excell files')
+parser = argparse.ArgumentParser(description='program for creating json seats from excell files')
 parser.add_argument('username', help='username used')
 args = parser.parse_args()
 #print(args)

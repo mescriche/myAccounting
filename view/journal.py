@@ -1,10 +1,10 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
-from dbase import db_session, Account, Transaction, BookEntry
+from dbase import db_session, Account, Seat, BookEntry
 from controller.utility import db_currency, db_get_yearRange, db_get_accounts_gname, db_get_account_code
-from datamodel.transaction import DMTransaction
-from .transaction import TransactionViewer, TransactionEditor
+from datamodel.seat import DMSeat
+from .seat import SeatViewer, SeatEditor
 from datetime import datetime
 
 class JournalView(ttk.Frame):
@@ -61,7 +61,7 @@ class JournalView(ttk.Frame):
         self.text.configure(yscrollcommand=scroll_bar.set)
         scroll_bar.config(command=self.text.yview)
         scroll_bar.pack(side='right', fill='y')
-        self.text.tag_configure('transaction', background='blue', foreground='yellow', justify='left')
+        self.text.tag_configure('seat', background='blue', foreground='yellow', justify='left')
         self.text.tag_configure('account', background='blue')
         self.render_request()
 
@@ -82,22 +82,22 @@ class JournalView(ttk.Frame):
         
     def render_request(self, *args):
         with db_session() as db:
-            query = db.query(Transaction)
+            query = db.query(Seat)
             if self.etrans_id.get():
                 _id = self.etrans_id.get()
-                query = query.filter(Transaction.id == _id)
+                query = query.filter(Seat.id == _id)
             if self.etrans_description.get():
                 description = self.etrans_description.get()
-                query = query.filter(Transaction.description.contains(description))
+                query = query.filter(Seat.description.contains(description))
             if self.etrans_year.get():
                 year = self.etrans_year.get()
                 min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
                 max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
-                query = query.filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)    
+                query = query.filter(Seat.date >= min_date).filter(Seat.date <= max_date)    
             if self.etrans_date.get():
                 _date = self.etrans_date.get()
                 date = datetime.strptime(_date, "%d-%m-%Y").date()
-                query = query.filter(Transaction.date == date)
+                query = query.filter(Seat.date == date)
             if items := [item.id for item in query]:
                 self.render(items)
             else:
@@ -112,9 +112,9 @@ class JournalView(ttk.Frame):
         self.text['state'] = 'normal'
         self.text.delete('1.0', 'end')
         if trans is None:
-        ## list of last 20 transactions
+        ## list of last 20 seats
             with db_session() as db:
-                query = db.query(Transaction).order_by(Transaction.id.desc()).limit(20)
+                query = db.query(Seat).order_by(Seat.id.desc()).limit(20)
                 if items := [item.id for item in query]:
                     items.reverse()
                     trans = items
@@ -123,12 +123,12 @@ class JournalView(ttk.Frame):
         with db_session() as db:
             #print(trans)
             for _id in reversed(trans):
-                try: db_trans = db.query(Transaction).get(_id)
+                try: db_trans = db.query(Seat).get(_id)
                 except Exception as e:
                     print(e)
                 else:
-                    dm_trans = DMTransaction.from_DBTransaction(db_trans)
-                    wdgt = TransactionViewer(self.text, dm_trans, borderwidth=2)
+                    dm_trans = DMSeat.from_DBSeat(db_trans)
+                    wdgt = SeatViewer(self.text, dm_trans, borderwidth=2)
                     for child in wdgt.winfo_children():
                         child.bindtags((dm_trans.id,) + child.bindtags())
                     else:
@@ -139,8 +139,8 @@ class JournalView(ttk.Frame):
 
     def _create_popup_menu(self, widget, value):
         menu = Menu(widget)
-        menu.add_command(label='Edit', command=lambda e=value: self._get_updated_transaction(e))
-        menu.add_command(label='Remove', command= lambda e=value.id: self.remove_transaction(e))
+        menu.add_command(label='Edit', command=lambda e=value: self._get_updated_seat(e))
+        menu.add_command(label='Remove', command= lambda e=value.id: self.remove_seat(e))
 
         if self.text.tk.call('tk', 'windowingsystem') == 'aqua':
             widget.bind_class(value.id, '<2>',         lambda e: menu.post(e.x_root, e.y_root))
@@ -149,11 +149,11 @@ class JournalView(ttk.Frame):
             widget.bind_class(value.id, '<3>', lambda e: menu.post(e.x_root, e.y_root))
         return 'break'
 
-    def _get_updated_transaction(self, trans:DMTransaction):
-        editor = TransactionEditor(self, trans)
+    def _get_updated_seat(self, trans:DMSeat):
+        editor = SeatEditor(self, trans)
         updated_trans = editor.trans
         with db_session() as db:
-            db_trans = db.query(Transaction).get(updated_trans.id)
+            db_trans = db.query(Seat).get(updated_trans.id)
             setattr(db_trans, 'date', updated_trans.date)
             setattr(db_trans, 'description', updated_trans.description)
             for i in range(len(updated_trans.entries), len(db_trans.entries)):
@@ -163,16 +163,16 @@ class JournalView(ttk.Frame):
                 account = db.query(Account).filter_by(code=code).one()
                 try: _entry = db_trans.entries[n]
                 except IndexError: #not enough entries
-                    db.add(BookEntry(account=account, transaction=db_trans, type=entry.type, amount=entry.amount))
+                    db.add(BookEntry(account=account, seat=db_trans, type=entry.type, amount=entry.amount))
                 else: # using existing entries
                     setattr(_entry, 'account', account)
                     setattr(_entry, 'type', entry.type)
                     setattr(_entry, 'amount', entry.amount)
         self.master.event_generate("<<DataBaseContentChanged>>")
                          
-    def remove_transaction(self, trans_id):
+    def remove_seat(self, trans_id):
         with db_session() as db:
-            trans = db.query(Transaction).get(trans_id)
+            trans = db.query(Seat).get(trans_id)
             for entry in trans.entries:
                 db.delete(entry)
             else:

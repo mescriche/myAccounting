@@ -2,9 +2,9 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
 from tkinter import filedialog
-from datamodel.transaction import DMTransaction, DMTransactionEncoder
+from datamodel.seat import DMSeatEncoder, DMSeat
 from controller.app_seats import create_year_seats
-from dbase import db_session, Transaction
+from dbase import db_session, Seat
 from .input import InputView
 from .journal import JournalView
 from .ledger import LedgerView
@@ -47,7 +47,7 @@ class View(ttk.Frame):
         #btn.image=upload_icon
         #btn.pack(side='left')
         #plus_icon = PhotoImage(file='./view/icons/add.gif')        
-        #btn=Button(shortcut_bar, image=plus_icon, command=lambda: TransactionView(self))
+        #btn=Button(shortcut_bar, image=plus_icon, command=lambda: SeatView(self))
         #btn.image=plus_icon
         #btn.pack(side='left')
         
@@ -88,7 +88,7 @@ class View(ttk.Frame):
 
     def refresh_tabs(self, event=None):
         with db_session() as db:
-            trans = db.query(Transaction).order_by(Transaction.id.desc()).first()
+            trans = db.query(Seat).order_by(Seat.id.desc()).first()
             #print(trans)
             self.journal.refresh(trans.date)
             self.ledger.refresh(trans.date)
@@ -138,7 +138,7 @@ class View(ttk.Frame):
         
         
         #new_menu = Menu(menu_bar)
-        #new_menu.add_command(label='Transaction', command=lambda: TransactionEditor(self))
+        #new_menu.add_command(label='Seat', command=lambda: SeatEditor(self))
         #menu_bar.add_cascade(label='New', menu=new_menu)
 
         view_menu = Menu(menu_bar)

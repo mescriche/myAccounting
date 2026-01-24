@@ -2,7 +2,7 @@ __author__ = 'Manuel Escriche'
 
 import os, json,locale, re
 from datetime import datetime
-from dbase import db_session, Transaction, Account, BookEntry
+from dbase import db_session, Seat, Account, BookEntry
 
 
 def db_currency(data:float) -> str:
@@ -33,10 +33,10 @@ def db_get_accounts_gname(all=True) -> list:
 def db_get_yearRange() -> tuple:
     today = datetime.today()
     with db_session() as db:
-        if first := db.query(Transaction).order_by(Transaction.date.asc()).first():
+        if first := db.query(Seat).order_by(Seat.date.asc()).first():
             _min = first.date.year
         else: _min = today.year
-        if last := db.query(Transaction).order_by(Transaction.date.desc()).first():
+        if last := db.query(Seat).order_by(Seat.date.desc()).first():
             _max = last.date.year
         else: _max = today.year
     return _min,_max

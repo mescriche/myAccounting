@@ -27,11 +27,11 @@ class Account(Base):
     entries: Mapped[list['BookEntry']] = relationship(back_populates='account')  # many-to-one
 
     def debit(self, year=None) -> float:
-        entries = filter(lambda x:x.transaction.date.year == year, self.entries) if year else self.entries
+        entries = filter(lambda x:x.seat.date.year == year, self.entries) if year else self.entries
         return sum((entry.debit for entry in entries))
     
     def credit(self, year=None) -> float:
-        entries = filter(lambda x:x.transaction.date.year == year, self.entries) if year else self.entries
+        entries = filter(lambda x:x.seat.date.year == year, self.entries) if year else self.entries
         return sum((entry.credit for entry in entries))
     
     @property
@@ -41,7 +41,7 @@ class Account(Base):
         else: return False
 
     def isQuiet(self, year=None) -> bool:
-        entries = filter(lambda x:x.transaction.date.year == year, self.entries) if year else self.entries
+        entries = filter(lambda x:x.seat.date.year == year, self.entries) if year else self.entries
         try: next(entries)
         except StopIteration: return True
         else: return False
@@ -131,8 +131,8 @@ class BookEntry(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     account_id: Mapped[int] = mapped_column(ForeignKey('book.id'), nullable=False)
     account: Mapped['Account'] = relationship(back_populates='entries')
-    transaction_id: Mapped[int] = mapped_column(ForeignKey('journal.id'))
-    transaction: Mapped['Transaction'] = relationship( back_populates='entries')
+    seat_id: Mapped[int] = mapped_column(ForeignKey('journal.id'))
+    seat: Mapped['Seat'] = relationship( back_populates='entries')
     type: Mapped[Type]  = mapped_column()
     amount: Mapped[float] = mapped_column(Float, CheckConstraint('amount >= 0.0'), default=0)
         
@@ -149,15 +149,15 @@ class BookEntry(Base):
         return self.amount if self.type == Type.DEBIT else 0.0
         
     def __repr__(self):
-        return "Entry({0.id} | {0.account.name} | {0.transaction_id} | {0.type} | {0.amount} )".format(self)
+        return "Entry({0.id} | {0.account.name} | {0.seat_id} | {0.type} | {0.amount} )".format(self)
 
     
-class Transaction(Base):
+class Seat(Base):
     __tablename__ = 'journal'
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     description: Mapped[str] = mapped_column(String)
-    entries: Mapped[list['BookEntry']] = relationship(back_populates='transaction')
+    entries: Mapped[list['BookEntry']] = relationship(back_populates='seat')
     
     @property
     def debit(self) -> float:
@@ -168,4 +168,4 @@ class Transaction(Base):
         return sum((entry.credit for entry in self.entries))
 
     def __repr__(self):
-        return "Transaction({0.id} | {0.date} | #entries={1} | {0.description})".format(self, len(self.entries))
+        return "Seat({0.id} | {0.date} | #entries={1} | {0.description})".format(self, len(self.entries))

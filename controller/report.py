@@ -1,6 +1,6 @@
 __author__ = 'Manuel Escriche'
 import random
-from dbase import db_session, Transaction, Account, BookEntry
+from dbase import db_session, Seat, Account, BookEntry
 from prettytable import PrettyTable
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors

@@ -5,7 +5,7 @@ from tkinter import ttk
 from datetime import datetime
 from dbase import db_session
 from controller.utility import db_currency, db_get_account_code, db_get_account_name, db_get_yearRange
-from dbase import Account, Transaction, BookEntry
+from dbase import Account, Seat, BookEntry
 import locale
 
 class LedgerView(ttk.Frame):
@@ -85,7 +85,7 @@ class LedgerView(ttk.Frame):
         self.table.column('date', width=100, anchor='c')
         self.table.column('amount', width=80, anchor='e')
         self.table.column('description', width=800, anchor='w')        
-        self.table.bind('<<TreeviewSelect>>', self.display_transaction)
+        self.table.bind('<<TreeviewSelect>>', self.display_seat)
         
         self.render_filter()
         
@@ -114,7 +114,7 @@ class LedgerView(ttk.Frame):
         self.etrans_year.set(date.year)
         #self.render_filter()
         
-    def display_transaction(self, event):
+    def display_seat(self, event):
         if iid := event.widget.focus():
             trans_id = self.table.set(iid, column='tid')
             self.parent.master.journal.render([trans_id])
@@ -136,16 +136,16 @@ class LedgerView(ttk.Frame):
                 entries = [entry for account in accounts for entry in account.entries]
                 if self.etrans_description.get():
                     description = self.etrans_description.get()
-                    entries = filter(lambda x: description in x.transaction.description, entries)
+                    entries = filter(lambda x: description in x.seat.description, entries)
                 if self.etrans_year.get():
                     year = self.etrans_year.get()
                     min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
                     max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
-                    entries = filter(lambda x: x.transaction.date >= min_date and x.transaction.date <= max_date, entries)
+                    entries = filter(lambda x: x.seat.date >= min_date and x.seat.date <= max_date, entries)
                 if self.etrans_date.get():
                     _date = self.etrans_date.get()
                     date = datetime.strptime(_date, "%d-%m-%Y").date()
-                    entries = filter(lambda x:x.transaction.date == date, entries)
+                    entries = filter(lambda x:x.seat.date == date, entries)
                 if items := [item.id for item in entries]:
                     self.render_entries(acc_value, items)
                 else:
@@ -164,8 +164,8 @@ class LedgerView(ttk.Frame):
                     print(e)
                 else:
                     total += entry.value
-                    values = entry.id, entry.transaction.id, entry.account.gname, entry.transaction.date.strftime("%d-%m-%Y"),\
-                        db_currency(entry.value), entry.transaction.description
+                    values = entry.id, entry.seat.id, entry.account.gname, entry.seat.date.strftime("%d-%m-%Y"),\
+                        db_currency(entry.value), entry.seat.description
                     self.table.insert('','end', values=values)
             else:
                 total = db_currency(total)

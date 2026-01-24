@@ -1,7 +1,7 @@
 __author__ = 'Manuel Escriche'
 from collections import namedtuple
 import re
-from dbase import db_session, Transaction
+from dbase import db_session, Seat
 from controller import create_graph, create_table,  create_cmp_graph
 from tkinter import *
 from tkinter import ttk
@@ -47,8 +47,8 @@ class IncomeRepoView(ttk.Frame):
     def _get_year(self):
         _desc = f'Income closing seat for year'
         with db_session() as db:
-            years = [t.date.year for t in db.query(Transaction).\
-                filter(Transaction.description.contains(_desc))]
+            years = [t.date.year for t in db.query(Seat).\
+                filter(Seat.description.contains(_desc))]
         min_year,max_year = min(years), max(years)
         self.year_combo['values'] = values = [*range(max_year, min_year, -1)]
                           

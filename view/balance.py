@@ -6,7 +6,7 @@ from datamodel.accounts_tree import AccountsTree
 from dbase import db_session, Account, Type
 from controller.utility import db_currency, db_get_yearRange
 from controller.app_seats import create_balance_closing_seat, db_record_file
-from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
+from datamodel.seat import DMBookEntry, DMSeat, DMSeatEncoder
 from locale import currency
 from datetime import datetime
 import os,re

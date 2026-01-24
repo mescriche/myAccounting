@@ -3,19 +3,19 @@ import argparse, os, sys, json, textwrap
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 from datamodel import UserData
-from datamodel.transaction import DMTransaction
+from datamodel.seat import DMSeat
 
 parser = argparse.ArgumentParser(
     formatter_class = argparse.RawDescriptionHelpFormatter,
     description=textwrap.dedent('''\
-    Tool useful to compare json transactions files; especifically, year_<tag>_seats.json file against year_app_seats.json file.
+    Tool useful to compare json seats files; especifically, year_<tag>_seats.json file against year_app_seats.json file.
     '''))
 parser.add_argument('user', help="user")
 parser.add_argument('year', help="files' year")
 parser.add_argument('-t', "--tag" , nargs='?', help="file's tag - format: year_<tag>_seats.json; <user> works as default tag  ")
 parser.add_argument('-m', "--map", action='store_true', help='print comparation map')
 parser.add_argument('-p', "--print" , metavar='Tid', type=int, nargs='+', action='store',
-                    help='print transactions from tag file first, and app file second. examples: -p 1; -p 2 3; -p 0 23')
+                    help='print seats from tag file first, and app file second. examples: -p 1; -p 2 3; -p 0 23')
 args=parser.parse_args()
 print(args)
 
@@ -36,7 +36,7 @@ if os.path.exists(tag_file):
         else:
             data.sort(key=lambda x:(x['date'], x['description']))
             for n,item in enumerate(data,start=1):
-                try: trans = DMTransaction.from_json(item)
+                try: trans = DMSeat.from_json(item)
                 except Exception as e:
                     print(e)
                     break
@@ -44,7 +44,7 @@ if os.path.exists(tag_file):
                     trans.id = 0
                     tag_data.append(trans)
             else:
-                print(f"{os.path.basename(tag_file)}: {len(tag_data)} transactions")
+                print(f"{os.path.basename(tag_file)}: {len(tag_data)} seats")
                 
 app_data = list()
 if os.path.exists(app_file):
@@ -56,7 +56,7 @@ if os.path.exists(app_file):
         else:
             data.sort(key=lambda x:(x['date'], x['description']))
             for n,item in enumerate(data, start=1):
-                try: trans = DMTransaction.from_json(item)
+                try: trans = DMSeat.from_json(item)
                 except Exception as e:
                     print(e)
                     break
@@ -64,7 +64,7 @@ if os.path.exists(app_file):
                     trans.id = 0
                     app_data.append(trans)
             else:
-                print(f"{os.path.basename(app_file)}: {len(app_data)} transactions")
+                print(f"{os.path.basename(app_file)}: {len(app_data)} seats")
                 
 _match = list()
 _removed = list()
@@ -87,9 +87,9 @@ for n,y in enumerate(app_data, start=1):
         if _test: break
     else: _added.append(n)
 print('------------')    
-print(f'>>> {len(_match)} transactions are equal to both files')
-print(f'>>> {len(_removed)} transactions removed from file: {os.path.basename(tag_file)}')
-print(f'>>> {len(_added)} transactions added to file: {os.path.basename(app_file)}')
+print(f'>>> {len(_match)} seats are equal to both files')
+print(f'>>> {len(_removed)} seats removed from file: {os.path.basename(tag_file)}')
+print(f'>>> {len(_added)} seats added to file: {os.path.basename(app_file)}')
 print('------------')
 if (len(tag_data) == len(_match)):
     print(f'>>> {os.path.basename(tag_file)} IS INCLUDED IN {os.path.basename(app_file)}')
@@ -109,7 +109,7 @@ if args.map:
 ###
 if args.print:
     print('--------------')
-    print(f'>>> printing transactions #{args.print}')
+    print(f'>>> printing seats #{args.print}')
     if len(args.print) == 1:
         trns = tag_data[args.print[0]-1]
         print('[id]:',  f'[{trns.id}] from {os.path.basename(tag_file)}')

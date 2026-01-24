@@ -2,20 +2,20 @@ __author__ = 'Manuel Escriche'
 import os,json
 from datetime import datetime
 from dbase import db_session
-from dbase import Account, Transaction, BookEntry, Type, Content
-from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
+from dbase import Account, Seat, BookEntry, Type, Content
+from datamodel.seat import DMBookEntry, DMSeat, DMSeatEncoder
 from controller.utility import db_get_account_code
 
 
 def db_record_file(filename) -> int:
-    def record_transaction(db, trans:DMTransaction):
-        transaction = Transaction(date=trans.date, description=trans.description)
-        db.add(transaction)
+    def record_seat(db, trans:DMSeat):
+        seat = Seat(date=trans.date, description=trans.description)
+        db.add(seat)
         for entry in trans.entries:
             code = db_get_account_code(entry.account)
             try: account = db.query(Account).filter_by(code=code).one()
             except: raise Exception(f'Unknown account code={code}')
-            else: db.add(BookEntry(account=account, transaction=transaction,
+            else: db.add(BookEntry(account=account, seat=seat,
                                    type=entry.type, amount=entry.amount))
         return
     
@@ -32,13 +32,13 @@ def db_record_file(filename) -> int:
             for item in _data:
                 #print(item)
                 try:
-                    trans = DMTransaction.from_json(item)
+                    trans = DMSeat.from_json(item)
                 except Exception as e:
                     print(f'Wrong format when reading item = {item}')
                     print(e)
                     break
                 else:
-                    record_transaction(db, trans)
+                    record_seat(db, trans)
             else:
                 return len(_data)
 
@@ -73,11 +73,11 @@ def create_income_closing_seat(year, user_dir, tag='app') -> str:
                     
     date = datetime.strptime(f'31-12-{year}', '%d-%m-%Y').date()
     description = f"Income closing seat for year {year}"
-    _data = [DMTransaction(id=0, date=date, description=description, entries=entries),]
+    _data = [DMSeat(id=0, date=date, description=description, entries=entries),]
     filename = f'{year}_{tag}_income_closing_seat.json'
     _filename = os.path.join(datafiles_dir, filename)
     with open(_filename, 'w') as _file:
-        json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)        
+        json.dump(_data, _file, cls=DMSeatEncoder, indent=4)        
     return filename
 
 def create_balance_closing_seat(year, user_dir, tag='app') -> dict:
@@ -117,21 +117,21 @@ def create_balance_closing_seat(year, user_dir, tag='app') -> dict:
     ### create closing seat for running year
     date = datetime.strptime(f'31-12-{year}', '%d-%m-%Y').date()
     description = f"Balance closing seat for year {year}"
-    _data = [DMTransaction(id=0, date=date, description=description, entries=closing_entries),]
+    _data = [DMSeat(id=0, date=date, description=description, entries=closing_entries),]
     closing_filename =  f'{year}_{tag}_balance_closing_seat.json'
     _filename = os.path.join(datafiles_dir, closing_filename)
     with open(_filename, 'w') as _file:
-        json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
+        json.dump(_data, _file, cls=DMSeatEncoder, indent=4)
 
     ### create opening seat for next year
     year = year + 1
     date = datetime.strptime(f'1-1-{year}', '%d-%m-%Y').date()
     description = f"Balance opening seat for year {year}"
-    _data = [DMTransaction(id=0, date=date, description=description, entries=opening_entries),]
+    _data = [DMSeat(id=0, date=date, description=description, entries=opening_entries),]
     opening_filename = f'{year}_{tag}_opening_seat.json'
     _filename = os.path.join(datafiles_dir, opening_filename )
     with open(_filename, 'w') as _file:
-        json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
+        json.dump(_data, _file, cls=DMSeatEncoder, indent=4)
     return  {'closing': closing_filename, 'opening': opening_filename}
 
 def create_year_seats(year, user_dir, tag='app') -> dict:
@@ -144,9 +144,9 @@ def create_year_seats(year, user_dir, tag='app') -> dict:
     with db_session() as db:
          min_date = datetime.strptime(f'01-01-{year}', "%d-%m-%Y").date()
          max_date = datetime.strptime(f'31-12-{year}', "%d-%m-%Y").date()
-         query = db.query(Transaction).filter(Transaction.date >= min_date).filter(Transaction.date <= max_date)
+         query = db.query(Seat).filter(Seat.date >= min_date).filter(Seat.date <= max_date)
          if items := [item for item in query]:
-            _data = map(lambda x: DMTransaction.from_DBTransaction(x), items)
+            _data = map(lambda x: DMSeat.from_DBSeat(x), items)
             _data = list(filter(lambda x:x.description.splitlines()[0].strip() not in _exclude_seats, _data))
             _data = sorted(_data, key=lambda x:x.date)
             for n,item in enumerate(_data, start=1): item.id = n
@@ -154,5 +154,5 @@ def create_year_seats(year, user_dir, tag='app') -> dict:
             filename = f'{year}_{tag}_seats.json'
             _filename = os.path.join(datafiles_dir, filename )
             with open(_filename, 'w') as _file:
-                json.dump(_data, _file, cls=DMTransactionEncoder, indent=4)
+                json.dump(_data, _file, cls=DMSeatEncoder, indent=4)
     return {'n_records': len(_data), 'filename': filename}

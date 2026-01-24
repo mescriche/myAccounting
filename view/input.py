@@ -5,12 +5,12 @@ from tkinter import filedialog, dialog
 import tkinter.font as tkfont 
 from datetime import datetime
 from json import load, loads, dumps
-from dbase import db_session, Account, Transaction, BookEntry
+from dbase import db_session, Account, Seat, BookEntry
 from controller.utility import db_get_account_code
 from enum import Enum
 import os, re
-from datamodel.transaction import DMTransaction
-from view.transaction import TransactionEditor, askTransactionRecordDialog
+from datamodel.seat import DMSeat
+from view.seat import SeatEditor, askSeatRecordDialog
 from .text_editor import TextEditor
 
 class InputView(ttk.Frame):
@@ -46,10 +46,10 @@ class InputView(ttk.Frame):
         self.file_name_entry.pack(side='left')
         self.file_name_entry.bind('<<ComboboxSelected>>', self._open_file)
 
-        new_bar = ttk.LabelFrame(tools_bar, text='New Transaction')
+        new_bar = ttk.LabelFrame(tools_bar, text='New Seat')
         new_bar.pack(expand=False, side='left')
         new_trans_icon = PhotoImage(file='./view/icons/add.gif')        
-        new_trans_btn = ttk.Button(new_bar, image=new_trans_icon, command=self.get_new_transaction)
+        new_trans_btn = ttk.Button(new_bar, image=new_trans_icon, command=self.get_new_seat)
         new_trans_btn.image = new_trans_icon
         new_trans_btn.pack(padx=10)
 
@@ -119,19 +119,19 @@ class InputView(ttk.Frame):
            
     def execute_step_by_step(self, *args):
         answer = messagebox.askokcancel(title='Recording Confirmation',
-                                        message=f"Transactions are ready, proceed?")
+                                        message=f"Seats are ready, proceed?")
         if not answer: return
         for trans in self.editor.data():
             if not trans.validate():
-                print('transaction is not valid for record:')
-                print('transaction=', trans)
+                print('seat is not valid for record:')
+                print('seat=', trans)
                 break
-            answer = askTransactionRecordDialog(self, trans)
+            answer = askSeatRecordDialog(self, trans)
             if answer:
                 with db_session() as db:
-                    try: self.record_transaction(db, trans)
+                    try: self.record_seat(db, trans)
                     except Exception as e:
-                        print(f'Problem when recording transaction:{trans}')
+                        print(f'Problem when recording seat:{trans}')
                         print(e)
                         break
                 self.master.event_generate("<<DataBaseContentChanged>>")
@@ -139,34 +139,34 @@ class InputView(ttk.Frame):
     def execute(self, *args):
         data = list(self.editor.data())
         answer = messagebox.askokcancel(title='Record Confirmation',
-                                        message=f"{len(data)} transactions are ready, proceed?")
+                                        message=f"{len(data)} seats are ready, proceed?")
         if answer:
             with db_session() as db:
                 for trans in self.editor.data():
                     if trans.validate():
-                        self.record_transaction(db, trans)
+                        self.record_seat(db, trans)
                     else:
-                        print('transaction is not valid for record:')
-                        print('transaction=', trans)
+                        print('seat is not valid for record:')
+                        print('seat=', trans)
                         break
                     
-            title = "Transactions Record"
-            msg = f"{len(data)} transactions has/have been created"
+            title = "Seats Record"
+            msg = f"{len(data)} seats has/have been created"
             messagebox.showinfo(title=title, message=msg) 
             self.master.event_generate("<<DataBaseContentChanged>>")
 
-    def record_transaction(self, db, trans:DMTransaction):
-        transaction = Transaction(date=trans.date, description=trans.description)
-        db.add(transaction)
+    def record_seat(self, db, trans:DMSeat):
+        seat = Seat(date=trans.date, description=trans.description)
+        db.add(seat)
         for entry in trans.entries:
             code = db_get_account_code(entry.account)
             try: account = db.query(Account).filter_by(code=code).one()
             except: raise Exception(f'Unknown account code={code}')
-            else: db.add(BookEntry(account=account, transaction=transaction, type=entry.type, amount=entry.amount))
+            else: db.add(BookEntry(account=account, seat=seat, type=entry.type, amount=entry.amount))
 
-    def get_new_transaction(self):
-        editor = TransactionEditor(self)
+    def get_new_seat(self):
+        editor = SeatEditor(self)
         new_trans = editor.trans
         if new_trans:
-            self.editor.add_new_transaction(new_trans)
+            self.editor.add_new_seat(new_trans)
 

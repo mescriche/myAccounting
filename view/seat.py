@@ -2,18 +2,18 @@ __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
 from dataclasses import dataclass
-from dbase import db_session, Account, Transaction, Type, BookEntry
-from datamodel.transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
+from dbase import db_session, Account, Seat, Type, BookEntry
+from datamodel.seat import DMBookEntry, DMSeat, DMSeatEncoder
 from controller.utility import db_currency, db_get_accounts_gname
 from .dialog import Dialog
 import re, enum, datetime, json, textwrap
     
-class TransactionViewer(ttk.Frame):
-    def __init__(self, parent, trans:DMTransaction, **kwargs):
+class SeatViewer(ttk.Frame):
+    def __init__(self, parent, trans:DMSeat, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.pack(expand=False)
-        Label(self, text=f'Transaction #{trans.id}', background='dark cyan').pack(fill='x')
+        Label(self, text=f'Seat #{trans.id}', background='dark cyan').pack(fill='x')
         self.text= Text(self, width=80, height=2+trans.description.count('\n'))
         self.text.pack(fill='x')
         self.text.tag_config('label', background='blue')
@@ -60,14 +60,14 @@ class TransactionViewer(ttk.Frame):
             ancestor.ledger.render_filter()
             ancestor.notebook.select(2)
 
-class TransactionDialog(Dialog):
-    def __init__(self, parent, title, trans:DMTransaction):
+class SeatDialog(Dialog):
+    def __init__(self, parent, title, trans:DMSeat):
         self.trans = trans
         self.answer = False
         super().__init__(parent, title)
 
     def body(self, master):
-        viewer = TransactionViewer(master, self.trans)
+        viewer = SeatViewer(master, self.trans)
         return viewer 
 
     def buttonbox(self):
@@ -87,15 +87,15 @@ class TransactionDialog(Dialog):
     def validate(self):
         return True
 
-def askTransactionRecordDialog(master, trans):
-    w = TransactionDialog(master, 'Confirm Transaction', trans)
+def askSeatRecordDialog(master, trans):
+    w = SeatDialog(master, 'Confirm Seat', trans)
     return w.answer
 
-class TransactionEditor(Dialog):
-    errormessage = 'Not a Transaction'
+class SeatEditor(Dialog):
+    errormessage = 'Not a Seat'
     
-    def __init__(self, parent, trans:DMTransaction=None, **kwargs):
-        title = 'Transaction Editor'
+    def __init__(self, parent, trans:DMSeat=None, **kwargs):
+        title = 'Seat Editor'
         self.trans = trans
         super().__init__(parent, title)
         
@@ -267,7 +267,7 @@ class TransactionEditor(Dialog):
         date = datetime.datetime.strptime(date, "%d-%m-%Y").date()
         description = re.search(r'(?<=^Description:).+',self.text.get(2.0, 'end-1c'), re.DOTALL).group(0)
         _id = self.trans.id if self.trans else 0
-        self.trans = DMTransaction(id=_id, date=date, description=description.strip(), entries=entries)
+        self.trans = DMSeat(id=_id, date=date, description=description.strip(), entries=entries)
 
     def _edit_table(self, event):
         table = event.widget

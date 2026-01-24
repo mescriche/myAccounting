@@ -1,6 +1,5 @@
 __author__ = 'Manuel Escriche'
 import re,random
-from dbase import db_session, Transaction, Account, BookEntry
 from controller.utility import db_get_accounts_gname,  db_get_account_code, db_get_account_name, db_get_yearRange
 from tkinter import *
 from tkinter import ttk

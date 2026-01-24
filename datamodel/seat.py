@@ -10,7 +10,7 @@ class DMBookEntry:
     amount : float
     
 @dataclass
-class DMTransaction:
+class DMSeat:
     id: int
     date: datetime.date
     description: str
@@ -21,9 +21,9 @@ class DMTransaction:
         entries = [DMBookEntry(entry['account'], Type[entry['type']], entry['amount']) for entry in data['entries']]
         return cls(data['id'], datetime.datetime.strptime(data['date'], '%d-%m-%Y').date(), data['description'], entries)
     @classmethod
-    def from_DBTransaction(cls, trans):
-        entries = [DMBookEntry(entry.account.gname, entry.type, entry.amount) for entry in trans.entries]
-        return cls(trans.id, trans.date, trans.description, entries)
+    def from_DBSeat(cls, seat):
+        entries = [DMBookEntry(entry.account.gname, entry.type, entry.amount) for entry in seat.entries]
+        return cls(seat.id, seat.date, seat.description, entries)
     def validate(self) ->bool:
         if not self.date or not isinstance(self.date, datetime.date): return False
         if not self.description or not isinstance(self.description, str): return False
@@ -34,9 +34,9 @@ class DMTransaction:
             if not entry.amount or not isinstance(entry.amount, float) or entry.amount < 0: return False
         return True
 
-class DMTransactionEncoder(json.JSONEncoder):
+class DMSeatEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, DMTransaction):
+        if isinstance(obj, DMSeat):
             item = dict()
             item['id'] = obj.id
             item['date'] = obj.date.strftime('%d-%m-%Y')

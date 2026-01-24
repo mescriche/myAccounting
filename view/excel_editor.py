@@ -1,13 +1,11 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk, messagebox
-#from tkinter.simpledialog import Dialog
-#from .dialog import Dialog
 from dbase import db_session, Type, Account
 from controller.utility import db_get_accounts_gname, db_currency
 from controller.excel_reader import create_excel_reader
 from dataclasses import asdict
-from .transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
+from .seat import DMBookEntry, DMSeat, DMSeatEncoder
 import json, os, pickle
 from datetime import datetime
 
@@ -47,7 +45,7 @@ class ExcelView(ttk.Frame):
             os.rename(filename, new_filename)
 
 class ExcelEditor(ttk.Frame):
-    #errormessage = 'Not a Transaction'
+    #errormessage = 'Not a Seat'
     def __init__(self, master, filename,  **kwargs):
         self.trans_list = None
         self.filename = None
@@ -344,7 +342,7 @@ class ExcelEditor(ttk.Frame):
         notebook = self.master.master # notebook
         blackboard = self.master.master.master.output #blackboard
         blackboard.editor.clear()
-        blackboard.editor.add_new_transaction(self.trans_list)
+        blackboard.editor.add_new_seat(self.trans_list)
         blackboard.set_filename(self.filename)
         notebook.select(3) #blackboard
         
@@ -365,7 +363,7 @@ class ExcelEditor(ttk.Frame):
                 else: raise Exception('Unknown entry type')
                 entry2_type = Type.CREDIT if entry1_type == Type.DEBIT else Type.DEBIT
                 amount = abs(amount)
-                data.append(DMTransaction(id=n, date=date, description=description,
+                data.append(DMSeat(id=n, date=date, description=description,
                                           entries = [DMBookEntry(master_account.gname, entry1_type, amount),
                                                      DMBookEntry(account, entry2_type, amount)]))
             else:

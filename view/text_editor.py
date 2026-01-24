@@ -1,8 +1,8 @@
 __author__ = 'Manuel Escriche'
 from tkinter import *
 from tkinter import ttk
-from .transaction import DMBookEntry, DMTransaction, DMTransactionEncoder
-from .transaction import TransactionViewer, TransactionEditor
+from .seat import DMBookEntry, DMSeat, DMSeatEncoder
+from .seat import SeatViewer, SeatEditor
 from dbase import Type
 from datetime import datetime
 import json, os
@@ -31,7 +31,7 @@ class TextEditor(ttk.Frame):
                     print('file not loaded')
                 else:
                     for item in data:
-                        try: trans = DMTransaction.from_json(item)
+                        try: trans = DMSeat.from_json(item)
                         except Exception as e:
                             print(f'Wrong item in file: {filename}')
                             print(f'when reading item = {item}')
@@ -53,10 +53,10 @@ class TextEditor(ttk.Frame):
     def save_to_file(self, filename=None):
         _filename = self.filename if not filename else filename
         with open(_filename, 'w') as _file:
-            json.dump(self._data, _file, cls=DMTransactionEncoder, indent=4)
+            json.dump(self._data, _file, cls=DMSeatEncoder, indent=4)
             
-    def add_new_transaction(self, new_trans):
-        if isinstance(new_trans, DMTransaction):
+    def add_new_seat(self, new_trans):
+        if isinstance(new_trans, DMSeat):
             try: last_trans = self._data[-1]
             except: new_trans.id = 1
             else: new_trans.id = last_trans.id + 1
@@ -72,14 +72,14 @@ class TextEditor(ttk.Frame):
                 self.render()
         else: raise Exception('Unknown instance ')
         
-    def remove_transaction(self, trans_id):
+    def remove_seat(self, trans_id):
         for trans in self._data:
             if trans.id == trans_id:
                 self._data.remove(trans)
                 break
         self.render()
 
-    def update_transaction(self, trans:DMTransaction):
+    def update_seat(self, trans:DMSeat):
         for n,item in enumerate(self._data):
             if item.id == trans.id:
                 self._data[n] = trans
@@ -93,10 +93,10 @@ class TextEditor(ttk.Frame):
         self.text['state'] = 'normal'
         self.text.delete(1.0, 'end')
         if json:
-            self.text.insert(1.0, json.dumps(self.data(), cls=DMTransactionEncoder, indent=4))
+            self.text.insert(1.0, json.dumps(self.data(), cls=DMSeatEncoder, indent=4))
         else:
             for trans in self._data:
-                wdgt = TransactionViewer(self.text, trans, borderwidth=2)
+                wdgt = SeatViewer(self.text, trans, borderwidth=2)
                 for child in wdgt.winfo_children():
                     child.bindtags((trans.id,) + child.bindtags())
                 else:
@@ -107,9 +107,9 @@ class TextEditor(ttk.Frame):
             
     def _create_popup_menu(self, widget, value):
         menu = Menu(widget)
-        menu.add_command(label='Edit', command=lambda e=value: self._get_updated_transaction(e))
-        menu.add_command(label='Duplicate', command=lambda e=value: self._duplicate_transaction(e))
-        menu.add_command(label='Remove', command=lambda e=value.id: self.remove_transaction(e))        
+        menu.add_command(label='Edit', command=lambda e=value: self._get_updated_seat(e))
+        menu.add_command(label='Duplicate', command=lambda e=value: self._duplicate_seat(e))
+        menu.add_command(label='Remove', command=lambda e=value.id: self.remove_seat(e))        
         if self.text.tk.call('tk', 'windowingsystem') == 'aqua':
             widget.bind_class(value.id, '<2>',         lambda e: menu.post(e.x_root, e.y_root))
             widget.bind_class(value.id, '<Control-1>', lambda e: menu.post(e.x_root, e.y_root))
@@ -117,15 +117,15 @@ class TextEditor(ttk.Frame):
             widget.bind_class(value.id,'<3>', lambda e: menu.post(e.x_root, e.y_root))
         return 'break'
 
-    def _get_updated_transaction(self, trans:DMTransaction):
-        editor = TransactionEditor(self,trans)
+    def _get_updated_seat(self, trans:DMSeat):
+        editor = SeatEditor(self,trans)
         updated_trans = editor.trans
         if updated_trans != trans:
-            self.update_transaction(updated_trans)
+            self.update_seat(updated_trans)
 
-    def _duplicate_transaction(self, trans:DMTransaction):
+    def _duplicate_seat(self, trans:DMSeat):
         entries = [DMBookEntry(entry.account, entry.type, entry.amount) for entry in trans.entries]        
-        new_trans = DMTransaction(0, trans.date, trans.description, entries)
-        self.add_new_transaction(new_trans)
+        new_trans = DMSeat(0, trans.date, trans.description, entries)
+        self.add_new_seat(new_trans)
 
         

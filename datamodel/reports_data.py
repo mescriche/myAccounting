@@ -2,7 +2,7 @@ __author__ = 'Manuel Escriche'
 from enum import Enum
 from typing import Literal
 from datamodel.accounts_tree import AccountsTree
-from dbase import db_session, Transaction
+from dbase import db_session, Seat
 import pandas as pd
 
 delta_char = "\u0394"
@@ -40,7 +40,7 @@ class ReportDataSource: #Report Data Source
                 for year in years:
                     desc = f'{doc.title()} closing seat for year {year}'
                     if verbose: print(f'\n{desc}')
-                    trans = db.query(Transaction).filter_by(description=desc).one()
+                    trans = db.query(Seat).filter_by(description=desc).one()
                     for child in node_proxy.children:
                         entries = [entry for entry in trans.entries if entry.account.code in child.codes]
                         amount = sum([entry.amount for entry in entries])
