@@ -1,59 +1,20 @@
-{"profile":"student",
- "accounts":{
-     "purpose":"database",
-     "accounts":[
-	 { "type":"CREDIT", "content":"REAL",    "code": "10",  "name":"Wealth"},
-	 { "type":"CREDIT", "content":"REAL",    "code": "11",  "name":"Outcome"},
-	 { "type":"DEBIT",  "content":"REAL",    "code": "20",  "name":"Devices"},
-	 { "type":"DEBIT",  "content":"REAL",    "code": "50",  "name":"Wallet"},
-	 { "type":"DEBIT",  "content":"REAL",    "code": "51",  "name":"Bank Account"},
-	 { "type":"DEBIT",  "content":"REAL",    "code": "511", "name":"OpenBank"},
-	 
-	 { "type":"CREDIT", "content":"NOMINAL", "code":"70",  "name":"Income-Parents"},
-	 { "type":"CREDIT", "content":"NOMINAL", "code":"71",  "name":"Income-Others"},
-	 { "type":"DEBIT",  "content":"NOMINAL", "code":"60",  "name":"Expenses"},
-	 { "type":"DEBIT",  "content":"NOMINAL", "code":"61",  "name":"Inv-Career"},
-	 { "type":"DEBIT",  "content":"NOMINAL", "code":"62",  "name":"Exp-Social life"},
-	 { "type":"DEBIT",  "content":"NOMINAL", "code":"63",  "name":"Exp-Maintenance"},
-	 { "type":"DEBIT",  "content":"NOMINAL", "code":"64",  "name":"Exp-Fitness"},
-	 { "type":"DEBIT",  "content":"NOMINAL", "code":"65",  "name":"Exp-Accomodation"},
-	 { "type":"DEBIT",  "content":"NOMINAL", "code":"66",  "name":"Exp-Transport"}	 
-     ]
- },
- "balance":{
-     "purpose":"report",
-     "assets": {
-	 "fixed": {
-	     "devices": ["20"]
-	 },
-	 "current":{
-	     "Bank": ["51", "511"],
-	     "Wallet":["50"]
-	 }
-     },
-     "claims": {
-	 "short_term": {},
-	 "long_term": {},
-	 "net_worth": {
-	     "Wealth": ["10"],
-	     "Income": ["11"]
-	 }
-     }
- },
- "income":{
-     "purpose":"report",
-     "revenues": {
-	 "parents": ["70"],
-	 "others":  ["71"]
-     },
-     "expenses": {
-	 "career":      ["61"],
-	 "acomodation": ["62"],
-	 "maintenance": ["63"],
-	 "fitness":     ["64"],
-	 "social life": ["65"],
-	 "transport":   ["66"],
-	 "others":      ["60"]
-     }
- }
+{
+    "accounts":[
+	{ "type":"CREDIT", "content":"REAL",    "code": "10",  "name":"Wealth"},
+	{ "type":"CREDIT", "content":"REAL",    "code": "11",  "name":"Outcome"},
+	{ "type":"DEBIT",  "content":"REAL",    "code": "20",  "name":"Devices"},
+	{ "type":"DEBIT",  "content":"REAL",    "code": "50",  "name":"Wallet"},
+	{ "type":"DEBIT",  "content":"REAL",    "code": "51",  "name":"Bank Account"},
+	{ "type":"DEBIT",  "content":"REAL",    "code": "511", "name":"OpenBank"},
+	
+	{ "type":"CREDIT", "content":"NOMINAL", "code":"70",  "name":"Income-Parents"},
+	{ "type":"CREDIT", "content":"NOMINAL", "code":"71",  "name":"Income-Others"},
+	{ "type":"DEBIT",  "content":"NOMINAL", "code":"60",  "name":"Expenses"},
+	{ "type":"DEBIT",  "content":"NOMINAL", "code":"61",  "name":"Inv-Career"},
+	{ "type":"DEBIT",  "content":"NOMINAL", "code":"62",  "name":"Exp-Social life"},
+	{ "type":"DEBIT",  "content":"NOMINAL", "code":"63",  "name":"Exp-Maintenance"},
+	{ "type":"DEBIT",  "content":"NOMINAL", "code":"64",  "name":"Exp-Fitness"},
+	{ "type":"DEBIT",  "content":"NOMINAL", "code":"65",  "name":"Exp-Accomodation"},
+	{ "type":"DEBIT",  "content":"NOMINAL", "code":"66",  "name":"Exp-Transport"}	 
+    ]
 }

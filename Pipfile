@@ -13,6 +13,7 @@ matplotlib = "*"
 jinja2 = "*"
 pandastable = "*"
 numexpr = "*"
+prettytable = "*"
 
 [dev-packages]
 

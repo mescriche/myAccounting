@@ -76,7 +76,3 @@ def move_entries_to_account(ids:list, code):
     else:
         db.commit()
     
-def search_seats_by_id(id):
-    seat = next(filter(lambda x:x.id == id, seats))
-    print(seat)
-    return seat

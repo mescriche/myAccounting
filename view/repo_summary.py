@@ -4,7 +4,6 @@ from tkinter import *
 from tkinter import ttk
 from datamodel.reports_data import ReportDataSource
 from controller.report import create_table
-from prettytable import PrettyTable
 
 delta = "\u0394"
 
